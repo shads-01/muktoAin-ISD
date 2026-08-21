@@ -1,0 +1,22 @@
+[
+  {
+    "categoryId": 1,
+    "name": "Labour Complaint",
+    "description": "Unpaid wages, wrongful termination, unsafe working conditions, maternity benefits, overtime disputes"
+  },
+  {
+    "categoryId": 2,
+    "name": "General Diary (GD)",
+    "description": "Police station report for theft, assault, threats, missing persons, document loss, harassment"
+  },
+  {
+    "categoryId": 3,
+    "name": "RTI Request",
+    "description": "Right to Information application to government bodies, public authorities, administrative transparency"
+  },
+  {
+    "categoryId": 4,
+    "name": "Consumer Complaint",
+    "description": "Defective products, fraudulent services, adulterated food, overpricing, consumer rights violations"
+  }
+]

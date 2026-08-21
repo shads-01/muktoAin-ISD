@@ -1,0 +1,132 @@
+[
+  {
+    "sectionId": 121,
+    "scenarioKeyword": "unpaid wages",
+    "notes": "Labour Act s.121/123 — responsibility for wage payment and timeline"
+  },
+  {
+    "sectionId": 121,
+    "scenarioKeyword": "বেতন দেয়নি",
+    "notes": "Labour Act s.121/123 — unpaid wages (Bangla)"
+  },
+  {
+    "sectionId": 121,
+    "scenarioKeyword": "salary not paid",
+    "notes": "Labour Act s.121/123 — delay in wage payment"
+  },
+  {
+    "sectionId": 121,
+    "scenarioKeyword": "beton dey nai",
+    "notes": "Labour Act s.121/123 — unpaid salary (Banglish)"
+  },
+  {
+    "sectionId": 26,
+    "scenarioKeyword": "wrongful termination",
+    "notes": "Labour Act s.26 — termination of employment by employer"
+  },
+  {
+    "sectionId": 26,
+    "scenarioKeyword": "চাকরি থেকে বরখাস্ত",
+    "notes": "Labour Act s.26 — dismissal/termination (Bangla)"
+  },
+  {
+    "sectionId": 26,
+    "scenarioKeyword": "chakri theke ber kore dise",
+    "notes": "Labour Act s.26 — terminated without cause/notice (Banglish)"
+  },
+  {
+    "sectionId": 26,
+    "scenarioKeyword": "fired without notice",
+    "notes": "Labour Act s.26 — termination notice and compensation"
+  },
+  {
+    "sectionId": 27,
+    "scenarioKeyword": "resignation compensation",
+    "notes": "Labour Act s.27 — resignation by worker and settlement benefits"
+  },
+  {
+    "sectionId": 27,
+    "scenarioKeyword": "ইস্তফা বকেয়া",
+    "notes": "Labour Act s.27 — resignation dues (Bangla)"
+  },
+  {
+    "sectionId": 46,
+    "scenarioKeyword": "maternity benefit",
+    "notes": "Labour Act s.46/47 — payment of maternity benefit and leave"
+  },
+  {
+    "sectionId": 46,
+    "scenarioKeyword": "মাতৃত্বকালীন ছুটি",
+    "notes": "Labour Act s.46/47 — maternity leave & benefit (Bangla)"
+  },
+  {
+    "sectionId": 46,
+    "scenarioKeyword": "matritwakalin bhatar dabi",
+    "notes": "Labour Act s.46/47 — maternity benefit claim (Banglish)"
+  },
+  {
+    "sectionId": 100,
+    "scenarioKeyword": "daily working hours",
+    "notes": "Labour Act s.100 — 8 hours daily limit"
+  },
+  {
+    "sectionId": 102,
+    "scenarioKeyword": "overtime payment",
+    "notes": "Labour Act s.102/108 — extra wages for overtime work"
+  },
+  {
+    "sectionId": 102,
+    "scenarioKeyword": "অতিরিক্ত কাজের মজুরি",
+    "notes": "Labour Act s.102/108 — overtime wage claim (Bangla)"
+  },
+  {
+    "sectionId": 102,
+    "scenarioKeyword": "overtime pay kortese na",
+    "notes": "Labour Act s.102/108 — overtime unpaid (Banglish)"
+  },
+  {
+    "sectionId": 19,
+    "scenarioKeyword": "workplace safety",
+    "notes": "Labour Act s.19-30 — health, hygiene and workplace safety"
+  },
+  {
+    "sectionId": 19,
+    "scenarioKeyword": "কর্মক্ষেত্রে নিরাপত্তা",
+    "notes": "Labour Act s.19 — occupational safety (Bangla)"
+  },
+  {
+    "sectionId": 33,
+    "scenarioKeyword": "grievance procedure",
+    "notes": "Labour Act s.33 — special procedure for worker grievance and labour court filing"
+  },
+  {
+    "sectionId": 33,
+    "scenarioKeyword": "মালিকের বিরুদ্ধে অভিযোগ",
+    "notes": "Labour Act s.33 — submission of grievance to employer / Labour Court (Bangla)"
+  },
+  {
+    "sectionId": 33,
+    "scenarioKeyword": "malik er biruddhe complaint",
+    "notes": "Labour Act s.33 — worker complaint against employer (Banglish)"
+  },
+  {
+    "sectionId": 150,
+    "scenarioKeyword": "workplace injury compensation",
+    "notes": "Labour Act s.150/151 — compensation for death and permanent injury during employment"
+  },
+  {
+    "sectionId": 150,
+    "scenarioKeyword": "দুর্ঘটনায় ক্ষতিপূরণ",
+    "notes": "Labour Act s.150 — accident/injury compensation (Bangla)"
+  },
+  {
+    "sectionId": 117,
+    "scenarioKeyword": "annual leave with wages",
+    "notes": "Labour Act s.117 — annual earned leave entitlement"
+  },
+  {
+    "sectionId": 117,
+    "scenarioKeyword": "অর্জিত ছুটি ও বেতন",
+    "notes": "Labour Act s.117 — earned leave with wages (Bangla)"
+  }
+]
