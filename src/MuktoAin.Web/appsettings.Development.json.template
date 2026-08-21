@@ -9,8 +9,8 @@
       "REPLACE_WITH_KEY_3",
       "REPLACE_WITH_KEY_4"
     ],
-    "EmbeddingModel": "text-embedding-004",
-    "GenerationModel": "gemini-2.5-flash"
+    "EmbeddingModel": "gemini-embedding-001",
+    "GenerationModel": "gemini-3.7-flash"
   },
   "Qdrant": {
     "Endpoint": "https://your-cluster-id.cloud.qdrant.io:6333",
