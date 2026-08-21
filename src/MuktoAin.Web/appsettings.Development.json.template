@@ -10,7 +10,8 @@
       "REPLACE_WITH_KEY_4"
     ],
     "EmbeddingModel": "gemini-embedding-001",
-    "GenerationModel": "gemini-3.7-flash"
+    "GenerationModel": "gemini-flash-lite-latest",
+    "GenerationModel_Comment": "Use gemini-3.7-flash when fine legal quality evaluation is needed"
   },
   "Qdrant": {
     "Endpoint": "https://your-cluster-id.cloud.qdrant.io:6333",
