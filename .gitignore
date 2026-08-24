@@ -505,3 +505,6 @@ data/*.tar.gz
 wwwroot/generated-pdfs/
 *.pdf
 
+# Temporary review notes
+TODOS.md
+

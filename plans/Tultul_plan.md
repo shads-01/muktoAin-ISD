@@ -182,6 +182,12 @@ public interface IActSectionChunkRepository : IRepository<ActSectionChunk>
     Task<IEnumerable<ActSectionChunk>> GetUnembeddedChunksAsync(int batchSize);
     Task UpdateEmbeddingInfoAsync(int chunkId, string vectorId, string contentHash);
 }
+
+// IScenarioMappingRepository.cs — consumed by Shads's PromptAssembler (eng review)
+public interface IScenarioMappingRepository : IRepository<ScenarioMapping>
+{
+    Task<IEnumerable<ScenarioMapping>> SearchByKeywordAsync(string keywordFragment);
+}
 ```
 
 - ponytail: Only create specific interfaces for entities that actually need custom query methods. `District`, `CaseCategory`, `ActFootnote`, `ScenarioMapping` — just use `IRepository<T>` directly. Don't create `IDistrictRepository` with zero custom methods. Ceiling: 4-5 specific interfaces; upgrade path: add new interfaces when a service method can't express its query through `IRepository<T>`.
@@ -228,9 +234,9 @@ public record RetrievedSection(int SectionId, string ActTitle, string SectionNum
 
 - ponytail: Interfaces go in Domain. Implementations go in Application (for business logic) or Infrastructure (for external integrations). Don't create interfaces for things no one will swap. `ISearchService` exists because the search could be FTS or vector. `IDistrictService` probably doesn't need to exist — just inject the repository. Ceiling: ~6-8 service interfaces; upgrade path: add when a second implementation becomes plausible.
 
-### Step 1.6: EF Core AppDbContext + Fluent Configurations
+### Step 1.6: EF Core Packages + Manual MSSQL DDL Scripts in SSMS & DbContext Mapping
 
-> **Depends on**: Step 1.3 (all entities must exist).
+> **Depends on**: Step 1.3 (entity definitions).
 
 1. Install EF Core packages in `MuktoAin.Infrastructure`:
    ```
@@ -238,11 +244,7 @@ public record RetrievedSection(int SectionId, string ActTitle, string SectionNum
    dotnet add src/MuktoAin.Infrastructure package Microsoft.EntityFrameworkCore.Tools
    ```
 
-### Step 1.6: Manual MSSQL DDL Scripts in SSMS & DbContext Mapping
-
-> **Depends on**: Step 1.3 (entity definitions).
-
-All database schema creation, keys, constraints, and indexes are authored as **manual MSSQL scripts** and executed via **SQL Server Management Studio (SSMS)**.
+2. All database schema creation, keys, constraints, and indexes are authored as **manual MSSQL scripts** and executed via **SQL Server Management Studio (SSMS)**.
 
 1. Create `scripts/01_init_database.sql`:
    ```sql
@@ -264,14 +266,20 @@ All database schema creation, keys, constraints, and indexes are authored as **m
    - `dbo.ACT_SECTION` (`SectionId INT IDENTITY PRIMARY KEY`, `ActId FK`, `SectionNumber`, `SectionText`, `IsAmended`)
    - `dbo.ACT_SECTION_CHUNK` (`ChunkId INT IDENTITY PRIMARY KEY`, `SectionId FK`, `ChunkIndex`, `ChunkText`, `VectorId`, `TokenCount`, `ContentHash`)
    - `dbo.ACT_FOOTNOTE` (`FootnoteId INT IDENTITY PRIMARY KEY`, `ActId FK`, `NoteText`, `ReferenceSection`)
-   - `dbo.CASE` (`CaseId INT IDENTITY PRIMARY KEY`, `UserId NULLABLE FK`, `CategoryId FK`, `DistrictId FK`, `Title`, `Description`, `Language`, `Status`, `CreatedAt`)
+   - `dbo.CASE` (`CaseId INT IDENTITY PRIMARY KEY`, `UserId NULLABLE FK`, `CategoryId FK`, `DistrictId FK`, `Title`, `Description`, `Language`, `Status`, `AnonymousTrackingCode NVARCHAR(36) NULL` (guest tracking for FR-8, see Arpita_plan.md Step 2.1), `CreatedAt`)
    - `dbo.SCENARIO_MAPPING` (`MappingId INT IDENTITY PRIMARY KEY`, `SectionId FK`, `ScenarioKeyword`, `Notes`)
-   - `dbo.GENERATED_DOCUMENT` (`DocumentId INT IDENTITY PRIMARY KEY`, `CaseId FK`, `DocumentType`, `ContentDraft`, `ContentFinal`, `Status`, `PdfPath`, `CreatedAt`)
+   - `dbo.GENERATED_DOCUMENT` (`DocumentId INT IDENTITY PRIMARY KEY`, `CaseId FK`, `DocumentType`, `ContentDraft`, `ContentFinal`, `Status`, `PdfPath`, `AssignedLawyerProfileId INT NULL FK → LAWYER_PROFILE` (review-claim guard, see Arpita_plan.md Step 2.7), `CreatedAt`)
    - `dbo.CASE_ACT_REFERENCE` (`CaseActReferenceId INT IDENTITY PRIMARY KEY`, `CaseId FK`, `SectionId FK`, `RelevanceScore`, `RetrievalMethod`)
    - `dbo.LAWYER_REVIEW` (`ReviewId INT IDENTITY PRIMARY KEY`, `DocumentId FK`, `LawyerProfileId FK`, `Decision`, `Comments`, `ReviewedAt`)
    - `dbo.AI_LOG` (`LogId BIGINT IDENTITY PRIMARY KEY`, `CaseId NULLABLE FK`, `RequestType`, `PromptText`, `ResponseText`, `ModelUsed`, `TokensUsed`, `LatencyMs`, `CreatedAt`)
 
 3. Execute both scripts in **SSMS** against your SQL Server instance. Verify all 14 tables and foreign keys are created cleanly in Object Explorer.
+
+   > **Naming & reserved-word rules (applies to every script and raw SQL query in this repo):**
+   > - Table names follow `design.md` §2 exactly, UPPERCASE with underscores: `[dbo].[USER]`, `[dbo].[CASE]`, `[dbo].[ACT_SECTION]`, etc.
+   > - `USER` and `CASE` are T-SQL reserved words — they MUST be bracket-delimited (`[dbo].[USER]`) in every script, view, and raw SQL string. Unbracketed `dbo.USER` / `dbo.CASE` will not parse in SSMS.
+   > - EF Core maps entities to these tables via explicit `ToTable("USER", "dbo")` configuration — do NOT rely on DbSet property-name pluralization.
+   > - Raw SQL (e.g. `FromSqlRaw`) must reference the same bracketed physical names.
 
 4. Create `Infrastructure/Data/AppDbContext.cs` to map to the SQL tables:
    ```csharp
@@ -304,7 +312,7 @@ All database schema creation, keys, constraints, and indexes are authored as **m
 
 ### Step 1.7: Seed Data Loaders
 
-> **Depends on**: Step 1.6 (DbContext + migration must be applied so tables exist).
+> **Depends on**: Step 1.6 (DbContext + SSMS scripts executed so tables exist).
 
 Create in `Infrastructure/Data/Seeding/`:
 
@@ -330,7 +338,9 @@ Create in `Infrastructure/Data/Seeding/`:
    using (var scope = app.Services.CreateScope())
    {
        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-       await context.Database.MigrateAsync();
+       // NOTE: schema comes from manual SSMS scripts (scripts/*.sql), NOT EF migrations.
+       // Do NOT call Database.MigrateAsync() — there are no migrations by design.
+       // Seeders assume the SSMS scripts have already been executed.
        await SeedDistricts.SeedAsync(context);
        await SeedCategories.SeedAsync(context);
        // SeedAdminUser is Shads's responsibility — he'll add it here
@@ -420,20 +430,23 @@ We configure SQL Server Full-Text Search via a manual MSSQL script executed in S
    END
    GO
 
-   -- 2. Create Full-Text Index on ActSections
-   IF NOT EXISTS (
-       SELECT * FROM sys.fulltext_indexes 
-       WHERE object_id = OBJECT_ID('dbo.ActSections')
-   )
-   BEGIN
-       CREATE FULLTEXT INDEX ON dbo.ActSections(SectionText, ActTitle)
-           KEY INDEX PK_ActSections
-           ON MuktoAinCatalog
-           WITH STOPLIST = OFF;
-   END
-   GO
-   ```
-   `STOPLIST = OFF` is crucial — Bangla legal terms and domain vocabulary must not be dropped by SQL Server's English-centric stoplist.
+    -- 2. Create Full-Text Index on ActSections
+    -- NOTE: ACT_SECTION has NO ActTitle column (title lives on [dbo].[ACT]).
+    -- Index SectionText only; filter/join by Act title at query time via
+    -- IActRepository.GetWithSectionsAsync or a JOIN in the FTS query.
+    IF NOT EXISTS (
+        SELECT * FROM sys.fulltext_indexes 
+        WHERE object_id = OBJECT_ID('[dbo].[ACT_SECTION]')
+    )
+    BEGIN
+        CREATE FULLTEXT INDEX ON [dbo].[ACT_SECTION](SectionText)
+            KEY INDEX [PK_ACT_SECTION]
+            ON MuktoAinCatalog
+            WITH STOPLIST = OFF;
+    END
+    GO
+    ```
+    `STOPLIST = OFF` is crucial — Bangla legal terms and domain vocabulary must not be dropped by SQL Server's English-centric stoplist.
 
 2. Open and execute `scripts/03_fulltext.sql` in **SSMS**. Verify the index status:
    ```sql
@@ -455,14 +468,29 @@ We configure SQL Server Full-Text Search via a manual MSSQL script executed in S
    ```csharp
    public class QdrantVectorStore : IVectorStore
    {
-       private readonly QdrantClient _client;
-       private const string CollectionName = "act_section_chunks";
-       private const int VectorSize = 768;  // text-embedding-004 output dimension
+        private readonly QdrantClient _client;
+        // Collection name MUST come from config (appsettings.Development.json is gitignored).
+        // Every teammate's local SQL Server generates INDEPENDENT IDENTITY values —
+        // teammate B's ChunkId 123 is a different chunk than teammate A's. Sharing one
+        // canonical collection across four local DBs corrupts retrieval.
+        // Convention: each developer sets Qdrant:Collection to "act_section_chunks_<name>"
+        // locally; the shared/canonical "act_section_chunks" collection is written ONLY by
+        // the single EmbeddingBatchJob run against a merged database (Shads runs it once
+        // after Tultul's import PR merges).
+        private string CollectionName => _options.Value.Collection ?? "act_section_chunks";
+        private const int VectorSize = 768;  // text-embedding-004 output dimension
 
-       public QdrantVectorStore(IOptions<QdrantOptions> options)
-       {
-           _client = new QdrantClient(options.Value.Endpoint, apiKey: options.Value.ApiKey);
-       }
+        public QdrantVectorStore(IOptions<QdrantOptions> options)
+        {
+            // NOTE: verify against the pinned Qdrant.Client version before coding.
+            // The constructor takes (host, port, https, apiKey) — NOT a full URL string.
+            // Parse options.Value.Endpoint into host/https/port. Recent SDK versions
+            // deprecated SearchAsync in favor of QueryAsync — check the API surface
+            // on day 1 with a 15-minute spike (see TODOS.md).
+            var uri = new Uri(options.Value.Endpoint);
+            _client = new QdrantClient(uri.Host, port: uri.Port, https: uri.Scheme == "https",
+                apiKey: options.Value.ApiKey);
+        }
 
        public async Task EnsureCollectionAsync()
        {
@@ -501,11 +529,12 @@ We configure SQL Server Full-Text Search via a manual MSSQL script executed in S
 
 6. Create a `QdrantOptions` POCO:
    ```csharp
-   public class QdrantOptions
-   {
-       public string Endpoint { get; set; } = "https://your-cluster-id.cloud.qdrant.io:6333";
-       public string ApiKey { get; set; } = "";
-   }
+    public class QdrantOptions
+    {
+        public string Endpoint { get; set; } = "https://your-cluster-id.cloud.qdrant.io:6333";
+        public string ApiKey { get; set; } = "";
+        public string? Collection { get; set; }  // per-developer namespace, see above
+    }
    ```
    - ponytail: The Qdrant SDK handles connection pooling and retries internally. Don't wrap it in Polly — that's for HTTP clients you control. Ceiling: direct SDK usage; upgrade path: add health check endpoint for monitoring.
 
@@ -548,18 +577,20 @@ public class ActSectionRepository : Repository<ActSection>, IActSectionRepositor
         // Manual parameterized query
         var idsList = string.Join(",", sectionIds);
         return await _dbSet
-            .FromSqlRaw("SELECT * FROM dbo.ActSections WHERE SectionId IN (SELECT value FROM STRING_SPLIT({0}, ','))", idsList)
+            .FromSqlRaw("SELECT * FROM [dbo].[ACT_SECTION] WHERE SectionId IN (SELECT value FROM STRING_SPLIT({0}, ','))", idsList)
             .Include(s => s.Act)
             .ToListAsync();
     }
 
     public async Task<IEnumerable<ActSection>> FullTextSearchAsync(string query, int maxResults)
     {
-        // Manual MSSQL FTS query using CONTAINSTABLE ranking
+        // Manual MSSQL FTS query using CONTAINSTABLE ranking.
+        // Join [dbo].[ACT] so the Act title is available for filtering/display
+        // (the full-text index covers SectionText only).
         return await _dbSet.FromSqlInterpolated($@"
             SELECT TOP({maxResults}) s.*
-            FROM dbo.ActSections s
-            INNER JOIN CONTAINSTABLE(dbo.ActSections, SectionText, {query}) AS ft
+            FROM [dbo].[ACT_SECTION] s
+            INNER JOIN CONTAINSTABLE([dbo].[ACT_SECTION], SectionText, {query}) AS ft
                 ON s.SectionId = ft.[KEY]
             ORDER BY ft.[RANK] DESC")
             .Include(s => s.Act)
@@ -686,8 +717,12 @@ This is the service that Shads's `AiOrchestrationService` calls. It tries vector
 ```csharp
 public class RagContextBuilder : IRagContextBuilder
 {
-    private readonly SimilaritySearchService _vectorSearch;
-    private readonly KeywordSearchService _keywordSearch;
+    // IMPORTANT: depend on Domain interfaces, NOT concrete Infrastructure classes.
+    // Application must never reference Infrastructure (Clean Architecture rule).
+    // Define IVectorSectionSearch and IKeywordSectionSearch in Domain/Interfaces/Services/;
+    // SimilaritySearchService and KeywordSearchService implement them in Infrastructure.
+    private readonly IVectorSectionSearch _vectorSearch;
+    private readonly IKeywordSectionSearch _keywordSearch;
     private readonly ILogger<RagContextBuilder> _logger;
 
     public async Task<IEnumerable<RetrievedSection>> RetrieveContextAsync(string query, int topK = 8)
