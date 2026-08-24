@@ -23,7 +23,8 @@ Due to file size and licensing, large statutory corpora and benchmark files are 
 - **Kaggle Link:** [kaggle.com/datasets/sakhadib/bangladesh-legal-acts-dataset](https://www.kaggle.com/datasets/sakhadib/bangladesh-legal-acts-dataset)
 - **Description:** Scraped statutory acts of Bangladesh (Laws of Bangladesh) covering historical and modern legislation.
 - **Licensing:** CC BY-SA 4.0 (Attribution required in project documentation).
-- **Format:** JSON array of Act objects (with Title, ActNumber, Year, Sections, Footnotes).
+- **Format:** Top-level object `{ "dataset_info": ..., "acts": [...] }` — 1,484 acts. Each act has `act_title`, `act_no`, `act_year`, `publication_date`, `sections[]` (each with `section_content`), `footnotes`, `source_url`.
+- **SHA256 (verified 2026-08-24):** `D132854C4FDFE022B2F234B6C1FBC0EF7633FB747F08951A2E725128EB19B7D9`
 
 ### 2.2 Bangladesh Legal QA Benchmark Dataset (Checkpoint 3)
 - **Filename:** `data/bangladesh-legal-qa-dataset.json`
@@ -37,4 +38,13 @@ Due to file size and licensing, large statutory corpora and benchmark files are 
 To verify your downloaded JSON files on Windows PowerShell:
 ```powershell
 Get-FileHash data/bangladesh-acts-dataset.json -Algorithm SHA256
+# Expected: D132854C4FDFE022B2F234B6C1FBC0EF7633FB747F08951A2E725128EB19B7D9
+```
+
+Or with the Kaggle CLI (requires `~/.kaggle` credentials):
+```bash
+kaggle datasets download sakhadib/bangladesh-legal-acts-dataset -p data/
+unzip -j data/bangladesh-legal-acts-dataset.zip Contextualized_Bangladesh_Legal_Acts.json -d data/
+mv data/Contextualized_Bangladesh_Legal_Acts.json data/bangladesh-acts-dataset.json
+rm data/bangladesh-legal-acts-dataset.zip
 ```
