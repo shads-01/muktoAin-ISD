@@ -1,6 +1,6 @@
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=MuktoAin;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
+    "DefaultConnection": "Server=.\\SQLEXPRESS;Database=MuktoAin;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
   },
   "Gemini": {
     "ApiKeys": [
@@ -10,8 +10,8 @@
       "REPLACE_WITH_KEY_4"
     ],
     "EmbeddingModel": "gemini-embedding-001",
-    "GenerationModel": "gemini-flash-lite-latest",
-    "GenerationModel_Comment": "Use gemini-3.7-flash when fine legal quality evaluation is needed"
+    "GenerationModel": "gemini-2.0-flash",
+    "GenerationModel_Comment": "gemini-2.0-flash provides highest free tier quota (1M TPM, 1500 RPD). Switch to gemini-2.5-flash or gemini-3.7-flash for benchmark evaluation."
   },
   "Qdrant": {
     "Endpoint": "https://your-cluster-id.cloud.qdrant.io:6333",

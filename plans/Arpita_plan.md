@@ -128,7 +128,12 @@ The case is the central entity everything hangs off. CaseService manages creatio
        private readonly ICaseRepository _caseRepo;
        private readonly IRepository<CaseCategory> _categoryRepo;
    
-       // Create a new case from citizen submission
+       // Create a new case from citizen submission.
+       // Returns the CaseId AND, for anonymous submissions, an AnonymousTrackingCode
+       // (GUID shown once to the submitter — their only way to use FR-8 tracking).
+       // NOTE (eng review): encrypt Title/Description here — see Shads_plan.md Step 2.8.
+       // Case.Description = _encryptionService.Encrypt(dto.Description), same for Title,
+       // and decrypt in the read paths below. Coordinate once; don't duplicate.
        public async Task<int> SubmitCaseAsync(CaseSubmissionDto dto, int? userId)
        {
            var caseEntity = new Case
@@ -149,14 +154,33 @@ The case is the central entity everything hangs off. CaseService manages creatio
            return caseEntity.CaseId;
        }
    
-       // Get case with documents for tracking dashboard
-       public async Task<CaseDetailDto?> GetCaseDetailAsync(int caseId, int? userId)
-       {
-           var c = await _caseRepo.GetWithDocumentsAsync(caseId);
-           if (c == null) return null;
-           // If not anonymous, verify the requesting user owns this case
-           if (!c.IsAnonymous && c.UserId != userId) return null;
-           return MapToCaseDetailDto(c);
+        // Get case with documents for tracking dashboard
+        public async Task<CaseDetailDto?> GetCaseDetailAsync(int caseId, int? userId, UserRole callerRole, string? trackingCode = null)
+        {
+            var c = await _caseRepo.GetWithDocumentsAsync(caseId);
+            if (c == null) return null;
+            // Access rules (eng review round 2):
+            // - Lawyers/Admins: full access.
+            // - Authenticated citizens: only their OWN non-anonymous cases
+            //   (c.UserId != userId is NOT enough — when both sides are null,
+            //   null != null evaluates FALSE in C# and would grant guests access
+            //   to every guest case. Compare explicitly against null first).
+            // - Guests (userId == null): may read an anonymous case ONLY with its
+            //   AnonymousTrackingCode (issued at submit, stored on CASE).
+            switch (callerRole)
+            {
+                case UserRole.Admin:
+                case UserRole.Lawyer:
+                    break;
+                case UserRole.Citizen:
+                    if (userId == null)
+                    {
+                        if (!c.IsAnonymous || c.AnonymousTrackingCode != trackingCode) return null;
+                    }
+                    else if (c.IsAnonymous || c.UserId != userId) return null;
+                    break;
+            }
+            return MapToCaseDetailDto(c);
        }
    
        // Get all cases for a user (tracking dashboard)
@@ -181,13 +205,14 @@ The case is the central entity everything hangs off. CaseService manages creatio
        var c = await _caseRepo.GetByIdAsync(caseId);
        if (c == null) return false;
 
-       bool valid = (c.Status, newStatus) switch
-       {
-           (CaseStatus.Submitted, CaseStatus.UnderReview) => true,
-           (CaseStatus.UnderReview, CaseStatus.Finalized) => true,
-           (CaseStatus.UnderReview, CaseStatus.Submitted) => true,  // rejection
-           _ => false
-       };
+        bool valid = (c.Status, newStatus) switch
+        {
+            (CaseStatus.Submitted, CaseStatus.UnderReview) => true,
+            (CaseStatus.UnderReview, CaseStatus.Finalized) => true,
+            (CaseStatus.UnderReview, CaseStatus.Submitted) => true,  // rejection
+            (CaseStatus.Finalized, CaseStatus.Submitted) => true,    // rejection of a replacement draft re-opens a finalized case (multi-doc reconciliation)
+            _ => false
+        };
 
        if (!valid) return false;
        c.Status = newStatus;
@@ -204,7 +229,12 @@ The case is the central entity everything hangs off. CaseService manages creatio
 
 This is the core of Arpita's assignment. The DocumentGenerator takes a case + AI context and produces a structured legal document using the appropriate template.
 
-1. Create `Infrastructure/Documents/DocumentGenerator.cs`.
+1. Create `Application/Documents/DocumentGenerator.cs`.
+
+   > **Layer note (eng review):** the generator does pure string assembly — no I/O — so it
+   > belongs in **Application**, not Infrastructure. Infrastructure placement would create a
+   > reverse dependency (Infrastructure consuming Application DTOs). Only `PdfExportService`
+   > (which performs file/IO work via QuestPDF) stays in Infrastructure.
 
 2. Design:
    ```csharp
@@ -247,6 +277,7 @@ This is the core of Arpita's assignment. The DocumentGenerator takes a case + AI
        Task<string> RenderAsync(Case caseEntity, RightsExplanationDto explanation);
    }
    ```
+   Template implementations live beside the generator in `Application/Documents/Templates/`.
 
    - ponytail: The `Dictionary<DocumentType, IDocumentTemplate>` with DI auto-registration is the entire "strategy pattern." Don't call it that. It's a dictionary lookup. Ceiling: in-memory template dictionary; upgrade path: load templates from database or files if non-developers need to edit them.
 
@@ -256,7 +287,7 @@ This is the core of Arpita's assignment. The DocumentGenerator takes a case + AI
 
 This is the vertical slice template — it must work end-to-end for the Checkpoint 2 demo.
 
-1. Create `Infrastructure/Documents/Templates/LabourComplaintTemplate.cs`.
+1. Create `Application/Documents/Templates/LabourComplaintTemplate.cs`.
 
 2. A Labour complaint has a specific structure. Research the format used in Bangladesh District Labour Courts:
    ```
@@ -553,43 +584,61 @@ This is the review gate — the feature that makes MuktoAin different from Adalo
        private readonly DocumentService _docService;
        private readonly CaseService _caseService;
    
-       // Get documents awaiting review (the review queue — FR-13)
-       public async Task<IEnumerable<DraftDocumentDto>> GetReviewQueueAsync()
-       {
-           var docs = await _docRepo.GetAllAsync();
-           return docs
-               .Where(d => d.Status == DocumentStatus.Draft || d.Status == DocumentStatus.UnderReview)
-               .Select(d => MapToDto(d));
-       }
+        // Get documents awaiting review (the review queue — FR-13).
+        // Shows UNCLAIMED drafts for everyone + documents claimed by the CALLING lawyer.
+        // Lawyers must not see (or submit reviews on) each other's claimed work —
+        // ownership is enforced here AND again in SubmitReviewAsync.
+        public async Task<IEnumerable<DraftDocumentDto>> GetReviewQueueAsync(int callerLawyerProfileId)
+        {
+            var docs = await _docRepo.GetByStatusesAsync(DocumentStatus.Draft, DocumentStatus.UnderReview);
+            return docs
+                .Where(d => d.AssignedLawyerProfileId == null
+                            || d.AssignedLawyerProfileId.Value == callerLawyerProfileId)
+                .Select(MapToDto);
+        }
+    
+        // Lawyer picks up a document for review
+        public async Task ClaimForReviewAsync(int documentId, int lawyerProfileId)
+        {
+            // Verify the lawyer is approved
+            var profile = await _profileRepo.GetByIdAsync(lawyerProfileId);
+            if (profile?.VerificationStatus != VerificationStatus.Approved)
+                throw new UnauthorizedAccessException("Lawyer not verified");
+    
+            var doc = await _docRepo.GetByIdAsync(documentId);
+            if (doc == null) throw new ArgumentException("Document not found");
+    
+            // Assignment guard (eng review A5): persist WHO claimed the doc so two verified
+            // lawyers cannot silently claim the same document. Requires a nullable
+            // AssignedLawyerProfileId column on GENERATED_DOCUMENT (schema addition to
+            // scripts/02_schema.sql — a field, not a new entity) and an optimistic check:
+            if (doc.AssignedLawyerProfileId.HasValue && doc.AssignedLawyerProfileId.Value != lawyerProfileId)
+                throw new InvalidOperationException("Document already claimed by another lawyer");
+            doc.AssignedLawyerProfileId = lawyerProfileId;
+    
+            doc.Status = DocumentStatus.UnderReview;
+            await _docRepo.SaveChangesAsync();
+    
+            // Transition the parent case status
+            await _caseService.TransitionStatusAsync(doc.CaseId, CaseStatus.UnderReview);
+        }
    
-       // Lawyer picks up a document for review
-       public async Task ClaimForReviewAsync(int documentId, int lawyerProfileId)
-       {
-           // Verify the lawyer is approved
-           var profile = await _profileRepo.GetByIdAsync(lawyerProfileId);
-           if (profile?.VerificationStatus != VerificationStatus.Approved)
-               throw new UnauthorizedAccessException("Lawyer not verified");
+        // Lawyer submits their review (FR-14)
+        public async Task SubmitReviewAsync(int lawyerProfileId, ReviewDto dto)
+        {
+            var doc = await _docRepo.GetByIdAsync(dto.DocumentId);
+            if (doc == null) throw new ArgumentException("Document not found");
+            if (doc.Status != DocumentStatus.UnderReview)
+                throw new InvalidOperationException("Document not under review");
+
+            // Ownership guard (eng review round 2): only the lawyer who CLAIMED the
+            // document may submit a review on it. Status alone is not authorization.
+            if (doc.AssignedLawyerProfileId != lawyerProfileId)
+                throw new UnauthorizedAccessException("Document claimed by another lawyer");
    
-           var doc = await _docRepo.GetByIdAsync(documentId);
-           if (doc == null) throw new ArgumentException("Document not found");
-   
-           doc.Status = DocumentStatus.UnderReview;
-           await _docRepo.SaveChangesAsync();
-   
-           // Transition the parent case status
-           await _caseService.TransitionStatusAsync(doc.CaseId, CaseStatus.UnderReview);
-       }
-   
-       // Lawyer submits their review (FR-14)
-       public async Task SubmitReviewAsync(int lawyerProfileId, ReviewDto dto)
-       {
-           var doc = await _docRepo.GetByIdAsync(dto.DocumentId);
-           if (doc == null) throw new ArgumentException("Document not found");
-           if (doc.Status != DocumentStatus.UnderReview)
-               throw new InvalidOperationException("Document not under review");
-   
-           // Parse decision
-           var decision = Enum.Parse<ReviewDecision>(dto.Decision);
+            // Parse decision — TryParse, never Enum.Parse (bad input = 400, not 500)
+            if (!Enum.TryParse<ReviewDecision>(dto.Decision, ignoreCase: true, out var decision))
+                throw new ArgumentException($"Unknown decision: {dto.Decision}");
    
            // Create the review record
            var review = new LawyerReview
@@ -602,28 +651,40 @@ This is the review gate — the feature that makes MuktoAin different from Adalo
            };
            await _reviewRepo.AddAsync(review);
    
-           // Update document based on decision
-           switch (decision)
-           {
-               case ReviewDecision.Approved:
-                   // ContentFinal = ContentDraft (no edits)
-                   await _docService.UpdateStatusAsync(dto.DocumentId, DocumentStatus.Approved);
-                   await _caseService.TransitionStatusAsync(doc.CaseId, CaseStatus.Finalized);
-                   break;
-   
-               case ReviewDecision.EditedApproved:
-                   // ContentFinal = lawyer's edited version, ContentDraft preserved
-                   if (string.IsNullOrWhiteSpace(dto.EditedContent))
-                       throw new ArgumentException("Edited content required for EditedApproved");
-                   await _docService.UpdateStatusAsync(dto.DocumentId, DocumentStatus.Approved, dto.EditedContent);
-                   await _caseService.TransitionStatusAsync(doc.CaseId, CaseStatus.Finalized);
-                   break;
-   
-               case ReviewDecision.Rejected:
-                   await _docService.UpdateStatusAsync(dto.DocumentId, DocumentStatus.Rejected);
-                   await _caseService.TransitionStatusAsync(doc.CaseId, CaseStatus.Submitted);
-                   break;
-           }
+            // Update document based on decision
+            switch (decision)
+            {
+                case ReviewDecision.Approved:
+                    // ContentFinal = ContentDraft (no edits)
+                    await _docService.UpdateStatusAsync(dto.DocumentId, DocumentStatus.Approved);
+                    // Multi-doc rule (eng review round 2): a case can hold several drafts
+                    // (rejection spawns replacements). Finalize ONLY when no sibling doc
+                    // is still Draft/UnderReview — otherwise the case stays UnderReview.
+                    if (!await _docRepo.HasDocsInStatusesAsync(doc.CaseId,
+                            DocumentStatus.Draft, DocumentStatus.UnderReview))
+                    {
+                        await _caseService.TransitionStatusAsync(doc.CaseId, CaseStatus.Finalized);
+                    }
+                    break;
+    
+                case ReviewDecision.EditedApproved:
+                    // ContentFinal = lawyer's edited version, ContentDraft preserved
+                    if (string.IsNullOrWhiteSpace(dto.EditedContent))
+                        throw new ArgumentException("Edited content required for EditedApproved");
+                    await _docService.UpdateStatusAsync(dto.DocumentId, DocumentStatus.Approved, dto.EditedContent);
+                    if (!await _docRepo.HasDocsInStatusesAsync(doc.CaseId,
+                            DocumentStatus.Draft, DocumentStatus.UnderReview))
+                    {
+                        await _caseService.TransitionStatusAsync(doc.CaseId, CaseStatus.Finalized);
+                    }
+                    break;
+    
+                case ReviewDecision.Rejected:
+                    await _docService.UpdateStatusAsync(dto.DocumentId, DocumentStatus.Rejected);
+                    // Re-open the case so the citizen can regenerate a replacement draft.
+                    await _caseService.TransitionStatusAsync(doc.CaseId, CaseStatus.Submitted);
+                    break;
+            }
    
            await _reviewRepo.SaveChangesAsync();
        }
@@ -638,12 +699,13 @@ This is the review gate — the feature that makes MuktoAin different from Adalo
 
 4. **PDF download gate**: In `DocumentService` or a separate check, enforce:
    ```csharp
-   public async Task<byte[]?> GetPdfIfApprovedAsync(int documentId)
-   {
-       var doc = await _docRepo.GetByIdAsync(documentId);
-       if (doc?.Status != DocumentStatus.Approved) return null;
-       return _pdfService.GeneratePdf(doc, doc.Case);
-   }
+    public async Task<byte[]?> GetPdfIfApprovedAsync(int documentId)
+    {
+        // Include the Case nav — GetByIdAsync alone leaves doc.Case null (NRE in GeneratePdf)
+        var doc = await _docRepo.GetWithCaseAsync(documentId);
+        if (doc?.Status != DocumentStatus.Approved) return null;
+        return _pdfService.GeneratePdf(doc, doc.Case);
+    }
    ```
    Citizens cannot download PDFs for documents that haven't been approved. This is non-negotiable.
 
@@ -657,7 +719,7 @@ This is the review gate — the feature that makes MuktoAin different from Adalo
 
 A General Diary (GD) application is filed at a police station. The format follows Bangladesh Police procedures.
 
-1. Create `Infrastructure/Documents/Templates/GeneralDiaryTemplate.cs` implementing `IDocumentTemplate`.
+1. Create `Application/Documents/Templates/GeneralDiaryTemplate.cs` implementing `IDocumentTemplate`.
 
 2. Structure:
    ```
@@ -779,36 +841,38 @@ Complainant Signature: [Name]
    {
        private readonly AppDbContext _context;
     
-       public async Task<AnalyticsSummaryDto> GetSummaryAsync()
-       {
-           // Explicit manual MSSQL aggregate queries
-           var totalCases = await _context.Database
-               .SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM dbo.Cases")
-               .SingleAsync();
+        public async Task<AnalyticsSummaryDto> GetSummaryAsync()
+        {
+            // Explicit manual MSSQL aggregate queries.
+            // NOTE: table names follow the repo naming rule (Tultul_plan.md Step 1.6):
+            // design.md UPPERCASE names, bracketed because USER/CASE are reserved words.
+            var totalCases = await _context.Database
+                .SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM [dbo].[CASE]")
+                .SingleAsync();
 
-           var pendingReviews = await _context.Database
-               .SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM dbo.GeneratedDocuments WHERE Status = 1") // 1 = UnderReview
-               .SingleAsync();
+            var pendingReviews = await _context.Database
+                .SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM [dbo].[GENERATED_DOCUMENT] WHERE Status = 1") // 1 = UnderReview
+                .SingleAsync();
 
-           var approvedDocs = await _context.Database
-               .SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM dbo.GeneratedDocuments WHERE Status = 2") // 2 = Approved
-               .SingleAsync();
-    
-           var byCategory = await _context.Database
-               .SqlQueryRaw<CategoryCountDto>(@"
-                   SELECT cat.Name AS CategoryName, COUNT(c.CaseId) AS [Count]
-                   FROM dbo.CaseCategories cat
-                   LEFT JOIN dbo.Cases c ON cat.CategoryId = c.CategoryId
-                   GROUP BY cat.Name")
-               .ToListAsync();
-    
-           var byDistrict = await _context.Database
-               .SqlQueryRaw<DistrictCountDto>(@"
-                   SELECT d.NameEn AS DistrictName, COUNT(c.CaseId) AS [Count]
-                   FROM dbo.Districts d
-                   LEFT JOIN dbo.Cases c ON d.DistrictId = c.DistrictId
-                   GROUP BY d.NameEn")
-               .ToListAsync();
+            var approvedDocs = await _context.Database
+                .SqlQueryRaw<int>("SELECT COUNT(*) AS [Value] FROM [dbo].[GENERATED_DOCUMENT] WHERE Status = 2") // 2 = Approved
+                .SingleAsync();
+     
+            var byCategory = await _context.Database
+                .SqlQueryRaw<CategoryCountDto>(@"
+                    SELECT cat.Name AS CategoryName, COUNT(c.CaseId) AS [Count]
+                    FROM [dbo].[CASE_CATEGORY] cat
+                    LEFT JOIN [dbo].[CASE] c ON cat.CategoryId = c.CategoryId
+                    GROUP BY cat.Name")
+                .ToListAsync();
+     
+            var byDistrict = await _context.Database
+                .SqlQueryRaw<DistrictCountDto>(@"
+                    SELECT d.NameEn AS DistrictName, COUNT(c.CaseId) AS [Count]
+                    FROM [dbo].[DISTRICT] d
+                    LEFT JOIN [dbo].[CASE] c ON d.DistrictId = c.DistrictId
+                    GROUP BY d.NameEn")
+                .ToListAsync();
     
            return new AnalyticsSummaryDto(totalCases, pendingReviews, approvedDocs, byCategory, byDistrict);
        }
@@ -859,6 +923,9 @@ public class ModerationService
    - **DocumentService**: `GenerateDocumentAsync` sets `ContentDraft`, `Status = Draft`, `ContentFinal = null`.
    - **LawyerReviewService**: `SubmitReviewAsync` with `Approved` sets `ContentFinal = ContentDraft`. With `EditedApproved` sets `ContentFinal = edited text`. With `Rejected` sets status back to `Rejected`.
    - **LawyerVerificationService**: `ApplyAsync` rejects duplicate applications. `VerifyAsync` sets `VerifiedAt` timestamp.
+   - **Claim race** (eng review): second lawyer claiming an already-claimed document throws `InvalidOperationException`.
+   - **Unverified lawyer** calling `ClaimForReviewAsync` gets `UnauthorizedAccessException`.
+   - **Anonymous-case authorization**: citizen requesting another user's anonymous case gets `null`; lawyer/admin can retrieve it.
 
 ```csharp
 [Fact]

@@ -613,13 +613,16 @@ After submission, the citizen sees their rights explanation and draft document.
        <span class="badge badge-@Model.Status.ToLower() fs-6">@Model.Status</span>
    </div>
 
-   <!-- Rights Explanation Section -->
-   <div class="card mb-4">
-       <div class="card-header"><h5>⚖️ Your Rights / আপনার অধিকার</h5></div>
-       <div class="card-body">
-           <div class="rights-explanation">@Html.Raw(Model.RightsExplanation)</div>
-       </div>
-   </div>
+    <!-- Rights Explanation Section -->
+    <div class="card mb-4">
+        <div class="card-header"><h5>⚖️ Your Rights / আপনার অধিকার</h5></div>
+        <div class="card-body">
+            @* SECURITY (eng review): do NOT use Html.Raw on AI output — the explanation
+               echoes citizen free text, so raw rendering is an XSS vector if a prompt
+               injection makes Gemini emit HTML/script. Encode it like the document preview: *@
+            <div class="rights-explanation document-preview">@Model.RightsExplanation</div>
+        </div>
+    </div>
 
    <!-- Cited Sections -->
    <div class="card mb-4">
@@ -949,7 +952,9 @@ Document the implicit API contracts — what each controller expects and returns
 
 ## CaseController
 - POST /Case/Submit → expects CaseSubmitViewModel → calls CaseService.SubmitCaseAsync()
+  - Anonymous submissions return an **AnonymousTrackingCode** — the Track page accepts it as credentials for that one case (FR-8).
 - GET /Case/Result/{id} → calls CaseService.GetCaseDetailAsync() + AiOrchestrationService
+  - NOTE (eng review): rights explanation is CACHED in AI_LOG — repeat views must NOT re-call Gemini. Controller reads stored response first.
 - GET /Case/Track → calls CaseService.GetUserCasesAsync()
 
 ## SearchController
