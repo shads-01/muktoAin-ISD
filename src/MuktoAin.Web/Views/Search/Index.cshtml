@@ -1,0 +1,127 @@
+@model MuktoAin.Web.ViewModels.SearchViewModel
+@{
+    ViewData["Title"] = "আইন অনুসন্ধান — Search Acts";
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Home</a>
+        <span class="sep">/</span>
+        <span>আইন অনুসন্ধান</span>
+    </nav>
+
+    <!-- Search Hero -->
+    <div class="search-hero">
+        <span class="kicker"><i data-lucide="search"></i> Statutory Full-Text Search · FR-7</span>
+        <h1 class="page-title">বাংলাদেশের আইন সংকলনে খুঁজুন</h1>
+        <p class="page-sub" style="margin: 0 auto 1.25rem;">২৪টি পূর্ণাঙ্গ আইন ও ৩,৮০০+ ধারা থেকে সরাসরি কীওয়ার্ড, ধারা নম্বর বা বিষয়বস্তু খুঁজুন</p>
+
+        <form method="get" asp-action="Index" class="search-bar">
+            <div class="row">
+                <input name="q" value="@Model.Query" class="input" placeholder="কীওয়ার্ড লিখুন... (যেমন: মজুরি, ক্ষতিপূরণ, ধারা ১২৩, ট্রেড ইউনিয়ন)" autofocus required />
+                <button type="submit" class="btn btn-primary search-submit btn-lg">
+                    <i data-lucide="search"></i> খুঁজুন
+                </button>
+            </div>
+            <div class="row wrap" style="justify-content: center; gap: 8px; margin-top: 4px;">
+                <span class="tiny muted">জনপ্রিয় সার্চ:</span>
+                <a class="chip chip-sm" asp-action="Index" asp-route-q="মজুরি পরিশোধ">মজুরি পরিশোধ</a>
+                <a class="chip chip-sm" asp-action="Index" asp-route-q="ধারা ১২৩">ধারা ১২৩</a>
+                <a class="chip chip-sm" asp-action="Index" asp-route-q="তথ্য অধিকার">তথ্য অধিকার</a>
+                <a class="chip chip-sm" asp-action="Index" asp-route-q="দণ্ডবিধি ৪২০">দণ্ডবিধি ৪২০</a>
+            </div>
+        </form>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.Query))
+    {
+        <div class="with-rail" style="margin-top: 2rem;">
+            <!-- Main Results Column -->
+            <div class="stack" style="gap: 16px;">
+                <div class="row spread wrap" style="padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+                    <span class="tiny muted">
+                        “<b>@Model.Query</b>”-এর জন্য প্রায় <b>@Model.TotalResults টি ফলাফল</b> পাওয়া গেছে (পৃষ্ঠা @Model.Page)
+                    </span>
+                    <span class="citation-chip">SQL Server FTS / Qdrant Hybrid</span>
+                </div>
+
+                @if (Model.Results.Count > 0)
+                {
+                    <div class="stack" style="gap: 14px;">
+                        @foreach (var res in Model.Results)
+                        {
+                            <div class="card result-item">
+                                <div class="row spread wrap" style="margin-bottom: 6px;">
+                                    <div class="r-title">
+                                        <i data-lucide="bookmark" style="color:var(--gold)"></i>
+                                        <b class="serif">@res.SectionNumber: @res.SectionTitle</b>
+                                    </div>
+                                    <span class="badge badge-neutral">আইন নং ৪২/২০০৬</span>
+                                </div>
+                                <div class="tiny" style="color: var(--primary); font-weight: 600; margin-bottom: 6px;">
+                                    @res.ActTitle
+                                </div>
+                                <div class="r-snippet">
+                                    @Html.Raw(res.SectionTextSnippet.Replace(Model.Query, $"<mark>{Model.Query}</mark>"))
+                                </div>
+                                <div class="row spread wrap" style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
+                                    <a class="tiny" href="#" onclick="showToast('ধারা @res.SectionNumber ক্লিপবোর্ডে কপি হয়েছে', 'success'); return false;">
+                                        <i data-lucide="copy"></i> ধারা উদ্ধৃতি কপি
+                                    </a>
+                                    <a class="btn btn-quiet btn-sm" asp-controller="Case" asp-action="Submit">
+                                        এই ধারা উদ্ধৃত করে মামলা দাখিল →
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination">
+                        <button type="button" disabled><i data-lucide="chevron-left"></i></button>
+                        <button type="button" class="active">১</button>
+                        <button type="button" onclick="showToast('পৃষ্ঠা ২ লোড হচ্ছে...')">২</button>
+                        <button type="button" onclick="showToast('পৃষ্ঠা ৩ লোড হচ্ছে...')">৩</button>
+                        <button type="button" onclick="showToast('পরবর্তী পৃষ্ঠা...')"><i data-lucide="chevron-right"></i></button>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="es-ico"><i data-lucide="search-x"></i></div>
+                        <h3>কোনো ধারা খুঁজে পাওয়া যায়নি</h3>
+                        <p>অনুগ্রহ করে ভিন্ন কোনো শব্দ বা আইনের নাম দিয়ে আবার অনুসন্ধান করুন।</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Rail / Filter sidebar -->
+            <aside class="rail">
+                <div class="card">
+                    <h3 style="font-size: 16px; margin-bottom: 12px;"><i data-lucide="filter"></i> আইন অনুযায়ী ফিল্টার</h3>
+                    <div class="stack" style="gap: 8px;">
+                        <label class="check-row"><input type="checkbox" checked /> <span>বাংলাদেশ শ্রম আইন, ২০০৬</span></label>
+                        <label class="check-row"><input type="checkbox" checked /> <span>দণ্ডবিধি, ১৮৬০</span></label>
+                        <label class="check-row"><input type="checkbox" checked /> <span>তথ্য অধিকার আইন, ২০০৯</span></label>
+                        <label class="check-row"><input type="checkbox" checked /> <span>ভোক্তা অধিকার আইন, ২০০৯</span></label>
+                    </div>
+                </div>
+
+                <div class="card" style="background: var(--surface-2);">
+                    <div class="kicker"><i data-lucide="help-circle"></i> অনুসন্ধান সহায়িকা</div>
+                    <p class="tiny muted" style="margin-top: 6px; line-height: 1.6;">
+                        আপনি সুনির্দিষ্ট ধারা নম্বর লিখেও সার্চ করতে পারেন (যেমন: <i>ধারা ১২৩</i> বা <i>Section 123</i>)।
+                    </p>
+                </div>
+            </aside>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state" style="margin: 2rem 0;">
+            <div class="es-ico"><i data-lucide="book-marked"></i></div>
+            <h3>আইন ও ধারার নাম লিখে অনুসন্ধান শুরু করুন</h3>
+            <p class="muted">বাংলাদেশ কোড সংকলন থেকে যেকোনো শব্দ বা ধারার তাৎক্ষণিক রেফারেন্স পান।</p>
+        </div>
+    }
+</main>
