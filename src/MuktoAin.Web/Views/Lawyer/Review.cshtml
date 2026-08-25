@@ -1,0 +1,110 @@
+@model MuktoAin.Web.ViewModels.LawyerReviewViewModel
+@{
+    ViewData["Title"] = $"দলিল #{Model.DocumentId} পর্যালোচনা — Lawyer Redline Review";
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Home</a>
+        <span class="sep">/</span>
+        <a asp-controller="Lawyer" asp-action="Queue">রিভিউ কিউ</a>
+        <span class="sep">/</span>
+        <span>দলিল #@Model.DocumentId</span>
+    </nav>
+
+    <div class="row spread wrap page-head" style="align-items: flex-start; gap: 14px;">
+        <div>
+            <span class="kicker"><i data-lucide="file-check-2"></i> Mandatory Review Gate · FR-14</span>
+            <h1 class="page-title">দলিল পর্যালোচনা ও সম্পাদন</h1>
+            <p class="page-sub">
+                মামলা: <b>@Model.CaseTitle</b> · বিভাগ: <b>@Model.CategoryName</b>
+            </p>
+        </div>
+        <a class="btn btn-outline btn-sm" asp-action="Queue">
+            <i data-lucide="arrow-left"></i> কিউতে ফিরুন
+        </a>
+    </div>
+
+    <!-- Mobile Comparison Tabs (shown only on small screens) -->
+    <div class="compare-tabs" id="compare-mobile-tabs">
+        <button type="button" class="active" id="btn-show-draft">মূল AI খসড়া</button>
+        <button type="button" id="btn-show-edit">আইনজীবী সম্পাদিত রূপ</button>
+    </div>
+
+    <form method="post" asp-action="SubmitReview">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="DocumentId" />
+        <input type="hidden" asp-for="CaseId" />
+
+        <!-- Side-by-Side Comparison Panes -->
+        <div class="compare" style="margin-bottom: 24px;">
+            <!-- Left: Original AI Draft (Read-only) -->
+            <div class="pane" id="pane-draft">
+                <div class="pane-head red">
+                    <i data-lucide="file-text"></i>
+                    <span>মূল AI খসড়া (Original AI Generated Draft)</span>
+                </div>
+                <div class="pane-body">@Model.ContentDraft</div>
+            </div>
+
+            <!-- Right: Lawyer Editable Pane -->
+            <div class="pane" id="pane-edit">
+                <div class="pane-head green">
+                    <i data-lucide="edit-3"></i>
+                    <span>আইনজীবী সত্যায়ন ও সম্পাদনা (Lawyer Editable Version)</span>
+                </div>
+                <textarea asp-for="EditedContent" class="pane-body editable" rows="18" placeholder="প্রয়োজনে আইনের ধারা সংশোধন বা তথ্য পরিমার্জন করুন...">@Model.EditedContent</textarea>
+            </div>
+        </div>
+
+        <!-- Decision & Comments Box -->
+        <div class="card card-pad-lg" style="margin-bottom: 3rem;">
+            <h3 style="font-size: 18px; margin-bottom: 14px;"><i data-lucide="check-square"></i> আইনজীবী সিদ্ধান্ত ও মন্তব্য (Lawyer Decision)</h3>
+
+            <div class="field" style="margin-bottom: 16px;">
+                <label asp-for="Decision">সিদ্ধান্ত / Decision</label>
+                <select asp-for="Decision" class="input" required>
+                    <option value="Approved">✅ যথাযথ রয়েছে — অনুমোদন করুন (Approve without changes)</option>
+                    <option value="EditedApproved" selected>✏️ সম্পাদিত রূপ অনুমোদন করুন (Approve with lawyer edits)</option>
+                    <option value="Rejected">❌ ত্রুটিপূর্ণ বা অপ্রযোজ্য — বাতিল করুন (Reject)</option>
+                </select>
+            </div>
+
+            <div class="field" style="margin-bottom: 20px;">
+                <label asp-for="Comments">নাগরিকের জন্য আইনি পরামর্শ বা পর্যালোচনার নোট</label>
+                <textarea asp-for="Comments" class="textarea autogrow" rows="3" placeholder="যেমন: ধারা ১২৩ ও ২৮৯ অনুযায়ী বকেয়া মজুরির লিখিত অভিযোগপত্র সম্পূর্ণ হয়েছে..."></textarea>
+            </div>
+
+            <div class="row spread wrap" style="gap: 12px;">
+                <span class="tiny muted">অনুমোদনের সাথে সাথে নাগরিকের জন্য PDF ডাউনলোড সক্রিয় হয়ে যাবে।</span>
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i data-lucide="check-circle-2"></i> পর্যালোচনা সাবমিট করুন
+                </button>
+            </div>
+        </div>
+    </form>
+</main>
+
+@section Scripts {
+    <script>
+        var btnDraft = document.getElementById('btn-show-draft');
+        var btnEdit = document.getElementById('btn-show-edit');
+        var paneDraft = document.getElementById('pane-draft');
+        var paneEdit = document.getElementById('pane-edit');
+
+        if (btnDraft && btnEdit && paneDraft && paneEdit) {
+            btnDraft.addEventListener('click', function() {
+                btnDraft.classList.add('active');
+                btnEdit.classList.remove('active');
+                paneDraft.classList.remove('mobile-hidden');
+                paneEdit.classList.add('mobile-hidden');
+            });
+            btnEdit.addEventListener('click', function() {
+                btnEdit.classList.add('active');
+                btnDraft.classList.remove('active');
+                paneEdit.classList.remove('mobile-hidden');
+                paneDraft.classList.add('mobile-hidden');
+            });
+        }
+    </script>
+}

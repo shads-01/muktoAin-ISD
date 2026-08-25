@@ -1,0 +1,50 @@
+@model MuktoAin.Web.ViewModels.CategoryViewModel
+@{
+    ViewData["Title"] = $"{Model.NameBn} — Legal Category Details";
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Home</a>
+        <span class="sep">/</span>
+        <a asp-controller="Category" asp-action="Index">বিভাগসমূহ</a>
+        <span class="sep">/</span>
+        <span>@Model.NameBn</span>
+    </nav>
+
+    <div class="card card-pad-lg" style="margin-bottom: 24px;">
+        <div class="row spread wrap" style="align-items: center; gap: 16px;">
+            <div class="row" style="gap: 16px;">
+                <span class="cat-icon-lg cat-icon"><i data-lucide="@Model.Icon"></i></span>
+                <div>
+                    <span class="kicker"><i data-lucide="tag"></i> Category ID #@Model.CategoryId</span>
+                    <h1 class="page-title" style="margin-bottom: 2px;">@Model.NameBn</h1>
+                    <span class="cat-en" style="font-size: 14px;">@Model.NameEn</span>
+                </div>
+            </div>
+            <a class="btn btn-primary btn-lg" asp-controller="Case" asp-action="Submit">
+                <i data-lucide="edit-3"></i> এই বিভাগে মামলা দাখিল করুন
+            </a>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="stack" style="gap: 16px;">
+            <div>
+                <h3 style="font-size: 17px; margin-bottom: 6px;">বিভাগের বিবরণ ও পরিধি</h3>
+                <p style="font-size: 16px; line-height: 1.8;">@Model.DescriptionBn</p>
+                <p class="muted tiny"><em>@Model.DescriptionEn</em></p>
+            </div>
+
+            <div style="background: var(--surface-2); padding: 18px; border-radius: var(--radius); border: 1px solid var(--border);">
+                <h4 style="font-size: 15px; margin-bottom: 10px;"><i data-lucide="check-square"></i> এই বিভাগে সচরাচর দাখিলযোগ্য অভিযোগসমূহ:</h4>
+                <ul style="padding-left: 20px; font-size: 14.5px; line-height: 1.8; color: var(--ink-2);">
+                    <li>বকেয়া বা বিলম্বিত মজুরি পরিশোধের লিখিত দাবি</li>
+                    <li>বেআইনি বরখাস্ত বা ছাঁটাইয়ের ক্ষতিপূরণ দাবি</li>
+                    <li>মাতৃত্বকালীন ছুটি ও আর্থিক সুবিধা প্রাপ্তির আবেদন</li>
+                    <li>কর্মস্থলে দুর্ঘটনাজনিত স্বাস্থ্য ও নিরাপত্তা ক্ষতিপূরণ</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</main>

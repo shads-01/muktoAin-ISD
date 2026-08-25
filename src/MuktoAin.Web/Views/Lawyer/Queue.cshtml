@@ -1,0 +1,83 @@
+@model List<MuktoAin.Web.ViewModels.CaseListItemViewModel>
+@{
+    ViewData["Title"] = "আইনজীবী রিভিউ কিউ — Lawyer Review Queue";
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Home</a>
+        <span class="sep">/</span>
+        <span>Lawyer Portal · Queue</span>
+    </nav>
+
+    <div class="row spread wrap page-head" style="align-items: center; gap: 14px;">
+        <div>
+            <span class="kicker"><i data-lucide="award"></i> Verified Advocate Portal · FR-13</span>
+            <h1 class="page-title">দলিল পর্যালোচনা কিউ (Review Queue)</h1>
+            <p class="page-sub">AI দ্বারা প্রস্তুতকৃত খসড়া দলিল পর্যালোচনা ও সত্যায়ন করে নাগরিকের জন্য চূড়ান্ত PDF অনুমোদন করুন।</p>
+        </div>
+        <div class="row wrap" style="gap: 8px;">
+            <span class="badge badge-final"><i data-lucide="check-circle-2"></i> বার সনদ যাচাইকৃত: DHA-1187</span>
+        </div>
+    </div>
+
+    <!-- Stat Strip -->
+    <div class="stat-strip" style="margin-bottom: 20px;">
+        <div class="card kpi">
+            <span class="k-label"><i data-lucide="clock"></i>Pending in Queue</span>
+            <span class="k-num">৩টি</span>
+            <span class="k-sub">গড় পর্যালোচনা সময়: ২ ঘণ্টা</span>
+        </div>
+        <div class="card kpi">
+            <span class="k-label"><i data-lucide="check-check"></i>Your Reviews</span>
+            <span class="k-num">২৮টি</span>
+            <span class="k-sub">এই মাসে সম্পন্ন</span>
+        </div>
+        <div class="card kpi">
+            <span class="k-label"><i data-lucide="star"></i>Pro-Bono Hours</span>
+            <span class="k-num">১৪.৫</span>
+            <span class="k-sub">আইনি সহায়তা অবদান</span>
+        </div>
+    </div>
+
+    <!-- Review Queue Table -->
+    <div class="card" style="margin-bottom: 3rem;">
+        <div class="table-wrap">
+            <div class="table-scroll">
+                <table class="min-w-table">
+                    <thead>
+                        <tr>
+                            <th>মামলা ট্র্যাকিং</th>
+                            <th>শিরোনাম ও বিবরণ</th>
+                            <th>আইনি বিভাগ</th>
+                            <th>দাখিলের সময়</th>
+                            <th>বর্তমান অবস্থা</th>
+                            <th style="text-align: right;">অ্যাকশন</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="mono"><b>@item.TrackingCode</b></td>
+                                <td>
+                                    <b>@item.Title</b>
+                                </td>
+                                <td>@item.CategoryName</td>
+                                <td class="tiny muted">@item.CreatedAt.ToString("dd MMM, hh:mm tt")</td>
+                                <td>
+                                    <span class="badge badge-@item.Status.ToLower()">@item.Status</span>
+                                </td>
+                                <td style="text-align: right;">
+                                    <a class="btn btn-primary btn-sm" asp-action="Review" asp-route-id="@item.CaseId">
+                                        <i data-lucide="file-edit"></i> পর্যালোচনা করুন →
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>

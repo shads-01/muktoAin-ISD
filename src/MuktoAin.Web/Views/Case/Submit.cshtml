@@ -1,0 +1,73 @@
+@model MuktoAin.Web.ViewModels.CaseSubmitViewModel
+@{
+    ViewData["Title"] = "মামলা দাখিল — Submit Case";
+}
+
+<main class="container container-sm" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Home</a>
+        <span class="sep">/</span>
+        <a asp-controller="Case" asp-action="Track">মামলাসমূহ</a>
+        <span class="sep">/</span>
+        <span>নতুন দাখিল</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="edit-3"></i> Citizen Intake · FR-2</span>
+        <h1 class="page-title">আইনি সমস্যা জমা দিন</h1>
+        <p class="page-sub">বাংলা, English বা Banglish-এ আপনার সমস্যার বিবরণ লিখুন — AI প্রয়োজনীয় আইন খুঁজবে ও দলিল প্রস্তুত করবে।</p>
+    </div>
+
+    <div class="card card-pad-lg" style="margin-bottom: 3rem;">
+        <form method="post" asp-action="Submit">
+            @Html.AntiForgeryToken()
+
+            <div class="field">
+                <label asp-for="CategoryId">আইনি বিভাগ / Legal Category</label>
+                <select asp-for="CategoryId" asp-items="Model.Categories" class="input" required>
+                    <option value="">— বিভাগ নির্বাচন করুন —</option>
+                </select>
+                <span class="hint">আপনার সমস্যার ধরন অনুযায়ী সঠিক বিভাগ বাছাই করুন (যেমন: মজুরি সমস্যা হলে শ্রম অভিযোগ)</span>
+            </div>
+
+            <div class="field">
+                <label asp-for="DistrictId">জেলা / District (FR-2)</label>
+                <select asp-for="DistrictId" asp-items="Model.Districts" class="input" required>
+                    <option value="">— জেলা নির্বাচন করুন —</option>
+                </select>
+                <span class="hint">যে জেলায় ঘটনাটি ঘটেছে বা সংশ্লিষ্ট কারখানা/প্রতিষ্ঠান অবস্থিত</span>
+            </div>
+
+            <div class="field">
+                <label asp-for="Title">সংক্ষিপ্ত শিরোনাম / Brief Title</label>
+                <input asp-for="Title" class="input" maxlength="250" placeholder="যেমন: ৩ মাস ধরে বকেয়া বেতন পরিশোধ না করা" required />
+                <span class="hint">এক লাইনে মূল অভিযোগ বা সমস্যার সারসংক্ষেপ</span>
+            </div>
+
+            <div class="field">
+                <label asp-for="Description">সমস্যার পূর্ণ বিবরণ / Describe Your Problem</label>
+                <textarea asp-for="Description" class="textarea autogrow" rows="6" maxlength="5000" data-counter="#descCounter" placeholder="ঘটনাটি বিস্তারিত লিখুন — কখন ঘটেছে, কী অন্যায় হয়েছে, আপনার কী ক্ষতি হয়েছে এবং আপনি কী আইনি প্রতিকার চান..." required></textarea>
+                <div class="row spread" style="margin-top: 4px;">
+                    <span class="tiny muted">বাংলা, English বা Banglish যেকোনো ভাষায় লিখতে পারেন</span>
+                    <span class="char-counter" id="descCounter">০ / ৫,০০০</span>
+                </div>
+            </div>
+
+            <div class="field" style="background: var(--surface-2); padding: 14px; border-radius: var(--radius); border: 1px solid var(--border); margin: 20px 0;">
+                <label class="check-row" for="anonCheck">
+                    <input asp-for="IsAnonymous" type="checkbox" id="anonCheck" />
+                    <span>
+                        <b>বেনামে জমা দিন (Anonymous Submission · FR-2)</b>
+                        <small class="muted" style="display:block; margin-top:2px;">
+                            আপনার নাম বা ব্যক্তিগত পরিচয় সংরক্ষিত থাকবে না; একটি গোপনীয় ট্র্যাকিং কোডের মাধ্যমে যেকোনো সময় ফলাফল ও খসড়া দেখতে পারবেন।
+                        </small>
+                    </span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg btn-block">
+                <i data-lucide="send"></i> সমস্যা জমা দিন ও অধিকার জানুন →
+            </button>
+        </form>
+    </div>
+</main>

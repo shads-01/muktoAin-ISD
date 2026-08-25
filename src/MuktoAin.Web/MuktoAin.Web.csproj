@@ -7,8 +7,10 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <RollForward>LatestMajor</RollForward>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>MuktoAin.Web</RootNamespace>
   </PropertyGroup>
 
 </Project>

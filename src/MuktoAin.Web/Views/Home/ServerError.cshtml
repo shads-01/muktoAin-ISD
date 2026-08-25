@@ -1,0 +1,19 @@
+@{
+    ViewData["Title"] = "সার্ভার সমস্যা — 500";
+}
+
+<main class="container" id="main">
+    <div class="error-wrap">
+        <div class="error-code">500</div>
+        <h1 class="page-title">সার্ভার সাময়িক সমস্যায় পড়েছে</h1>
+        <p class="muted">Something unexpected occurred on our end. Your submitted case data remains safely encrypted.</p>
+        <div class="row wrap" style="justify-content: center; gap: 10px; margin-top: 10px;">
+            <button class="btn btn-primary" type="button" onclick="showToast('পুনরায় চেষ্টা করা হচ্ছে...', 'info'); location.reload();">
+                <i data-lucide="refresh-cw"></i> আবার চেষ্টা করুন
+            </button>
+            <a class="btn btn-ghost" asp-controller="Home" asp-action="About">
+                <i data-lucide="info"></i> সিস্টেম স্ট্যাটাস
+            </a>
+        </div>
+    </div>
+</main>
