@@ -1,0 +1,181 @@
+@model MuktoAin.Web.ViewModels.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Platform Overview — Admin";
+    ViewData["IsAdminPage"] = true;
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Home</a>
+        <span class="sep">/</span>
+        <span>Admin Console · Analytics</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="shield" aria-hidden="true"></i> FR-16 · Anonymized Analytics</span>
+        <h1 class="page-title">Platform Overview</h1>
+        <p class="page-sub">Aggregated platform metrics and lawyer verification queue — zero PII leaves this administrative console.</p>
+    </div>
+
+    <!-- KPI row -->
+    <div class="grid grid-4" style="margin-bottom: 20px;">
+        <div class="card kpi">
+            <span class="k-label"><i data-lucide="folder-open" aria-hidden="true"></i>Total Cases</span>
+            <span class="k-num">@Model.TotalCases.ToString("N0")</span>
+            <span class="k-sub">+@Model.CasesThisWeek this week</span>
+        </div>
+        <div class="card kpi">
+            <span class="k-label"><i data-lucide="clock" aria-hidden="true"></i>Pending Reviews</span>
+            <span class="k-num">@Model.PendingReviews</span>
+            <span class="k-sub">across 4 legal categories</span>
+        </div>
+        <div class="card kpi">
+            <span class="k-label"><i data-lucide="user-check" aria-hidden="true"></i>Verifications Waiting</span>
+            <span class="k-num">@Model.VerificationsWaiting</span>
+            <span class="k-sub">oldest: 4 days</span>
+        </div>
+        <div class="card kpi">
+            <span class="k-label"><i data-lucide="cpu" aria-hidden="true"></i>AI Calls Today</span>
+            <span class="k-num">@Model.AiCallsToday</span>
+            <span class="k-sub">failure rate: @Model.AiFailureRate%</span>
+        </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="grid grid-2" style="margin-bottom: 20px;">
+        <div class="card">
+            <h3 style="font-size: 17px; margin-bottom: 16px;">Cases by Category</h3>
+            <div class="barchart">
+                @foreach (var cat in Model.CategoryStats)
+                {
+                    <div class="bar-row">
+                        <span>@cat.Name</span>
+                        <div class="bar-track">
+                            <div class="bar-fill @cat.ColorClass" style="--w:@cat.Percentage%"></div>
+                        </div>
+                        <b>@cat.Percentage%</b>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="card">
+            <h3 style="font-size: 17px; margin-bottom: 16px;">Category Share (Conic Distribution)</h3>
+            <div class="donut-wrap">
+                <div class="donut" role="img" aria-label="Donut chart of case share by category"></div>
+                <div class="legend">
+                    <div class="li"><span class="swatch" style="background:var(--primary)"></span> শ্রম অভিযোগ (Labour) · 38%</div>
+                    <div class="li"><span class="swatch" style="background:var(--gold)"></span> সাধারণ ডায়েরি (GD) · 27%</div>
+                    <div class="li"><span class="swatch" style="background:var(--info)"></span> তথ্য অধিকার (RTI) · 20%</div>
+                    <div class="li"><span class="swatch" style="background:var(--success)"></span> ভোক্তা অধিকার (Consumer) · 15%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Districts + verification queue -->
+    <div class="grid grid-2" style="margin-bottom: 20px;">
+        <div class="card">
+            <h3 style="font-size: 17px; margin-bottom: 16px;">Top Case Districts (FR-2 Geographic Intake)</h3>
+            <div class="barchart">
+                @foreach (var dist in Model.DistrictStats)
+                {
+                    <div class="bar-row">
+                        <span>@dist.Name</span>
+                        <div class="bar-track">
+                            <div class="bar-fill gold" style="--w:@dist.Percentage%"></div>
+                        </div>
+                        <b>@dist.Count</b>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="font-size: 17px; margin-bottom: 16px;">Lawyer Verification Queue (FR-15)</h3>
+            <div class="table-wrap">
+                <div class="table-scroll">
+                    <table class="min-w-table">
+                        <thead>
+                            <tr>
+                                <th>Applicant</th>
+                                <th>Bar Reg. No</th>
+                                <th>Applied</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var lawyer in Model.VerificationQueue)
+                            {
+                                <tr>
+                                    <td><b>@lawyer.ApplicantName</b></td>
+                                    <td class="mono">@lawyer.BarRegNo</td>
+                                    <td class="tiny muted">@lawyer.AppliedDate</td>
+                                    <td style="text-align: right;">
+                                        <div class="row wrap" style="gap: 6px; justify-content: flex-end;">
+                                            <button class="btn btn-success-outline btn-sm" type="button" onclick="showToast('আইনজীবী অনুমোদন সম্পন্ন হয়েছে ✓', 'success')">Approve</button>
+                                            <button class="btn btn-danger-outline btn-sm" type="button" data-open-modal="#reject-modal">Reject</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="row spread wrap" style="margin-top: 14px;">
+                <span class="tiny muted">Bar Council registration API integration ready</span>
+                <button class="btn btn-quiet btn-sm" type="button" onclick="showToast('Showing all 5 pending applicants')">Full queue →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- System health -->
+    <div class="card" style="margin-bottom: 3rem;">
+        <h3 style="font-size: 17px; margin-bottom: 12px;">System Infrastructure Health</h3>
+        <div class="stack" style="gap: 0;">
+            <div class="row wrap spread" style="padding: 11px 0; border-bottom: 1px dashed var(--border);">
+                <span class="row"><span class="status-dot ok" aria-hidden="true"></span><b>Google Gemini API (gemini-2.5-flash)</b></span>
+                <span class="muted tiny">Operational (Response time: 420ms)</span>
+            </div>
+            <div class="row wrap spread" style="padding: 11px 0; border-bottom: 1px dashed var(--border);">
+                <span class="row"><span class="status-dot ok" aria-hidden="true"></span><b>Qdrant Vector Database (.NET SDK)</b></span>
+                <span class="muted tiny">Operational (3,842 vectors indexed)</span>
+            </div>
+            <div class="row wrap spread" style="padding: 11px 0; border-bottom: 1px dashed var(--border);">
+                <span class="row"><span class="status-dot ok" aria-hidden="true"></span><b>SQL Server FTS Full-Text Fallback</b></span>
+                <span class="muted tiny">Standby (Catalog active)</span>
+            </div>
+            <div class="row wrap spread" style="padding: 12px 0 0;">
+                <span class="row"><i data-lucide="history" aria-hidden="true"></i><b>Last Legal Corpus Sync</b></span>
+                <span class="row wrap" style="gap: 8px;">
+                    <span class="muted tiny">Aug 24, 2026 02:14 UTC (SHA: b7e23ec2)</span>
+                    <button class="btn btn-outline btn-sm" type="button" onclick="showToast('কর্পাস পুনরায় ইনডেক্সিং কিউতে পাঠানো হয়েছে', 'info')">Re-index</button>
+                </span>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Reject application modal -->
+<div class="modal-backdrop" id="reject-modal" role="dialog" aria-modal="true" aria-labelledby="reject-title">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h3 id="reject-title">Reject Lawyer Verification</h3>
+            <button class="icon-btn" type="button" data-close-modal aria-label="Close modal">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <p class="tiny muted" style="margin-bottom: 16px;">Provide a constructive reason for rejection. An email notification will be dispatched to the applicant.</p>
+        
+        <div class="field">
+            <label for="rejectReason">Rejection Reason</label>
+            <textarea class="textarea autogrow" id="rejectReason" placeholder="e.g., Bar Council registration number could not be validated against the active roll..."></textarea>
+        </div>
+
+        <div class="row spread" style="margin-top: 20px; gap: 10px;">
+            <button class="btn btn-ghost" type="button" data-close-modal>Cancel</button>
+            <button class="btn btn-danger" type="button" data-close-modal onclick="showToast('Lawyer application rejected with notice', 'error')">Confirm Rejection</button>
+        </div>
+    </div>
+</div>
