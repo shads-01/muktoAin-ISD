@@ -1,0 +1,171 @@
+@{
+    ViewData["Title"] = "মুক্ত আইন — AI-সহায়ক আইনি তথ্য ও পরামর্শ";
+}
+
+<main class="container" id="main">
+    <!-- Hero Section -->
+    <section class="page-head" style="text-align: center; margin: 1.5rem 0 2rem;">
+        <span class="kicker">
+            <i data-lucide="scale" aria-hidden="true"></i> AI-Augmented Legal Aid for Bangladesh
+        </span>
+        <h1 class="page-title" style="max-width: 820px; margin: 0 auto 0.75rem;">
+            সহজ ভাষায় আপনার অধিকার জানুন,<br />আইনি দলিলের খসড়া তৈরি করুন
+        </h1>
+        <p class="page-sub" style="margin: 0 auto 1.5rem; font-size: 16.5px;">
+            বাংলা, English বা Banglish-এ আপনার আইনি সমস্যা বলুন — আমরা প্রয়োজনীয় ধারা উদ্ধৃতিসহ অধিকার ব্যাখ্যা করব এবং আইনজীবী-যাচাইকৃত খসড়া প্রস্তুত করব।
+        </p>
+
+        <!-- Interactive Quick Composer -->
+        <div class="composer" style="text-align: left; margin: 1.5rem auto 1rem; max-width: 760px;">
+            <div class="composer-mode" id="composer-mode">
+                <button type="button" class="chip active"><i data-lucide="message-square"></i> আইনি অধিকার জানুন</button>
+                <button type="button" class="chip"><i data-lucide="search"></i> ধারা খুঁজুন</button>
+            </div>
+            <form asp-controller="Case" asp-action="Submit" method="get">
+                <div class="composer-row">
+                    <textarea name="q" class="autogrow" rows="2" placeholder="আপনার সমস্যা লিখুন... (যেমন: ৩ মাস বেতন পাইনি, জিডি করব কীভাবে?)" required></textarea>
+                    <button type="submit" class="send-btn" aria-label="সমস্যা জমা দিন">
+                        <i data-lucide="arrow-right"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="row wrap" style="justify-content: center; gap: 10px; margin-top: 1.25rem;">
+            <span class="tiny muted">উদাহরণ:</span>
+            <a class="chip chip-sm" asp-controller="Case" asp-action="Submit">বকেয়া মজুরি দাবি</a>
+            <a class="chip chip-sm" asp-controller="Case" asp-action="Submit">হারানো দলিলের জিডি</a>
+            <a class="chip chip-sm" asp-controller="Case" asp-action="Submit">তথ্য অধিকার আবেদন (RTI)</a>
+            <a class="chip chip-sm" asp-controller="Case" asp-action="Submit">ভোক্তা অধিকার প্রতারণা</a>
+        </div>
+    </section>
+
+    <!-- 3-Step Process -->
+    <section style="margin: 3rem 0;">
+        <div class="row spread wrap" style="margin-bottom: 1rem; align-items: flex-end;">
+            <div>
+                <span class="kicker"><i data-lucide="workflow"></i> Workflow</span>
+                <h2 class="section-h" style="margin:0">এটি যেভাবে কাজ করে</h2>
+            </div>
+            <a class="tiny muted" asp-controller="Home" asp-action="About">পদ্ধতি সম্পর্কে বিস্তারিত →</a>
+        </div>
+
+        <div class="grid grid-3">
+            <div class="card">
+                <div class="row spread" style="margin-bottom: 12px;">
+                    <span class="step-num">১</span>
+                    <span class="cat-icon"><i data-lucide="message-circle"></i></span>
+                </div>
+                <b>সমস্যা বর্ণনা করুন</b>
+                <span class="cat-en">Describe Problem</span>
+                <p class="muted" style="margin-top: 8px;">
+                    বাংলা, English বা Banglish-এ যেকোনো ঘটনা বা অভিযোগ লিখুন — নাম প্রকাশ না করেও সম্পূর্ণ বেনামে জমা দেওয়া যায়।
+                </p>
+            </div>
+
+            <div class="card">
+                <div class="row spread" style="margin-bottom: 12px;">
+                    <span class="step-num">২</span>
+                    <span class="cat-icon"><i data-lucide="book-open"></i></span>
+                </div>
+                <b>অধিকার ও ধারা জানুন</b>
+                <span class="cat-en">Know Your Rights</span>
+                <p class="muted" style="margin-top: 8px;">
+                    বাংলাদেশের সংকলিত আইনসমূহ (২৪টি আইন · ৩,৮০০+ ধারা) থেকে প্রাসঙ্গিক ধারা উদ্ধৃতিসহ সহজ ভাষায় আপনার অধিকার দেখানো হয়।
+                </p>
+            </div>
+
+            <div class="card">
+                <div class="row spread" style="margin-bottom: 12px;">
+                    <span class="step-num">৩</span>
+                    <span class="cat-icon"><i data-lucide="file-check-2"></i></span>
+                </div>
+                <b>আইনজীবী-যাচাইকৃত দলিল পান</b>
+                <span class="cat-en">Lawyer-Reviewed Document</span>
+                <p class="muted" style="margin-top: 8px;">
+                    AI আবেদনের উপযুক্ত খসড়া তৈরি করে; সনদপ্রাপ্ত আইনজীবী পর্যালোচনা ও অনুমোদন করার পরই সুরক্ষিত PDF ডাউনলোড আনলক হয়।
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- Legal Categories -->
+    <section id="categories" style="margin: 3rem 0; scroll-margin-top: 130px;">
+        <div class="row spread wrap" style="margin-bottom: 1rem; align-items: flex-end;">
+            <div>
+                <span class="kicker"><i data-lucide="layers"></i> Categories</span>
+                <h2 class="section-h" style="margin:0">আইনি বিভাগসমূহ ও সেবাসমূহ</h2>
+            </div>
+            <a class="btn btn-quiet btn-sm" asp-controller="Category" asp-action="Index">সকল বিভাগ দেখুন →</a>
+        </div>
+
+        <div class="grid grid-4">
+            <a class="card click cat-card" asp-controller="Category" asp-action="Details" asp-route-id="1">
+                <i data-lucide="arrow-up-right" class="go-arrow" aria-hidden="true"></i>
+                <span class="cat-icon"><i data-lucide="briefcase"></i></span>
+                <b>শ্রম অধিকার ও অভিযোগ</b>
+                <span class="cat-en">Labour Complaints</span>
+                <p class="muted tiny">বকেয়া বেতন, অন্যায় বরখাস্ত, মাতৃত্বকালীন সুবিধা ও ক্ষতিপূরণ দাবি</p>
+                <div class="cat-meta">
+                    <span class="badge badge-neutral">শ্রম আইন ২০০৬</span>
+                </div>
+            </a>
+
+            <a class="card click cat-card" asp-controller="Category" asp-action="Details" asp-route-id="2">
+                <i data-lucide="arrow-up-right" class="go-arrow" aria-hidden="true"></i>
+                <span class="cat-icon"><i data-lucide="shield"></i></span>
+                <b>সাধারণ ডায়েরি (GD)</b>
+                <span class="cat-en">General Diary</span>
+                <p class="muted tiny">ডকুমেন্ট হারানো, নিরাপত্তা হুমকি, অপরাধ ও থানায় জিডি সংক্রান্ত আবেদন</p>
+                <div class="cat-meta">
+                    <span class="badge badge-neutral">দণ্ডবিধি ১৮৬০</span>
+                </div>
+            </a>
+
+            <a class="card click cat-card" asp-controller="Category" asp-action="Details" asp-route-id="3">
+                <i data-lucide="arrow-up-right" class="go-arrow" aria-hidden="true"></i>
+                <span class="cat-icon"><i data-lucide="file-text"></i></span>
+                <b>তথ্য অধিকার আবেদন</b>
+                <span class="cat-en">Right to Information</span>
+                <p class="muted tiny">সরকারি ও স্বায়ত্তশাসিত প্রতিষ্ঠানের জনগুরুত্বপূর্ণ তথ্য চেয়ে ফর্ম ‘ক’ আবেদন</p>
+                <div class="cat-meta">
+                    <span class="badge badge-neutral">তথ্য অধিকার ২০০৯</span>
+                </div>
+            </a>
+
+            <a class="card click cat-card" asp-controller="Category" asp-action="Details" asp-route-id="4">
+                <i data-lucide="arrow-up-right" class="go-arrow" aria-hidden="true"></i>
+                <span class="cat-icon"><i data-lucide="shopping-bag"></i></span>
+                <b>ভোক্তা অধিকার সংরক্ষণ</b>
+                <span class="cat-en">Consumer Protection</span>
+                <p class="muted tiny">ত্রুটিপূর্ণ পণ্য, অতিরিক্ত মূল্য, নকল ঔষধ ও সেবায় প্রতারণার ক্ষতিপূরণ</p>
+                <div class="cat-meta">
+                    <span class="badge badge-neutral">ভোক্তা অধিকার ২০০৯</span>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <!-- Trust & Open Highlight -->
+    <section class="card card-pad-lg" style="background: var(--surface-2); margin-bottom: 2rem;">
+        <div class="row spread wrap" style="align-items: center; gap: 20px;">
+            <div style="max-width: 680px;">
+                <span class="kicker"><i data-lucide="lock"></i> নিরাপত্তা ও মানব সুরক্ষা</span>
+                <h3 style="font-size: 22px; margin: 6px 0;">সম্পূর্ণ বিনামূল্যে, নাগরিক সুরক্ষায় নিবেদিত</h3>
+                <p class="muted" style="margin-bottom: 0;">
+                    মুক্ত আইন কোনো বাণিজ্যিক সংস্থা বা আইন ফার্ম নয়। এটি একটি উন্মুক্ত একাডেমিক প্রকল্প — আপনার সকল তথ্য সুরক্ষিত থাকে এবং কোনো মধ্যস্বত্বভোগী ফি নেই।
+                </p>
+            </div>
+            <div class="row wrap" style="gap:10px;">
+                <a class="btn btn-primary" asp-controller="Case" asp-action="Submit">
+                    <i data-lucide="plus-circle"></i> নতুন মামলা দাখিল করুন
+                </a>
+                <a class="btn btn-outline" asp-controller="Home" asp-action="About">
+                    <i data-lucide="info"></i> আরও জানুন
+                </a>
+            </div>
+        </div>
+    </section>
+</main>
