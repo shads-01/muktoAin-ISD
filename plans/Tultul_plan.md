@@ -891,7 +891,8 @@ FR-18 requires admin management of scenario mappings. Erin will build the admin 
 
 3. Test at minimum:
    - `ActRepository.GetWithSectionsAsync` — returns Act with loaded sections
-   - `ActSectionRepository.GetBySectionIdsAsync` — returns correct sections for given IDs
+   - `ActSectionRepository.GetSectionsByActIdAsync` — LINQ filtering works on the InMemory provider
+   - ~~`ActSectionRepository.GetBySectionIdsAsync`~~ — **NOT testable here**: implemented via `FromSqlRaw`, which throws on the InMemory provider. Cover it in integration tests with real SQL Server (see CI integration job in Shads_plan.md Step 3.4).
    - `ActSectionChunkRepository.GetUnembeddedChunksAsync` — returns only chunks with null VectorId
    - `CaseRepository.GetByUserIdAsync` — returns only that user's cases
    - Generic `Repository<T>` CRUD — add, get, update, delete roundtrip
@@ -971,3 +972,31 @@ Tultul's work is almost entirely self-contained. The critical insight: **she IS 
 3. **Day 3-5**: Steps 1.7 → 1.9 (seed data, import pipeline, chunking). PR this — Shads can start embedding batch job.
 4. **Day 5-6**: Steps 1.10 → 1.13 (FTS script in SSMS, Qdrant store, SQL repos, DI wiring).
 5. **Day 6+**: CP2 search services. By now Shads should have `GeminiEmbeddingService` ready, unblocking Step 2.1.
+
+## GSTACK REVIEW REPORT
+
+| Run | Scope | Status |
+|---|---|---|
+| Eng review r1 | Architecture A1-A6 · Code C1-C7 · Tests · Perf P1-P2 | complete — all findings applied in-file |
+| Outside voice r2 | Claude subagent (Codex absent) — 8 new findings O1-O8 | complete — all applied in-file |
+
+| Finding | Fix location |
+|---|---|
+| LocalDB lacks FTS; connection strings | _Initial_setup_plan.md (Express Advanced mandated) |
+| FTS indexed nonexistent ActTitle; naming rules | _Initial_setup + Tultul Step 1.6 (SectionText only, bracketed names) |
+| Clean Arch violations (DI concretes, DocumentGenerator layer) | Tultul RagContextBuilder → Domain interfaces; Arpita templates → Application/Documents |
+| Identity-in-Domain exception (A4) | Shads Option A note + AGENTS.md §3.1 amendment instruction |
+| Review claim race + ownership (A5/O2) | Arpita: AssignedLawyerProfileId, queue filter, SubmitReview guard |
+| Guest authz null-compare + anonymous tracking (A6/O3) | Arpita GetCaseDetailAsync rewrite; AnonymousTrackingCode on CASE |
+| XSS Html.Raw (C2) | Erin Result view encoded render |
+| Gemini key clobber, Qdrant ctor, MigrateAsync, ScenarioMapping (C1/C5/C6/C7) | Shads + Tultul respective steps |
+| Encryption scope, AI_LOG redaction, cached explanations (O4/O7) | Shads Steps 2.6/2.8 pipeline step 0; Erin contract note |
+| Analytics SQL table names (O5) | Arpita Step 3.4 bracketed real names |
+| CI red-by-construction; InMemory vs FromSqlRaw (O6) | Shads CI yaml split unit/integration + SQL container; Tultul test list |
+| Multi-doc state machine (O8) | Arpita approve/reject sibling guards + Finalized→Submitted row |
+
+**VERDICT:** CROSS-MODEL absorbed (Claude subagent standing in for Codex; zero contradictions between models).
+
+Deferred items live in TODOS.md (Qdrant SDK spike, ScenarioMapping retrieval-boost depth, Program.cs merge convention, CI FTS-image choice).
+
+NO UNRESOLVED DECISIONS
