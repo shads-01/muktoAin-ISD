@@ -39,8 +39,8 @@
 - [x] ~~**[T-1.4]** Define Repository & Service Interfaces in Domain/Application — *Tultul* `[Blocked by: T-1.3] [Unblocks: T-1.5, A-2.1]`~~
 - [x] ~~**[T-1.5]** EF Core `AppDbContext.cs` in `MuktoAin.Infrastructure` — *Tultul* `[Blocked by: T-1.3, T-1.4] [Unblocks: T-1.6, S-1.1]`~~
 - [x] ~~**[T-1.6]** Manual MSSQL Schema Scripts in SSMS (`scripts/01-14_*.sql`) — *Tultul* `[Blocked by: T-1.3, T-1.5] [Unblocks: S-1.1, T-1.7]`~~
-- [ ] **[A-1.1]** All DTOs in `MuktoAin.Application/DTOs/` — *Arpita* `[Blocked by: T-1.2, T-1.3] [Unblocks: A-2.1]`
-- [ ] **[A-1.2]** Checkpoint 1 DTOs Exit Gate — *Arpita* `[Blocked by: A-1.1]`
+- [x] ~~**[A-1.1]** All DTOs in `MuktoAin.Application/DTOs/` — *Arpita* `[Blocked by: T-1.2, T-1.3] [Unblocks: A-2.1]`~~
+- [x] ~~**[A-1.2]** Checkpoint 1 DTOs Exit Gate — *Arpita* `[Blocked by: A-1.1]`~~
 
 ### 3. Identity, Data Ingestion & Vector Indexing
 - [ ] **[S-1.1]** ASP.NET Core Identity Configuration in `MuktoAin.Infrastructure` — *Shads* `[Blocked by: T-1.5, T-1.6] [Unblocks: S-1.2, S-3.6]`
