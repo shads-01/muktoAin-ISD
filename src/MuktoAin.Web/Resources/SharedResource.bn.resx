@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="AppName" xml:space="preserve">
+    <value>মুক্ত আইন</value>
+  </data>
+  <data name="AppTagline" xml:space="preserve">
+    <value>সহজ ভাষায় আপনার অধিকার জানুন, আইনি দলিলের খসড়া তৈরি করুন</value>
+  </data>
+  <data name="SubmitCase" xml:space="preserve">
+    <value>সমস্যা জমা দিন</value>
+  </data>
+  <data name="TrackCase" xml:space="preserve">
+    <value>মামলা ট্র্যাক করুন</value>
+  </data>
+  <data name="SearchLaws" xml:space="preserve">
+    <value>আইন অনুসন্ধান</value>
+  </data>
+  <data name="Login" xml:space="preserve">
+    <value>সাইন ইন</value>
+  </data>
+  <data name="Register" xml:space="preserve">
+    <value>নিবন্ধন</value>
+  </data>
+  <data name="About" xml:space="preserve">
+    <value>পরিচিতি</value>
+  </data>
+  <data name="DisclaimerSummary" xml:space="preserve">
+    <value>মুক্ত আইন সাধারণ আইনি তথ্য দেয়, আনুষ্ঠানিক আইনি পরামর্শ নয়। প্রতিটি নথি যাচাইকৃত আইনজীবী দ্বারা পর্যালোচিত হয়।</value>
+  </data>
+</root>

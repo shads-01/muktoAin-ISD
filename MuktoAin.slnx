@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MuktoAin.Web/MuktoAin.Web.csproj" />
+  </Folder>
+</Solution>

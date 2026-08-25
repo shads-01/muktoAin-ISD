@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="AppName" xml:space="preserve">
+    <value>MuktoAin</value>
+  </data>
+  <data name="AppTagline" xml:space="preserve">
+    <value>Know your legal rights in plain language, auto-draft verified documents</value>
+  </data>
+  <data name="SubmitCase" xml:space="preserve">
+    <value>Submit a Case</value>
+  </data>
+  <data name="TrackCase" xml:space="preserve">
+    <value>Track Case</value>
+  </data>
+  <data name="SearchLaws" xml:space="preserve">
+    <value>Search Laws</value>
+  </data>
+  <data name="Login" xml:space="preserve">
+    <value>Sign In</value>
+  </data>
+  <data name="Register" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="DisclaimerSummary" xml:space="preserve">
+    <value>MuktoAin provides general legal information, not formal legal advice. Every document is reviewed by a verified lawyer.</value>
+  </data>
+</root>

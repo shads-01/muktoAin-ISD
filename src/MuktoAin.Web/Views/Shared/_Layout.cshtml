@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] | মুক্ত আইন — MuktoAin</title>
+    <meta name="description" content="মুক্ত আইন (MuktoAin) — বাংলাদেশের নাগরিকদের জন্য AI-সহায়ক আইনি তথ্য ও নথি প্রস্তুতকরণ প্ল্যাটফর্ম।" />
+    
+    <!-- Early theme init to prevent flash -->
+    <script>
+        var savedTheme = null;
+        try { savedTheme = localStorage.getItem('mkt-theme'); } catch(e) {}
+        document.documentElement.dataset.theme = savedTheme || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+    </script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Lora:ital,wght@0,400..700;1,400..700&family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Noto+Serif+Bengali:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    
+    <link rel="stylesheet" href="~/assets/css/main.css" asp-append-version="true" />
+</head>
+<body>
+    <a class="skip-link" href="#main">সরাসরি কন্টেন্টে যান / Skip to content</a>
+
+    <!-- ============ NAVBAR ============ -->
+    <header class="nav @(ViewData["IsAdminPage"] as bool? == true ? "has-adminbar" : "")">
+        <div class="nav-inner">
+            <a class="brand" asp-controller="Home" asp-action="Index" aria-label="মুক্ত আইন হোম">
+                <span class="brand-name">মুক্ত আইন<small>MuktoAin</small></span>
+            </a>
+            
+            <nav class="nav-links" aria-label="প্রধান মেনু">
+                <a asp-controller="Home" asp-action="Index"><i data-lucide="message-square"></i>আইনি সেবা</a>
+                <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i>মামলা ট্র্যাকিং</a>
+                <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i>আইন খুঁজুন</a>
+                <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i>বিভাগসমূহ</a>
+                <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i>পরিচিতি</a>
+            </nav>
+            
+            <div class="nav-actions">
+                <partial name="_LanguageToggle" />
+                <button class="icon-btn theme-toggle" type="button" aria-label="থিম পরিবর্তন"></button>
+                
+                <div class="nav-desktop-auth row" style="gap:8px">
+                    <a class="btn btn-outline btn-sm" asp-controller="Account" asp-action="Login">সাইন ইন</a>
+                    <a class="btn btn-primary btn-sm" asp-controller="Account" asp-action="Register">নিবন্ধন</a>
+                </div>
+
+                <div class="pop-wrap">
+                    <button class="avatar" type="button" data-pop="user-pop" aria-label="ব্যবহারকারী মেনু">
+                        ম
+                    </button>
+                    <div class="menu-pop" id="user-pop">
+                        <a asp-controller="Case" asp-action="Track"><i data-lucide="folder"></i>আমার মামলাসমূহ</a>
+                        <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>আইনজীবী রিভিউ কিউ</a>
+                        <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i>অ্যাডমিন ড্যাশবোর্ড</a>
+                        <hr class="divider" style="margin:4px 0" />
+                        <a asp-controller="Account" asp-action="Login"><i data-lucide="log-out"></i>লগআউট</a>
+                    </div>
+                </div>
+                
+                <button class="icon-btn nav-burger" type="button" aria-label="মেনু খুলুন" aria-expanded="false" aria-controls="drawer">
+                    <i data-lucide="menu"></i>
+                </button>
+            </div>
+        </div>
+
+        @if (ViewData["IsAdminPage"] as bool? == true)
+        {
+            <nav class="nav-adminbar" aria-label="অ্যাডমিন সেকশন">
+                <a asp-controller="Admin" asp-action="Dashboard" aria-current="page">Dashboard</a>
+                <a asp-controller="Lawyer" asp-action="Queue">Lawyer Queue</a>
+                <a asp-controller="Search" asp-action="Index">Corpus & Acts</a>
+                <a asp-controller="Category" asp-action="Index">Categories</a>
+                <a asp-controller="Case" asp-action="Track">All Cases</a>
+            </nav>
+        }
+    </header>
+
+    <!-- Surface 1 Non-Dismissible Legal Disclaimer -->
+    <partial name="_DisclaimerBanner" />
+
+    <!-- Mobile Navigation Drawer -->
+    <div class="drawer-backdrop" id="drawer-backdrop"></div>
+    <aside class="drawer" id="drawer" aria-label="মোবাইল মেনু">
+        <div class="drawer-head">
+            <a class="brand" asp-controller="Home" asp-action="Index">
+                <span class="brand-name">মুক্ত আইন<small>MuktoAin</small></span>
+            </a>
+            <button class="icon-btn" type="button" data-close-drawer aria-label="মেনু বন্ধ করুন">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <nav>
+            <a asp-controller="Home" asp-action="Index"><i data-lucide="message-square"></i> আইনি সেবা ও চ্যাট</a>
+            <a asp-controller="Case" asp-action="Submit"><i data-lucide="edit-3"></i> সমস্যা জমা দিন (Intake)</a>
+            <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i> মামলা ট্র্যাকিং</a>
+            <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i> আইন খুঁজুন</a>
+            <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i> আইনি বিভাগসমূহ</a>
+            <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i> আইনজীবী কিউ</a>
+            <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i> অ্যাডমিন কনসোল</a>
+            <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i> পরিচিতি ও দাবিত্যাগ</a>
+            <hr class="divider" style="margin:8px 0" />
+            <a asp-controller="Account" asp-action="Login"><i data-lucide="log-in"></i> সাইন ইন</a>
+            <a asp-controller="Account" asp-action="Register"><i data-lucide="user-plus"></i> নতুন একাউন্ট নিবন্ধন</a>
+        </nav>
+        <div class="drawer-foot">
+            <div class="row spread">
+                <partial name="_LanguageToggle" />
+                <button class="icon-btn theme-toggle" type="button" aria-label="থিম পরিবর্তন"></button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Page Content -->
+    @RenderBody()
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="site-footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a class="brand" asp-controller="Home" asp-action="Index">
+                    <span class="brand-name">মুক্ত আইন<small>MuktoAin</small></span>
+                </a>
+                <p>বাংলাদেশের নাগরিকদের জন্য বিনামূল্যে AI-সহায়ক আইনি তথ্য — প্রতিটি দলিল যাচাইকৃত আইনজীবী দ্বারা পর্যালোচিত।</p>
+            </div>
+            <div>
+                <h4>মেনু / Navigate</h4>
+                <ul>
+                    <li><a asp-controller="Home" asp-action="Index">আইনি সেবা ও চ্যাট</a></li>
+                    <li><a asp-controller="Category" asp-action="Index">আইনি বিষয়সমূহ</a></li>
+                    <li><a asp-controller="Search" asp-action="Index">আইন অনুসন্ধান</a></li>
+                    <li><a asp-controller="Case" asp-action="Track">মামলা ট্র্যাকিং</a></li>
+                    <li><a asp-controller="Home" asp-action="About">আমাদের সম্পর্কে</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>আইনি / Legal</h4>
+                <ul>
+                    <li><a asp-controller="Home" asp-action="About" asp-fragment="disclaimer">পূর্ণাঙ্গ দাবিত্যাগ</a></li>
+                    <li><a asp-controller="Home" asp-action="About" asp-fragment="faq">সাধারণ জিজ্ঞাসা (FAQ)</a></li>
+                    <li><a asp-controller="Home" asp-action="About" asp-fragment="dataset">ডেটাসেট কৃতজ্ঞতা</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>ভূমিকা / Roles</h4>
+                <ul>
+                    <li><a asp-controller="Account" asp-action="Login">নাগরিক সাইন ইন</a></li>
+                    <li><a asp-controller="Account" asp-action="Register">নতুন নিবন্ধন</a></li>
+                    <li><a asp-controller="Lawyer" asp-action="Queue">আইনজীবী রিভিউ পোর্টাল</a></li>
+                    <li><a asp-controller="Admin" asp-action="Dashboard">অ্যাডমিন ওভারভিউ</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2026 মুক্ত আইন MuktoAin · AI-Augmented Legal Aid for Bangladesh · Academic Project · Not formal legal advice
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="~/assets/js/main.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
