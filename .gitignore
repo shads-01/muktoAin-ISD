@@ -508,3 +508,8 @@ wwwroot/generated-pdfs/
 # Temporary review notes
 TODOS.md
 
+# Frontend prototypes & UI design drafts
+frontend/
+frontend.zip
+UI.md
+UI_SPEC.md
