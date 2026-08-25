@@ -1,0 +1,19 @@
+@{
+    ViewData["Title"] = "পৃষ্ঠা পাওয়া যায়নি — 404";
+}
+
+<main class="container" id="main">
+    <div class="error-wrap">
+        <div class="error-code">404</div>
+        <h1 class="page-title">পৃষ্ঠাটি খুঁজে পাওয়া যায়নি</h1>
+        <p class="muted">The requested legal document or page does not exist or has been archived.</p>
+        <div class="row wrap" style="justify-content: center; gap: 10px; margin-top: 10px;">
+            <a class="btn btn-primary" asp-controller="Home" asp-action="Index">
+                <i data-lucide="home"></i> হোমে ফিরে যান
+            </a>
+            <a class="btn btn-outline" asp-controller="Search" asp-action="Index">
+                <i data-lucide="search"></i> আইন অনুসন্ধান করুন
+            </a>
+        </div>
+    </div>
+</main>

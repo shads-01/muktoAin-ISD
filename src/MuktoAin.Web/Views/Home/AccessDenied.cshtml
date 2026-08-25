@@ -1,0 +1,19 @@
+@{
+    ViewData["Title"] = "প্রবেশাধিকার সংরক্ষিত — 403";
+}
+
+<main class="container" id="main">
+    <div class="error-wrap">
+        <div class="error-code">403</div>
+        <h1 class="page-title">প্রবেশাধিকার সংরক্ষিত</h1>
+        <p class="muted">Your current role does not grant permission to access this administrative or lawyer area.</p>
+        <div class="row wrap" style="justify-content: center; gap: 10px; margin-top: 10px;">
+            <a class="btn btn-primary" asp-controller="Account" asp-action="Login">
+                <i data-lucide="log-in"></i> সাইন ইন করুন
+            </a>
+            <a class="btn btn-ghost" asp-controller="Home" asp-action="Index">
+                <i data-lucide="home"></i> হোমে ফিরুন
+            </a>
+        </div>
+    </div>
+</main>

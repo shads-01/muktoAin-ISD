@@ -1,0 +1,147 @@
+@model MuktoAin.Web.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "নিবন্ধন — Register";
+}
+
+<main id="main">
+    <div class="auth-split">
+        <!-- Side Branding Column (Desktop) -->
+        <div class="auth-side">
+            <span class="kicker"><i data-lucide="user-plus"></i> Join MuktoAin</span>
+            <h2>নাগরিক ও আইনজীবীদের মেলবন্ধন</h2>
+            <ul>
+                <li>
+                    <i data-lucide="user-check"></i>
+                    <span><b>নাগরিক হিসেবে:</b> আইনি সমস্যার তাৎক্ষণিক উত্তর জানুন এবং আবেদন দলিলের নির্ভুল খসড়া তৈরি করুন।</span>
+                </li>
+                <li>
+                    <i data-lucide="award"></i>
+                    <span><b>আইনজীবী হিসেবে:</b> বার নম্বর যাচাইকরণ শেষে প্রো-বোনো ও লিগ্যাল এইড খসড়া পর্যালোচনায় অবদান রাখুন।</span>
+                </li>
+                <li>
+                    <i data-lucide="shield-check"></i>
+                    <span><b>সম্পূর্ণ উন্মুক্ত ও নিরাপদ:</b> আধুনিক এনক্রিপশন ও গোপনীয়তা সুরক্ষার প্রতিশ্রুতি।</span>
+                </li>
+            </ul>
+            <div class="tiny muted" style="margin-top: 1rem;">
+                © 2026 মুক্ত আইন · Not formal legal advice
+            </div>
+        </div>
+
+        <!-- Form Column -->
+        <div class="auth-form-wrap">
+            <div class="auth-card card card-pad-lg">
+                <nav class="breadcrumbs" aria-label="Breadcrumb">
+                    <a asp-controller="Home" asp-action="Index">Home</a>
+                    <span class="sep">/</span>
+                    <span>নিবন্ধন</span>
+                </nav>
+
+                <div class="page-head" style="margin-bottom: 20px;">
+                    <span class="kicker"><i data-lucide="sparkles"></i> Get Started</span>
+                    <h1 class="page-title" style="font-size: 26px;">নতুন একাউন্ট তৈরি করুন</h1>
+                    <p class="page-sub">আইনি অধিকার জানতে বা আইনজীবী হিসেবে যুক্ত হতে তথ্য দিন</p>
+                </div>
+
+                <form method="post" asp-action="Register">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-warn" style="margin-bottom: 16px;"></div>
+
+                    <!-- Role Selector (Radio cards) -->
+                    <div class="field" style="margin-bottom: 16px;">
+                        <label>আপনার ভূমিকা নির্বাচন করুন / Select Role</label>
+                        <div class="role-cards">
+                            <label class="role-card">
+                                <input type="radio" asp-for="Role" value="Citizen" checked id="roleCitizen" />
+                                <div class="rc-ico"><i data-lucide="user"></i></div>
+                                <b>নাগরিক (Citizen)</b>
+                                <small>আইনি পরামর্শ ও সহায়তা</small>
+                            </label>
+                            <label class="role-card">
+                                <input type="radio" asp-for="Role" value="Lawyer" id="roleLawyer" />
+                                <div class="rc-ico"><i data-lucide="award"></i></div>
+                                <b>আইনজীবী (Lawyer)</b>
+                                <small>দলিল পর্যালোচনা ও যাচাই</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label asp-for="FullName">পূর্ণ নাম / Full Name</label>
+                        <input asp-for="FullName" class="input" placeholder="e.g., মোঃ রফিকুল ইসলাম" required />
+                        <span asp-validation-for="FullName" class="err"></span>
+                    </div>
+
+                    <div class="grid grid-2" style="gap: 12px;">
+                        <div class="field">
+                            <label asp-for="Email">ইমেইল / Email</label>
+                            <input asp-for="Email" class="input" type="email" placeholder="name@example.com" required autocomplete="username" />
+                            <span asp-validation-for="Email" class="err"></span>
+                        </div>
+                        <div class="field">
+                            <label asp-for="PhoneNumber">মোবাইল (ঐচ্ছিক) / Phone</label>
+                            <input asp-for="PhoneNumber" class="input" type="tel" placeholder="01712-XXXXXX" />
+                            <span asp-validation-for="PhoneNumber" class="err"></span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-2" style="gap: 12px;">
+                        <div class="field">
+                            <label asp-for="Password">পাসওয়ার্ড / Password</label>
+                            <input asp-for="Password" class="input" type="password" placeholder="কমপক্ষে ৬ অক্ষর" required autocomplete="new-password" />
+                            <span asp-validation-for="Password" class="err"></span>
+                        </div>
+                        <div class="field">
+                            <label asp-for="ConfirmPassword">নিশ্চিত করুন / Confirm</label>
+                            <input asp-for="ConfirmPassword" class="input" type="password" placeholder="পুনরায় পাসওয়ার্ড লিখুন" required autocomplete="new-password" />
+                            <span asp-validation-for="ConfirmPassword" class="err"></span>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label asp-for="PreferredLanguage">পছন্দের ভাষা / Language</label>
+                        <select asp-for="PreferredLanguage" class="input">
+                            <option value="bn">বাংলা (Bengali)</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+
+                    <!-- Lawyer Bar Registration Section (Conditional) -->
+                    <div id="lawyerBarSection" style="display: none; background: var(--surface-2); padding: 14px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 16px;">
+                        <div class="field" style="margin-bottom: 8px;">
+                            <label asp-for="BarRegistrationNumber">বার রেজিস্ট্রেশন সনদ নম্বর / Bar Reg. No</label>
+                            <input asp-for="BarRegistrationNumber" class="input" placeholder="e.g., DHA-1234 বা বার সনদ নম্বর" />
+                            <span asp-validation-for="BarRegistrationNumber" class="err"></span>
+                        </div>
+                        <p class="tiny muted" style="margin-bottom: 0;">
+                            আইনজীবী একাউন্টের ক্ষেত্রে অ্যাডমিন কর্তৃক বার নম্বর যাচাইয়ের পর রিভিউ কিউতে প্রবেশাধিকার সক্রিয় হবে।
+                        </p>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg btn-block" style="margin-top: 10px;">
+                        <i data-lucide="check-circle"></i> একাউন্ট তৈরি করুন / Register
+                    </button>
+                </form>
+
+                <hr class="divider" />
+
+                <div class="text-center" style="font-size: 14px; text-align: center;">
+                    ইতিমধ্যে একাউন্ট আছে? <a asp-controller="Account" asp-action="Login" style="font-weight: 700;">সাইন ইন করুন →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        function checkRole() {
+            var isLawyer = document.getElementById('roleLawyer').checked;
+            var lawyerSec = document.getElementById('lawyerBarSection');
+            if (lawyerSec) lawyerSec.style.display = isLawyer ? 'block' : 'none';
+        }
+        document.querySelectorAll('input[name="Role"]').forEach(function(r) {
+            r.addEventListener('change', checkRole);
+        });
+        checkRole();
+    </script>
+}

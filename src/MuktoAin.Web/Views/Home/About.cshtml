@@ -1,0 +1,151 @@
+@{
+    ViewData["Title"] = "পরিচিতি — About MuktoAin";
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Home</a>
+        <span class="sep">/</span>
+        <span>পরিচিতি ও দাবিত্যাগ</span>
+    </nav>
+
+    <!-- Mission -->
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="scale" aria-hidden="true"></i> Mission & Vision</span>
+        <h1 class="page-title">মুক্ত আইন কী এবং কেন?</h1>
+        <p class="page-sub">বাংলাদেশের নাগরিকদের জন্য AI-সহায়ক আইনি তথ্য প্ল্যাটফর্ম — সহজ ভাষায় অধিকার, আইনজীবী-যাচাইকৃত দলিল।</p>
+    </div>
+
+    <div class="stack" style="max-width: 860px; gap: 14px;">
+        <p style="font-size: 16.5px; line-height: 1.8;">
+            <b>মুক্ত আইন (MuktoAin)</b> একটি উন্মুক্ত ও বিনামূল্যের AI-সহায়ক আইনি তথ্যসেবা প্ল্যাটফর্ম। আপনি সাধারণ বাংলা, English বা Banglish-এ নিজের সমস্যার কথা জানালে আমরা সরকারি সংকলিত আইনসমূহ (Bangladesh Code) থেকে তাৎক্ষণিকভাবে প্রাসঙ্গিক ধারা খুঁজে এনে আপনার অধিকার সহজ ভাষায় ব্যাখ্যা করি। একই সাথে থানা, আদালত বা কর্তৃপক্ষের নিকট জমা দেওয়ার উপযুক্ত আবেদনপত্র (জিডি, আরটিআই, শ্রম অভিযোগ) স্বয়ংক্রিয়ভাবে খসড়া তৈরি করি।
+        </p>
+        <p style="font-size: 16.5px; line-height: 1.8;">
+            <b>মানবীয় সুরক্ষা গেট (Human-in-the-Loop Safeguard):</b> AI কোনো অবস্থাতেই সরাসরি চূড়ান্ত আইনি সিদ্ধান্ত নিতে পারে না। তাই মুক্ত আইনে প্রস্তুতকৃত প্রতিটি খসড়া বাংলাদেশ বার কাউন্সিলে নিবন্ধিত এবং আমাদের অ্যাডমিন কর্তৃক যাচাইকৃত একজন অভিজ্ঞ আইনজীবী পুঙ্খানুপুঙ্খভাবে পর্যালোচনা ও অনুমোদন করার পরেই কেবল নাগরিকের জন্য চূড়ান্ত PDF ডাউনলোড উন্মুক্ত করা হয়।
+        </p>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- How it works -->
+    <h2 class="section-h"><i data-lucide="workflow"></i> কার্যপ্রণালী · How It Works</h2>
+    <div class="grid grid-3">
+        <div class="card">
+            <div class="row spread" style="margin-bottom: 12px;">
+                <span class="step-num">১</span>
+                <span class="cat-icon"><i data-lucide="message-circle"></i></span>
+            </div>
+            <b>সমস্যা বলুন</b>
+            <span class="cat-en">Describe Problem</span>
+            <p class="muted" style="margin-top: 8px;">
+                চ্যাটে বা ফর্মে সাধারণ ভাষায় আপনার অভিযোগ বা আইনি ঘটনাটি লিখুন — চাইলে সম্পূর্ণ বেনামে (Anonymous) ট্র্যাকিং কোড দিয়ে জমা দিতে পারেন।
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="row spread" style="margin-bottom: 12px;">
+                <span class="step-num">২</span>
+                <span class="cat-icon"><i data-lucide="book-open"></i></span>
+            </div>
+            <b>আইনি অধিকার জানুন</b>
+            <span class="cat-en">Know Your Rights</span>
+            <p class="muted" style="margin-top: 8px;">
+                ভেক্টর সার্চের মাধ্যমে সুনির্দিষ্ট ধারা ও উপধারা উদ্ধার করে আপনার অধিকার, করণীয় ও আইনি সীমাবদ্ধতা সহজ বাংলায় তুলে ধরা হয়।
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="row spread" style="margin-bottom: 12px;">
+                <span class="step-num">৩</span>
+                <span class="cat-icon"><i data-lucide="file-check-2"></i></span>
+            </div>
+            <b>যাচাইকৃত দলিল সংগ্রহ</b>
+            <span class="cat-en">Lawyer Review Gate</span>
+            <p class="muted" style="margin-top: 8px;">
+                AI আবেদনের আনুষ্ঠানিক খসড়া তৈরি করে; আইনজীবী ধারা মিলিয়ে সত্যায়ন ও সংশোধন করার পর নিখুঁত অফিসিয়াল ফরম্যাটে PDF ডাউনলোড করুন।
+            </p>
+        </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- FAQ -->
+    <section id="faq" style="scroll-margin-top: 130px; margin-bottom: 3rem;">
+        <h2 class="section-h"><i data-lucide="help-circle"></i> সাধারণ জিজ্ঞাসা (FAQ)</h2>
+
+        <details class="acc" open>
+            <summary>মুক্ত আইন কি সাধারণ মানুষের জন্য সম্পূর্ণ বিনামূল্যে?<i data-lucide="chevron-down" class="chev"></i></summary>
+            <div class="acc-body">
+                হ্যাঁ, মুক্ত আইন সম্পূর্ণ অবাণিজ্যিক ও বিনামূল্যে ব্যবহারযোগ্য একটি একাডেমিক উদ্ভাবন। নাগরিক বা আইনজীবী কারো কাছ থেকেই কোনো প্রকার সাবস্ক্রিপশন ফি বা আর্থিক চার্জ নেওয়া হয় না।
+                <div class="tiny" style="margin-top:6px;"><em>MuktoAin is 100% free and open for academic & public legal empowerment. No ads or subscription fees.</em></div>
+            </div>
+        </details>
+
+        <details class="acc">
+            <summary>প্ল্যাটফর্মের প্রদত্ত উত্তর কি আইনি পরামর্শ হিসেবে আদালতে উপস্থাপন করা যাবে?<i data-lucide="chevron-down" class="chev"></i></summary>
+            <div class="acc-body">
+                না। মুক্ত আইন কেবল সাধারণ আইনি তথ্য ও সংশ্লিষ্ট ধারার সন্ধান দেয়। এটি কোনো আইন ফার্ম বা আনুষ্ঠানিক পরামর্শদাতা নয়। যেকোনো আদালতের মামলা পরিচালনার পূর্বে অবশ্যই সরাসরি একজন অভিজ্ঞ আইনজীবীর পরামর্শ নেওয়া আবশ্যক।
+                <div class="tiny" style="margin-top:6px;"><em>Provides general legal informational guidance, not formal advocate representation.</em></div>
+            </div>
+        </details>
+
+        <details class="acc">
+            <summary>খসড়া দলিলগুলো কারা এবং কীভাবে পর্যালোচনা করেন?<i data-lucide="chevron-down" class="chev"></i></summary>
+            <div class="acc-body">
+                বাংলাদেশ বার কাউন্সিলে নিবন্ধিত যেসকল আইনজীবী আমাদের পোর্টালে তাদের বার সনদ যাচাই করিয়েছেন, তারা এই খসড়াগুলো পর্যালোচনা করেন। আইনের ধারা ঠিক আছে কিনা, ঘটনার বিবরণ পরিষ্কার কিনা তা দেখে আইনজীবী খসড়া অনুমোদন বা প্রয়োজনীয় সম্পাদনা করেন।
+            </div>
+        </details>
+
+        <details class="acc">
+            <summary>আমার গোপনীয়তা ও ব্যক্তিগত তথ্যের নিরাপত্তা কীভাবে নিশ্চিত হয়?<i data-lucide="chevron-down" class="chev"></i></summary>
+            <div class="acc-body">
+                আপনি নাম, মোবাইল বা পরিচয় গোপন রেখে বেনামে (Anonymous) মামলা জমা দিতে পারেন। প্রতিটি মামলার জন্য ইউনিক ক্রিপ্টোগ্রাফিক ট্র্যাকিং কোড দেওয়া হয় যার মাধ্যমে কেবল আপনি ফলাফল দেখতে পারবেন।
+            </div>
+        </details>
+
+        <details class="acc">
+            <summary>বর্তমানে কোন কোন আইন অন্তর্ভুক্ত রয়েছে?<i data-lucide="chevron-down" class="chev"></i></summary>
+            <div class="acc-body">
+                বাংলাদেশ কোড (Bangladesh Code) থেকে শ্রম আইন ২০০৬, দণ্ডবিধি ১৮৬০, তথ্য অধিকার আইন ২০০৯, ভোক্তা অধিকার সংরক্ষণ আইন ২০০৯-সহ গুরুত্বপূর্ণ ২৪টি পূর্ণাঙ্গ আইন এবং ৩,৮০০+ ধারা ইনডেক্স করা রয়েছে।
+            </div>
+        </details>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- Full disclaimer · FR-11 canonical long-form -->
+    <section id="disclaimer" style="scroll-margin-top: 130px; margin-bottom: 3rem;">
+        <h2 class="section-h"><i data-lucide="shield-alert"></i> পূর্ণাঙ্গ আইনি দাবিত্যাগ <span class="cat-en" style="margin:0">· Full Disclaimer (FR-11)</span></h2>
+        <div class="alert alert-warn" style="flex-direction: column; padding: 22px 24px; gap: 14px;">
+            <div class="row" style="align-items: flex-start; gap: 12px;">
+                <i data-lucide="alert-triangle" style="color: var(--warn-text); margin-top:3px;"></i>
+                <p style="line-height: 1.85; margin:0;">
+                    <b>আইনি বাধ্যবাধকতা ও সীমাবদ্ধতা:</b> মুক্ত আইন একটি শিক্ষামূলক প্রযুক্তি প্রকল্প, যা নাগরিকদের সাধারণ আইনি সচেতনতা ও তথ্যসেবা প্রদান করে — এটি কোনো আইন ফার্ম, অ্যাডভোকেট চেম্বার বা সরকারি আইনসহায়তা সংস্থা নয়। এখানে প্রাপ্ত যেকোনো ব্যাখ্যা, বিশ্লেষণ বা খসড়া দলিল সাধারণ তথ্য মাত্র এবং কোনো অবস্থাতেই তা আইনজীবীর সরাসরি পরামর্শের বিকল্প নয়। আপনার নির্দিষ্ট পরিস্থিতির ভিত্তিতে সিদ্ধান্ত নেওয়ার আগে বাংলাদেশ বার কাউন্সিলে নিবন্ধিত একজন আইনজীবীর সঙ্গে অবশ্যই পরামর্শ করুন। সংকলনের তথ্য সম্পূর্ণ নির্ভুল বা হালনাগাদ থাকার নিশ্চয়তা দেওয়া যায় না; আইন সংশোধনের ফলে সৃষ্ট যেকোনো অসঙ্গতির জন্য প্রকল্পটি দায়বদ্ধ থাকবে না।
+                </p>
+            </div>
+            <div class="row" style="align-items: flex-start; gap: 12px; border-top: 1px dashed var(--warn-border); padding-top: 12px;">
+                <i data-lucide="alert-circle" style="color: var(--warn-text); margin-top:3px;"></i>
+                <p style="line-height: 1.85; margin:0; font-size: 14px;">
+                    <em><b>Academic Project Disclaimer:</b> MuktoAin is an academic technology project providing general legal information about the laws of Bangladesh. It is not a law firm, chamber, or legal-aid authority, and nothing on this platform constitutes legal advice or creates an attorney–client relationship. Although every generated document is reviewed by a Bar-registered lawyer before release, statutes change and interpretations vary, so accuracy or completeness cannot be guaranteed. Always consult a qualified advocate of the Bangladesh Bar Council before acting on any information, explanation, or draft obtained through this service.</em>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <hr class="divider" />
+
+    <!-- Dataset attribution -->
+    <section id="dataset" style="scroll-margin-top: 130px; margin-bottom: 2rem;">
+        <h2 class="section-h"><i data-lucide="database"></i> ডেটাসেট ও প্রযুক্তি কৃতজ্ঞতা</h2>
+        <div class="card card-pad-lg">
+            <p><b>আইনি কর্পাস:</b> Bangladesh Code dataset — গণপ্রজাতন্ত্রী বাংলাদেশ সরকারের আইন, বিচার ও সংসদ বিষয়ক মন্ত্রণালয় কর্তৃক প্রকাশিত সরকারি সংকলন থেকে সংগৃহীত।</p>
+            <p class="muted" style="margin-top: 8px;"><b>উৎস ও লাইসেন্স:</b> সরকারি গেজেটে প্রকাশিত সংকলন জনস্বার্থে উন্মুক্ত। মুক্ত আইনে এর ব্যবহার সম্পূর্ণ শিক্ষামূলক ও অলাভজনক। প্রতিটি ধারার সাথে মূল আইন ও ধারার নম্বর অক্ষুণ্ন রাখা হয়েছে।</p>
+            <p class="mono tiny" style="margin-top: 12px; word-break: break-all;">কর্পাস হ্যাশ: SHA-256: b7e23ec29af22b0b4e41da31e868d57f4c4a0f31d3c9265a2a2e6e5f9f86d081</p>
+            <hr class="divider" style="margin: 16px 0;" />
+            <div class="row wrap spread">
+                <span class="tiny"><b>প্রযুক্তি স্ট্যাক:</b> ASP.NET Core (.NET 8) · SQL Server FTS · Qdrant Vector Store · Google Gemini AI · QuestPDF</span>
+                <span class="tiny muted">সংস্করণ ২.০ · Parchment Sepia</span>
+            </div>
+        </div>
+    </section>
+</main>

@@ -1,0 +1,74 @@
+@model MuktoAin.Web.ViewModels.CaseTrackViewModel
+@{
+    ViewData["Title"] = "মামলা ট্র্যাকিং — My Cases";
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Home</a>
+        <span class="sep">/</span>
+        <span>মামলা ট্র্যাকিং</span>
+    </nav>
+
+    <div class="row spread wrap page-head" style="align-items: center; gap: 14px;">
+        <div>
+            <span class="kicker"><i data-lucide="folder-clock"></i> Citizen Dashboard · FR-8</span>
+            <h1 class="page-title">আপনার জমাকৃত মামলাসমূহ</h1>
+            <p class="page-sub">আপনার সকল আইনি সমস্যা, ধারা বিশ্লেষণ ও খসড়া দলিলের অগ্রগতি পর্যবেক্ষণ করুন</p>
+        </div>
+        <a class="btn btn-primary" asp-controller="Case" asp-action="Submit">
+            <i data-lucide="plus-circle"></i> নতুন সমস্যা জমা দিন
+        </a>
+    </div>
+
+    <!-- Filter chips -->
+    <div class="row wrap" style="margin-bottom: 16px; gap: 8px;">
+        <span class="tiny muted" style="margin-right: 4px;">ফিল্টার:</span>
+        <div class="chip-row" data-chip-group>
+            <button type="button" class="chip chip-sm active">সকল মামলা (@Model.Cases.Count)</button>
+            <button type="button" class="chip chip-sm">পর্যালোচনাধীন (Under Review)</button>
+            <button type="button" class="chip chip-sm">অনুমোদিত (Finalized)</button>
+            <button type="button" class="chip chip-sm">দাখিলকৃত (Submitted)</button>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 3rem;">
+        <div class="table-wrap">
+            <div class="table-scroll">
+                <table class="min-w-table">
+                    <thead>
+                        <tr>
+                            <th>ট্র্যাকিং কোড</th>
+                            <th>শিরোনাম</th>
+                            <th>আইনি বিভাগ</th>
+                            <th>দাখিলের তারিখ</th>
+                            <th>বর্তমান স্ট্যাটাস</th>
+                            <th style="text-align: right;">পদক্ষেপ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.Cases)
+                        {
+                            <tr>
+                                <td class="mono"><b>@c.TrackingCode</b></td>
+                                <td>
+                                    <b>@c.Title</b>
+                                </td>
+                                <td>@c.CategoryName</td>
+                                <td class="tiny muted">@c.CreatedAt.ToString("dd MMM yyyy")</td>
+                                <td>
+                                    <span class="badge badge-@c.Status.ToLower()">@c.Status</span>
+                                </td>
+                                <td style="text-align: right;">
+                                    <a class="btn btn-outline btn-sm" asp-controller="Case" asp-action="Result" asp-route-id="@c.CaseId">
+                                        ফলাফল দেখুন →
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>

@@ -1,0 +1,155 @@
+@model MuktoAin.Web.ViewModels.CaseResultViewModel
+@{
+    ViewData["Title"] = $"মামলা #{Model.CaseId} ফলাফল — MuktoAin";
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Home</a>
+        <span class="sep">/</span>
+        <a asp-controller="Case" asp-action="Track">মামলাসমূহ</a>
+        <span class="sep">/</span>
+        <span>মামলা #@Model.CaseId</span>
+    </nav>
+
+    <!-- Page Header & Status -->
+    <div class="row spread wrap page-head" style="align-items: flex-start; gap: 14px;">
+        <div>
+            <span class="kicker"><i data-lucide="folder-check"></i> Analysis & Draft · Case #@Model.CaseId</span>
+            <h1 class="page-title">@Model.Title</h1>
+            <p class="page-sub">
+                বিভাগ: <b>@Model.CategoryName</b> · জেলা: <b>@Model.DistrictName</b> · দাখিলের তারিখ: <b>@Model.CreatedAt.ToString("dd MMMM, yyyy")</b>
+            </p>
+        </div>
+        <div class="row" style="gap: 10px;">
+            <span class="badge badge-@Model.Status.ToLower()">
+                স্ট্যাটাস: @Model.Status
+            </span>
+            <button class="btn btn-outline btn-sm" type="button" data-copy="https://muktoain.bd/Case/Result/@Model.CaseId" data-copy-msg="মামলার লিংক কপি হয়েছে ✓">
+                <i data-lucide="share-2"></i> শেয়ার
+            </button>
+        </div>
+    </div>
+
+    <!-- Case Progress Timeline -->
+    <div class="card" style="margin-bottom: 24px; padding: 18px 24px;">
+        <div class="timeline">
+            <div class="t-step done">
+                <div class="dot"><i data-lucide="check"></i></div>
+                <span>দাখিল সম্পন্ন</span>
+                <small>@Model.CreatedAt.ToString("dd MMM")</small>
+            </div>
+            <div class="t-step done">
+                <div class="dot"><i data-lucide="check"></i></div>
+                <span>AI অধিকার বিশ্লেষণ</span>
+                <small>সম্পন্ন</small>
+            </div>
+            <div class="t-step current">
+                <div class="dot">৩</div>
+                <span>আইনজীবী পর্যালোচনা</span>
+                <small>প্রক্রিয়াধীন</small>
+            </div>
+            <div class="t-step">
+                <div class="dot">৪</div>
+                <span>চূড়ান্ত PDF</span>
+                <small>লকড</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rights Explanation Section -->
+    <div class="card card-pad-lg" style="margin-bottom: 24px;">
+        <div class="row spread wrap" style="margin-bottom: 12px;">
+            <h2 class="section-h" style="margin: 0;"><i data-lucide="scale"></i> আপনার আইনি অধিকার / Your Rights</h2>
+            <button class="read-aloud" type="button" onclick="showToast('পাঠ করে শোনানো হচ্ছে (TTS ডেমো)...', 'info')">
+                <i data-lucide="volume-2"></i> পাঠ শুনুন
+            </button>
+        </div>
+        <div style="font-size: 16.5px; line-height: 1.85;">
+            @Html.Raw(Model.RightsExplanation)
+        </div>
+    </div>
+
+    <!-- Cited Legal Provisions -->
+    <div class="card card-pad-lg" style="margin-bottom: 24px;">
+        <h2 class="section-h" style="margin-top: 0;"><i data-lucide="book-open"></i> সংশ্লিষ্ট আইনের ধারা / Cited Legal Provisions (FR-7)</h2>
+        <div class="stack" style="gap: 14px;">
+            @foreach (var sec in Model.CitedSections)
+            {
+                <div style="background: var(--surface-2); padding: 16px 18px; border-radius: var(--radius); border: 1px solid var(--border);">
+                    <div class="row spread wrap" style="margin-bottom: 8px;">
+                        <b style="font-size: 16px; color: var(--ink);">@sec.ActTitle</b>
+                        <span class="citation-chip">সাদৃশ্য স্কোর: @sec.RelevanceScore</span>
+                    </div>
+                    <div class="serif" style="font-weight: 700; color: var(--gold); margin-bottom: 6px; font-size: 15px;">
+                        <i data-lucide="bookmark"></i> @sec.SectionNumber
+                    </div>
+                    <p class="muted" style="margin-bottom: 0; line-height: 1.75; font-size: 14.5px;">@sec.SectionText</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Generated Document Preview inside Parchment Paper Sheet -->
+    @if (!string.IsNullOrEmpty(Model.DocumentContent))
+    {
+        <div class="card card-pad-lg" style="margin-bottom: 3rem;">
+            <div class="row spread wrap" style="margin-bottom: 18px;">
+                <div>
+                    <span class="kicker"><i data-lucide="file-text"></i> Draft Document</span>
+                    <h2 class="section-h" style="margin: 0;">প্রস্তুতকৃত আইনি খসড়া দলিল</h2>
+                </div>
+                <span class="badge badge-review">পর্যালোচনাধীন (Under Review)</span>
+            </div>
+
+            <!-- Vintage Parchment Document Sheet -->
+            <div class="paper-sheet" style="margin-bottom: 20px;">
+                @if (!Model.CanDownloadPdf)
+                {
+                    <div class="paper-watermark" aria-hidden="true">
+                        <span>খসড়া · DRAFT</span>
+                    </div>
+                }
+
+                <h2>অভিযোগ পত্র / আবেদনপত্র</h2>
+                <div class="doc-meta">
+                    নথি নং: MKT-DOC-@Model.DocumentId · তারিখ: @DateTime.UtcNow.ToString("dd MMMM, yyyy") · জেলা: @Model.DistrictName
+                </div>
+
+                <div style="white-space: pre-wrap; font-family: var(--font-doc); line-height: 2; font-size: 15px;">@Model.DocumentContent</div>
+
+                <!-- Surface 3 Disclaimer Stamp -->
+                <div class="doc-stamp">
+                    <b>⚠️ আইনি সতর্কবার্তা (Surface 3 Mandatory Disclaimer):</b>
+                    এই দলিলটি মুক্ত আইন প্ল্যাটফর্মের কৃত্রিম বুদ্ধিমত্তা (AI) দ্বারা প্রস্তুতকৃত প্রাথমিক খসড়া। বাংলাদেশ বার কাউন্সিলের সনদপ্রাপ্ত একজন আইনজীবী কর্তৃক ধারা যাচাই ও চূড়ান্ত অনুমোদনের পূর্বে এটি আদালতে বা সরকারি দপ্তরে কার্যকর প্রমাণ হিসেবে গ্রহণযোগ্য নয়।
+                </div>
+            </div>
+
+            <!-- Lawyer Review Gate Alert -->
+            <div class="alert alert-warn" style="align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                <div class="row" style="gap: 10px; flex: 1; min-width: 260px;">
+                    <i data-lucide="shield-alert" style="color: var(--warn-text);"></i>
+                    <div>
+                        <b>আইনজীবী পর্যালোচনা সুরক্ষা (Mandatory Review Gate · FR-14):</b>
+                        <div class="tiny" style="color: inherit; opacity: 0.9;">
+                            আইনজীবী এই খসড়াটি আইনের ধারার সাথে মিলিয়ে সত্যায়িত করার পর নিরাপদ অফিশিয়াল PDF ডাউনলোড বাটন স্বয়ংক্রিয়ভাবে সক্রিয় হবে।
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.CanDownloadPdf)
+                {
+                    <a class="btn btn-primary" href="#">
+                        <i data-lucide="download"></i> অফিসিয়াল PDF ডাউনলোড
+                    </a>
+                }
+                else
+                {
+                    <button class="btn btn-outline" disabled style="opacity: 0.7; cursor: not-allowed;" title="আইনজীবী অনুমোদনের অপেক্ষায়">
+                        <i data-lucide="lock"></i> PDF ডাউনলোড লক রয়েছে
+                    </button>
+                }
+            </div>
+        </div>
+    }
+</main>
