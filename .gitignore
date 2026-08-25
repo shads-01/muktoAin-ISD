@@ -505,3 +505,15 @@ data/*.tar.gz
 wwwroot/generated-pdfs/
 *.pdf
 
+# Client-side vendor libraries restored via LibMan (see src/MuktoAin.Web/libman.json)
+# Run 'libman restore' after cloning to regenerate this folder.
+src/MuktoAin.Web/wwwroot/lib/
+
+# Temporary review notes
+TODOS.md
+
+# Frontend prototypes & UI design drafts
+frontend/
+frontend.zip
+UI.md
+UI_SPEC.md

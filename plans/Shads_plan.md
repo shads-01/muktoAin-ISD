@@ -187,6 +187,7 @@ Once Tultul's schema PR is merged and scripts executed in SSMS:
    - **Option A**: Use ASP.NET Identity's built-in `IdentityUser` as a base class for `User.cs`. Simpler, but adds Identity columns Tultul didn't design.
    - **Option B**: Map Identity onto Tultul's existing `User` entity using a custom `IUserStore<User>`. Cleaner schema, more code.
    - **Recommendation**: Option A — inherit `IdentityUser<int>` in the `User` entity. Coordinate with Tultul to add `: IdentityUser<int>` to `User.cs` before his PR merges. The extra Identity columns are harmless and save 200+ lines of custom store code.
+   - **Documented exception**: this adds `Microsoft.Extensions.Identity.Stores` as a NuGet dependency in `MuktoAin.Domain`, which contradicts the AGENTS.md rule "Domain: zero dependencies on external libraries." We accept this knowingly (pragmatism > purity for a student project). **Update AGENTS.md §3.1 in the same PR** to record the exception, so the written rule matches reality. Revisit only if Domain grows more dependencies.
 3. Configure Identity in `Program.cs` (Tultul owns this file — either he adds the Identity registration or you add it in your PR):
    ```csharp
    builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
@@ -269,25 +270,34 @@ Once Tultul's schema PR is merged and scripts executed in SSMS:
                uriWithKey.Query = $"key={GetCurrentKey()}";
                request.RequestUri = uriWithKey.Uri;
    
-               var response = await _httpClient.SendAsync(request, ct);
-   
-               if ((int)response.StatusCode == 429)   // RESOURCE_EXHAUSTED
-               {
-                   RotateKey();
-                   attempts++;
-                   await Task.Delay(200, ct);  // brief pause before retry
-                   // Re-clone the request (HttpRequestMessage can't be re-sent)
-                   request = CloneRequest(request);
-                   continue;
-               }
-   
-               return response;   // success or non-429 error — caller handles
-           }
-           throw new Exception("All Gemini API keys exhausted. Wait for quota reset.");
-       }
-   }
-   ```
-   - ponytail: The `CloneRequest` helper is necessary because `HttpRequestMessage` is single-use. 5 lines. Don't abstract it. Ceiling: in-process round-robin, no persistent key-state across restarts; upgrade path: Redis-backed key index so multiple app instances share rotation state.
+                var response = await _httpClient.SendAsync(request, ct);
+    
+                if ((int)response.StatusCode == 429)   // RESOURCE_EXHAUSTED
+                {
+                    RotateKey();
+                    attempts++;
+                    await Task.Delay(200, ct);  // brief pause before retry
+                    // Re-clone the request (HttpRequestMessage can't be re-sent)
+                    request = CloneRequest(request);
+                    continue;
+                }
+    
+                return response;   // success or non-429 error — caller handles
+            }
+            throw new Exception("All Gemini API keys exhausted. Wait for quota reset.");
+        }
+    }
+    ```
+    - The `CloneRequest` helper is necessary because `HttpRequestMessage` is single-use. 5 lines. Don't abstract it. Ceiling: in-process round-robin, no persistent key-state across restarts; upgrade path: Redis-backed key index so multiple app instances share rotation state.
+    - **Query-param rule**: when attaching the key, PRESERVE any existing query parameters and append `key` — do not overwrite the whole querystring:
+      ```csharp
+      var qb = new UriBuilder(request.RequestUri!);
+      var query = $"key={Uri.EscapeDataString(GetCurrentKey())}";
+      qb.Query = string.IsNullOrEmpty(qb.Query.TrimStart('?'))
+          ? query
+          : $"{qb.Query.TrimStart('?')}&{query}";
+      request.RequestUri = qb.Uri;
+      ```
 
 5. **Polly for transient errors** (network timeouts, 5xx — NOT 429, which is handled by rotation):
    - **Option A**: Polly v7 extension on `IHttpClientBuilder` — `AddTransientHttpErrorPolicy()`.
@@ -368,6 +378,10 @@ This is the heaviest compute task in the project. It reads every `ActSectionChun
    }
    ```
 2. This test validates the entire CP1 pipeline: data imported → chunks created → embedded → Qdrant indexed → retrieval works.
+3. Additional required tests (from eng review):
+   - `DisclaimerInjector` unit test: appends the correct language disclaimer exactly once, never mutates original text.
+   - `EncryptionService` roundtrip test: encrypt→decrypt returns original for Bangla + English strings; ciphertext ≠ plaintext.
+   - Key-exhaustion behavior test: all keys return 429 → exception surfaces a clear user-facing error message (not a raw stack trace).
 
 ---
 
@@ -436,11 +450,12 @@ This is the heaviest compute task in the project. It reads every `ActSectionChun
    ```
    1. Select the right PromptTemplate based on request type (rights explanation vs drafting)
    2. Substitute {problem}, {language}, {disclaimer}
-   3. Build {context} from the retrieved sections:
-      - For each section: "Act: {ActTitle}, Section {SectionNumber}: {SectionText}"
-      - Truncate if total context exceeds model context window (~100K tokens for Flash, so this won't be a problem for 5-8 sections)
-   4. Optionally inject few-shot examples (CP3 task)
-   5. Return assembled prompt
+3. Build {context} from the retrieved sections:
+   - For each section: "Act: {ActTitle}, Section {SectionNumber}: {SectionText}"
+   - Truncate if total context exceeds model context window (~100K tokens for Flash, so this won't be a problem for 5-8 sections)
+4. Retrieve matching `SCENARIO_MAPPING` rows for the query keywords and inject them as boost hints (design.md §3 step 5 requires this; Tultul seeds the data, admin manages it via FR-18 — this step is where it is actually CONSUMED). Query via `IScenarioMappingRepository.SearchByKeywordAsync()` (add to Tultul's repo interface batch).
+5. Optionally inject few-shot examples (CP3 task)
+6. Return assembled prompt
    ```
    - ponytail: String interpolation. Don't build a template engine. Ceiling: string.Replace placeholders; upgrade path: Scriban or Liquid templates if prompts get complex.
 
@@ -454,6 +469,12 @@ This is the central coordinator. It receives a citizen's request and orchestrate
 2. Main method: `Task<AiResponse> ProcessCaseAsync(Case case, AiRequestType requestType)`.
 3. Pipeline:
    ```
+   0. CACHE CHECK (eng review round 2): for RightsExplanation requests, query AI_LOG
+      for an existing RightsExplanation row for this case. If found, return the stored
+      response (with citations from CASE_ACT_REFERENCE) instead of calling Gemini.
+      Rationale: regenerating per page view burns free-tier quota, returns
+      nondeterministic text inconsistent with the stored citations, and adds LLM
+      latency for mobile users. Regenerate ONLY when no log row exists.
    1. Call RagContextBuilder.RetrieveContextAsync(case.Description, topK: 8)
       → Returns list of retrieved ActSection chunks with relevance scores
    2. Call PromptAssembler.AssemblePrompt(case, retrievedSections, requestType)
@@ -520,7 +541,11 @@ The NFR requires field-level encryption for "sensitive citizen PII in cases." Th
    var decryptedTitle = _encryptionService.Decrypt(c.Title);
    var decryptedDesc = _encryptionService.Decrypt(c.Description);
    ```
-3. **Decision**: Either Shads adds `IEncryptionService` injection to Arpita's `CaseService`, or Arpita adds it when she builds the service. Coordinate — don't duplicate.
+3. **Encryption scope (eng review round 2)** — encrypting the CASE columns alone does NOT satisfy the PII NFR, because `Case.Description` plaintext flows to three other places:
+   - **Embedding call**: decrypt BEFORE `RagContextBuilder`/embedding (Gemini must see plaintext; encryption is at-rest only).
+   - **Document templates**: templates render decrypted text — decrypt in the read path before `DocumentGenerator`.
+   - **AI_LOG.PromptText**: logging the full prompt persists the citizen's description as plaintext in a second table, defeating field-level encryption. Log a REDACTED prompt instead: replace the problem-description block with `[REDACTED: case description, N chars]`, keep the statutory context + template skeleton for debugging. Full fidelity stays ONLY in the encrypted CASE columns.
+4. **Decision**: Shads adds `IEncryptionService` injection to Arpita's `CaseService`, or Arpita adds it when she builds the service. Coordinate — don't duplicate.
    - ponytail: Encrypt on write, decrypt on read. Two calls each. Don't build a transparent encryption layer or EF value converters. Ceiling: manual encrypt/decrypt in CaseService; upgrade path: EF Core value converters for automatic transparent encryption.
 
 ---
@@ -612,8 +637,45 @@ jobs:
           dotnet-version: '8.0.x'
       - run: dotnet restore src/MuktoAin.sln
       - run: dotnet build src/MuktoAin.sln --no-restore
-      - run: dotnet test tests/ --no-build --verbosity normal
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      # Unit tests only — no SQL Server / Qdrant / Gemini needed.
+      # InMemory-provider tests CANNOT cover FromSqlRaw methods (they throw);
+      # those live in the integration job below.
+      - run: dotnet test tests/MuktoAin.UnitTests/ --verbosity normal
+  integration-tests:
+    runs-on: windows-latest   # LocalDB-style SQL available via service container below
+    needs: build
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          SA_PASSWORD: YourStrong!Passw0rd
+          ACCEPT_EULA: Y
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'YourStrong!Passw0rd' -Q 'SELECT 1' || exit 1"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      ConnectionStrings__DefaultConnection: "Server=localhost,1433;Database=MuktoAin_Test;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True"
+      Qdrant__Endpoint: ${{ secrets.QDRANT_ENDPOINT }}
+      Qdrant__ApiKey: ${{ secrets.QDRANT_API_KEY }}
+      Gemini__ApiKeys__0: ${{ secrets.GEMINI_API_KEY_1 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet test tests/MuktoAin.IntegrationTests/ --verbosity normal
 ```
+- **Note (eng review round 2)**: a bare `ubuntu-latest` + `dotnet test` would be red by construction — no SQL Server on the runner, and the RAG smoke/QA benchmark tests need real Qdrant + Gemini credentials. Integration job runs only when repo secrets are configured; until then it stays as the documented shape. FTS features need the container image WITH full-text (`mcr.microsoft.com/mssql/server` does NOT include FTS — for the CI FTS test, use the `mssql-full` community image or mark those tests `[Trait("Category","RequiresFts")]` to skip in CI).
 
 - **Option A**: CI only (build + test on PR). Deploy manually.
 - **Option B**: CI + CD to Azure App Service (auto-deploy on merge to main).
@@ -784,3 +846,31 @@ While waiting for Tultul's entities + SSMS SQL schema (the critical path):
 5. Set up Google AI Studio, Qdrant, share keys with team
 
 Once Tultul's PR lands → execute the SQL scripts in SSMS, wire Identity, start the embedding batch job, build the integration test.
+
+## GSTACK REVIEW REPORT
+
+| Run | Scope | Status |
+|---|---|---|
+| Eng review r1 | Architecture A1-A6 · Code C1-C7 · Tests · Perf P1-P2 | complete — all findings applied in-file |
+| Outside voice r2 | Claude subagent (Codex absent) — 8 new findings O1-O8 | complete — all applied in-file |
+
+| Finding | Fix location |
+|---|---|
+| LocalDB lacks FTS; connection strings | _Initial_setup_plan.md (Express Advanced mandated) |
+| FTS indexed nonexistent ActTitle; naming rules | _Initial_setup + Tultul Step 1.6 (SectionText only, bracketed names) |
+| Clean Arch violations (DI concretes, DocumentGenerator layer) | Tultul RagContextBuilder → Domain interfaces; Arpita templates → Application/Documents |
+| Identity-in-Domain exception (A4) | Shads Option A note + AGENTS.md §3.1 amendment instruction |
+| Review claim race + ownership (A5/O2) | Arpita: AssignedLawyerProfileId, queue filter, SubmitReview guard |
+| Guest authz null-compare + anonymous tracking (A6/O3) | Arpita GetCaseDetailAsync rewrite; AnonymousTrackingCode on CASE |
+| XSS Html.Raw (C2) | Erin Result view encoded render |
+| Gemini key clobber, Qdrant ctor, MigrateAsync, ScenarioMapping (C1/C5/C6/C7) | Shads + Tultul respective steps |
+| Encryption scope, AI_LOG redaction, cached explanations (O4/O7) | Shads Steps 2.6/2.8 pipeline step 0; Erin contract note |
+| Analytics SQL table names (O5) | Arpita Step 3.4 bracketed real names |
+| CI red-by-construction; InMemory vs FromSqlRaw (O6) | Shads CI yaml split unit/integration + SQL container; Tultul test list |
+| Multi-doc state machine (O8) | Arpita approve/reject sibling guards + Finalized→Submitted row |
+
+**VERDICT:** CROSS-MODEL absorbed (Claude subagent standing in for Codex; zero contradictions between models).
+
+Deferred items live in TODOS.md (Qdrant SDK spike, ScenarioMapping retrieval-boost depth, Program.cs merge convention, CI FTS-image choice).
+
+NO UNRESOLVED DECISIONS

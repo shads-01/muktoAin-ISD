@@ -24,6 +24,12 @@ public class HomeController : Controller
     }
 
     [HttpGet]
+    public IActionResult Privacy()
+    {
+        return View();
+    }
+
+    [HttpGet]
     public IActionResult AccessDenied()
     {
         Response.StatusCode = 403;

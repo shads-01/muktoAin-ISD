@@ -23,12 +23,13 @@ This guide gets every teammate from zero to a running local dev environment.
 ### 1.2 Microsoft SQL Server
 
 You need a running SQL Server instance on your machine:
-- **SQL Server 2022 Express** (Recommended) from [microsoft.com/sql-server/sql-server-downloads](https://www.microsoft.com/sql-server/sql-server-downloads) (Basic or Custom with **Full-Text and Semantic Extractions for Search** feature enabled).
-- **OR SQL Server LocalDB** (included with Visual Studio 2022). Verify with:
-  ```
-  sqllocaldb info
-  sqllocaldb start MSSQLLocalDB
-  ```
+- **SQL Server 2022 Express with Advanced Services** (**Required**) from [microsoft.com/sql-server/sql-server-downloads](https://www.microsoft.com/sql-server/sql-server-downloads) (Custom install with **Full-Text and Semantic Extractions for Search** feature enabled).
+- **OR SQL Server Developer Edition** (free, full-featured alternative).
+
+> [!CAUTION]
+> **Do NOT use LocalDB for this project.** LocalDB does not include Full-Text Search
+> (`FULLTEXTSERVICEPROPERTY('IsFullTextInstalled')` returns `0`). FR-7 (standalone Acts
+> search) and the FR-3 fallback path both depend on FTS and will be non-functional on LocalDB.
 
 > [!IMPORTANT]
 > **Full-Text Search (FTS)** is required for FR-7 (standalone Acts search) and the FTS fallback path.
@@ -46,7 +47,7 @@ SSMS is the primary tool for managing our database, executing manual MSSQL DDL/D
 1. Download the latest SSMS from [learn.microsoft.com/sql/ssms](https://learn.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms).
 2. Install SSMS.
 3. Open SSMS and verify you can connect to your local server:
-   - Server Name: `(localdb)\mssqllocaldb` OR `.\SQLEXPRESS` OR `localhost`
+   - Server Name: `.\SQLEXPRESS` OR `localhost`
    - Authentication: **Windows Authentication**
 
 ### 1.4 Qdrant Cloud Free Tier (No Docker Required for CP1 & CP2)
@@ -87,7 +88,7 @@ git checkout <your-branch>
    ```json
    {
      "ConnectionStrings": {
-       "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=MuktoAin;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
+       "DefaultConnection": "Server=.\\SQLEXPRESS;Database=MuktoAin;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
      },
      "Gemini": {
        "ApiKeys": [
@@ -102,7 +103,7 @@ git checkout <your-branch>
      }
    }
    ```
-   *(If you are using SQL Server Express instead of LocalDB, set `Server=.\\SQLEXPRESS;Database=MuktoAin;...`)*
+   *(If you installed a named instance other than `SQLEXPRESS`, adjust the `Server=` value accordingly.)*
 
 3. **Paste the Gemini API keys and Qdrant Cloud credentials** provided by Shads into their respective fields.
 
@@ -117,7 +118,7 @@ We do **not** use blind automated code-first migrations. All schema tables, fore
 
 ### 4.1 Step-by-Step Script Execution in SSMS
 
-1. Launch **SSMS** and connect to your SQL Server instance (`(localdb)\mssqllocaldb` or `.\SQLEXPRESS`).
+1. Launch **SSMS** and connect to your SQL Server instance (`.\SQLEXPRESS` or your named instance).
 2. **Create Database**:
    - In SSMS, go to `File` $\rightarrow$ `Open` $\rightarrow$ `File...` and select `scripts/01_init_database.sql` (or create a new query window):
      ```sql
@@ -138,7 +139,7 @@ We do **not** use blind automated code-first migrations. All schema tables, fore
 4. **Execute Full-Text Search Script**:
    - Open `scripts/03_fulltext.sql` in SSMS.
    - Press **F5** (Execute).
-   - This creates the Full-Text Catalog `ftCatalog_MuktoAin` and the Full-Text Index on `ActSection(SectionText, ActTitle)`.
+   - This creates the Full-Text Catalog `ftCatalog_MuktoAin` and the Full-Text Index on `ACT_SECTION(SectionText)` (the `ActTitle` column lives on the `ACT` table, so it is filtered via a join at query time — see `Tultul_plan.md` Step 1.10).
 5. **Execute Seed Data Script**:
    - Open `scripts/04_seed_data.sql` in SSMS.
    - Press **F5** (Execute).
@@ -213,12 +214,12 @@ Open `http://localhost:5000` or `https://localhost:5001`.
 
 ## 9. Troubleshooting
 
-### SSMS: Cannot connect to `(localdb)\mssqllocaldb`
-- Open command prompt and run:
+### SSMS: Cannot connect to `.\SQLEXPRESS`
+- Confirm the SQL Server (SQLEXPRESS) Windows service is running:
   ```
-  sqllocaldb start MSSQLLocalDB
+  net start MSSQL$SQLEXPRESS
   ```
-- If using SQL Server Express, connect to `.\SQLEXPRESS` or `localhost` instead.
+- Verify the instance name in SQL Server Configuration Manager.
 
 ### Qdrant: 401 Unauthorized or Connection Error
 - Check that the `Endpoint` in `appsettings.Development.json` has `https://` prefix and port `:6333`.
@@ -246,3 +247,31 @@ git add .
 git commit -m "feat: your descriptive message"
 git push origin <your-branch>
 ```
+
+## GSTACK REVIEW REPORT
+
+| Run | Scope | Status |
+|---|---|---|
+| Eng review r1 | Architecture A1-A6 · Code C1-C7 · Tests · Perf P1-P2 | complete — all findings applied in-file |
+| Outside voice r2 | Claude subagent (Codex absent) — 8 new findings O1-O8 | complete — all applied in-file |
+
+| Finding | Fix location |
+|---|---|
+| LocalDB lacks FTS; connection strings | _Initial_setup_plan.md (Express Advanced mandated) |
+| FTS indexed nonexistent ActTitle; naming rules | _Initial_setup + Tultul Step 1.6 (SectionText only, bracketed names) |
+| Clean Arch violations (DI concretes, DocumentGenerator layer) | Tultul RagContextBuilder → Domain interfaces; Arpita templates → Application/Documents |
+| Identity-in-Domain exception (A4) | Shads Option A note + AGENTS.md §3.1 amendment instruction |
+| Review claim race + ownership (A5/O2) | Arpita: AssignedLawyerProfileId, queue filter, SubmitReview guard |
+| Guest authz null-compare + anonymous tracking (A6/O3) | Arpita GetCaseDetailAsync rewrite; AnonymousTrackingCode on CASE |
+| XSS Html.Raw (C2) | Erin Result view encoded render |
+| Gemini key clobber, Qdrant ctor, MigrateAsync, ScenarioMapping (C1/C5/C6/C7) | Shads + Tultul respective steps |
+| Encryption scope, AI_LOG redaction, cached explanations (O4/O7) | Shads Steps 2.6/2.8 pipeline step 0; Erin contract note |
+| Analytics SQL table names (O5) | Arpita Step 3.4 bracketed real names |
+| CI red-by-construction; InMemory vs FromSqlRaw (O6) | Shads CI yaml split unit/integration + SQL container; Tultul test list |
+| Multi-doc state machine (O8) | Arpita approve/reject sibling guards + Finalized→Submitted row |
+
+**VERDICT:** CROSS-MODEL absorbed (Claude subagent standing in for Codex; zero contradictions between models).
+
+Deferred items live in TODOS.md (Qdrant SDK spike, ScenarioMapping retrieval-boost depth, Program.cs merge convention, CI FTS-image choice).
+
+NO UNRESOLVED DECISIONS

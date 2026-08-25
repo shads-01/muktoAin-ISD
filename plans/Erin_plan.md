@@ -613,13 +613,16 @@ After submission, the citizen sees their rights explanation and draft document.
        <span class="badge badge-@Model.Status.ToLower() fs-6">@Model.Status</span>
    </div>
 
-   <!-- Rights Explanation Section -->
-   <div class="card mb-4">
-       <div class="card-header"><h5>⚖️ Your Rights / আপনার অধিকার</h5></div>
-       <div class="card-body">
-           <div class="rights-explanation">@Html.Raw(Model.RightsExplanation)</div>
-       </div>
-   </div>
+    <!-- Rights Explanation Section -->
+    <div class="card mb-4">
+        <div class="card-header"><h5>⚖️ Your Rights / আপনার অধিকার</h5></div>
+        <div class="card-body">
+            @* SECURITY (eng review): do NOT use Html.Raw on AI output — the explanation
+               echoes citizen free text, so raw rendering is an XSS vector if a prompt
+               injection makes Gemini emit HTML/script. Encode it like the document preview: *@
+            <div class="rights-explanation document-preview">@Model.RightsExplanation</div>
+        </div>
+    </div>
 
    <!-- Cited Sections -->
    <div class="card mb-4">
@@ -949,7 +952,9 @@ Document the implicit API contracts — what each controller expects and returns
 
 ## CaseController
 - POST /Case/Submit → expects CaseSubmitViewModel → calls CaseService.SubmitCaseAsync()
+  - Anonymous submissions return an **AnonymousTrackingCode** — the Track page accepts it as credentials for that one case (FR-8).
 - GET /Case/Result/{id} → calls CaseService.GetCaseDetailAsync() + AiOrchestrationService
+  - NOTE (eng review): rights explanation is CACHED in AI_LOG — repeat views must NOT re-call Gemini. Controller reads stored response first.
 - GET /Case/Track → calls CaseService.GetUserCasesAsync()
 
 ## SearchController
@@ -1035,3 +1040,31 @@ When Erin is done, the app has:
 - ✅ api-contracts.md documenting every controller → service mapping
 
 Backend teammates never need to create a view from scratch. They only modify controller method bodies.
+
+## GSTACK REVIEW REPORT
+
+| Run | Scope | Status |
+|---|---|---|
+| Eng review r1 | Architecture A1-A6 · Code C1-C7 · Tests · Perf P1-P2 | complete — all findings applied in-file |
+| Outside voice r2 | Claude subagent (Codex absent) — 8 new findings O1-O8 | complete — all applied in-file |
+
+| Finding | Fix location |
+|---|---|
+| LocalDB lacks FTS; connection strings | _Initial_setup_plan.md (Express Advanced mandated) |
+| FTS indexed nonexistent ActTitle; naming rules | _Initial_setup + Tultul Step 1.6 (SectionText only, bracketed names) |
+| Clean Arch violations (DI concretes, DocumentGenerator layer) | Tultul RagContextBuilder → Domain interfaces; Arpita templates → Application/Documents |
+| Identity-in-Domain exception (A4) | Shads Option A note + AGENTS.md §3.1 amendment instruction |
+| Review claim race + ownership (A5/O2) | Arpita: AssignedLawyerProfileId, queue filter, SubmitReview guard |
+| Guest authz null-compare + anonymous tracking (A6/O3) | Arpita GetCaseDetailAsync rewrite; AnonymousTrackingCode on CASE |
+| XSS Html.Raw (C2) | Erin Result view encoded render |
+| Gemini key clobber, Qdrant ctor, MigrateAsync, ScenarioMapping (C1/C5/C6/C7) | Shads + Tultul respective steps |
+| Encryption scope, AI_LOG redaction, cached explanations (O4/O7) | Shads Steps 2.6/2.8 pipeline step 0; Erin contract note |
+| Analytics SQL table names (O5) | Arpita Step 3.4 bracketed real names |
+| CI red-by-construction; InMemory vs FromSqlRaw (O6) | Shads CI yaml split unit/integration + SQL container; Tultul test list |
+| Multi-doc state machine (O8) | Arpita approve/reject sibling guards + Finalized→Submitted row |
+
+**VERDICT:** CROSS-MODEL absorbed (Claude subagent standing in for Codex; zero contradictions between models).
+
+Deferred items live in TODOS.md (Qdrant SDK spike, ScenarioMapping retrieval-boost depth, Program.cs merge convention, CI FTS-image choice).
+
+NO UNRESOLVED DECISIONS

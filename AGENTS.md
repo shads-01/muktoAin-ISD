@@ -64,3 +64,16 @@ Detailed project knowledge is maintained in the `.agent/spec/` directory:
 - [Requirements & Specifications](file:///.agent/spec/requirements.md) — Functional requirements (FR-1 to FR-18), NFRs, evaluation benchmark, disclaimer rules.
 - [Architecture & Database Design](file:///.agent/spec/design.md) — 4-project structure, 14-entity relational schema, specialization design, vector search & RAG pipeline.
 - [Execution Plan & Tasks](file:///.agent/spec/tasks.md) — 3-checkpoint breakdown, target repository file layout, exit criteria.
+
+---
+
+## 5. Mandatory Task Progress Tracking Rule
+
+**Every AI Coding Agent (Antigravity, Claude Code, OpenCode, Codex, Cursor, etc.) MUST strictly adhere to this workflow:**
+
+1. **Check Prerequisite Dependencies:** Before starting any implementation task, consult [`plans/Dependency_plan.md`](file:///d:/Projects/muktoAin-ISD/plans/Dependency_plan.md) to verify that all preceding dependencies (`[Blocked by: ...]`) are marked completed (`[x]`).
+2. **Auto-Update on Completion:** The moment you implement, verify, or complete ANY task defined in the execution plans:
+   - You **MUST automatically update [`plans/Dependency_plan.md`](file:///d:/Projects/muktoAin-ISD/plans/Dependency_plan.md)**.
+   - Change the corresponding task checkbox from `- [ ]` to `- [x]`.
+   - If completing the task satisfies a checkpoint exit gate, mark the corresponding exit gate `[x]` as well.
+3. **No Unrecorded Work:** Never end a conversation or complete a prompt without recording your completed task progress in [`plans/Dependency_plan.md`](file:///d:/Projects/muktoAin-ISD/plans/Dependency_plan.md).
