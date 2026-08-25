@@ -45,7 +45,7 @@
 ### 3. Identity, Data Ingestion & Vector Indexing
 - [ ] **[S-1.1]** ASP.NET Core Identity Configuration in `MuktoAin.Infrastructure` — *Shads* `[Blocked by: T-1.5, T-1.6] [Unblocks: S-1.2, S-3.6]`
 - [ ] **[S-1.2]** `SeedAdminUser.cs` Startup Seeding — *Shads* `[Blocked by: S-1.1]`
-- [ ] **[T-1.7]** Seed Data Loaders (`SeedDistricts`, `SeedCategories`, `SeedDocumentTypes`) — *Tultul* `[Blocked by: S-Setup.5, T-1.6] [Unblocks: T-1.8]`
+- [x] ~~**[T-1.7]** Seed Data Loaders (`SeedDistricts`, `SeedCategories`, `SeedScenarioMappings`) — *Tultul* `[Blocked by: S-Setup.5, T-1.6] [Unblocks: T-1.8]` — note: no `SeedDocumentTypes` exists because `DocumentType` is an enum column, not a lookup table (scripts/02_schema.sql has no `DOCUMENT_TYPE` table); `SeedScenarioMappings` safely no-ops until `ACT_SECTION` rows exist (T-1.8)~~
 - [ ] **[T-1.8]** 1,484 Bangladesh Acts Ingestion Pipeline (`ActImportService.cs`) — *Tultul* `[Blocked by: T-1.6, T-1.7] [Unblocks: T-1.9]`
 - [ ] **[T-1.9]** Legal Section Chunking Pipeline (`LegalChunkingService.cs`) — *Tultul* `[Blocked by: T-1.8] [Unblocks: S-1.8]`
 - [x] ~~**[T-1.10]** Manual SQL Server Full-Text Search (FTS) SSMS Script — *Tultul* `[Blocked by: T-1.6] [Unblocks: T-2.2]`~~
