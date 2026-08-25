@@ -1,0 +1,103 @@
+@model MuktoAin.Web.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "সাইন ইন — Login";
+}
+
+<main id="main">
+    <div class="auth-split">
+        <!-- Side Branding Column (Desktop) -->
+        <div class="auth-side">
+            <span class="kicker"><i data-lucide="shield-check"></i> Secure Legal Portal</span>
+            <h2>নাগরিকের আইনি ক্ষমতায়নে মুক্ত আইন</h2>
+            <ul>
+                <li>
+                    <i data-lucide="check-circle-2"></i>
+                    <span>সহজ ভাষায় আপনার যেকোনো আইনি সমস্যার তাৎক্ষণিক পর্যালোচনা ও অধিকারের ব্যাখ্যা।</span>
+                </li>
+                <li>
+                    <i data-lucide="check-circle-2"></i>
+                    <span>স্বয়ংক্রিয় জিডি, আরটিআই এবং শ্রম-ভোক্তা অভিযোগের খসড়া তৈরি।</span>
+                </li>
+                <li>
+                    <i data-lucide="check-circle-2"></i>
+                    <span>বাংলাদেশ বার কাউন্সিলের সনদপ্রাপ্ত আইনজীবী কর্তৃক প্রতিটি দলিলের বাধ্যতামূলক সত্যায়ন।</span>
+                </li>
+                <li>
+                    <i data-lucide="check-circle-2"></i>
+                    <span>সম্পূর্ণ বিনামূল্যে, আধুনিক এনক্রিপশন ও নাগরিক তথ্যের গোপনীয়তা সুরক্ষা।</span>
+                </li>
+            </ul>
+            <div class="tiny muted" style="margin-top: 1rem;">
+                © 2026 মুক্ত আইন · Not formal legal advice
+            </div>
+        </div>
+
+        <!-- Form Column -->
+        <div class="auth-form-wrap">
+            <div class="auth-card card card-pad-lg">
+                <nav class="breadcrumbs" aria-label="Breadcrumb">
+                    <a asp-controller="Home" asp-action="Index">Home</a>
+                    <span class="sep">/</span>
+                    <span>সাইন ইন</span>
+                </nav>
+
+                <div class="page-head" style="margin-bottom: 20px;">
+                    <span class="kicker"><i data-lucide="log-in"></i> Authentication</span>
+                    <h1 class="page-title" style="font-size: 26px;">আপনার একাউন্টে প্রবেশ করুন</h1>
+                    <p class="page-sub">মামলার অগ্রগতি দেখতে বা আইনজীবী রিভিউ করতে লগইন করুন</p>
+                </div>
+
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert alert-success" style="margin-bottom: 16px;">
+                        <i data-lucide="check-circle-2"></i>
+                        <div>@TempData["Success"]</div>
+                    </div>
+                }
+                @if (TempData["Info"] != null)
+                {
+                    <div class="alert alert-info" style="margin-bottom: 16px;">
+                        <i data-lucide="info"></i>
+                        <div>@TempData["Info"]</div>
+                    </div>
+                }
+
+                <form method="post" asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-warn" style="margin-bottom: 16px;"></div>
+
+                    <div class="field">
+                        <label asp-for="Email">ইমেইল ঠিকানা / Email</label>
+                        <input asp-for="Email" class="input" type="email" placeholder="name@example.com" required autocomplete="username" />
+                        <span asp-validation-for="Email" class="err"></span>
+                    </div>
+
+                    <div class="field">
+                        <div class="row spread">
+                            <label asp-for="Password">পাসওয়ার্ড / Password</label>
+                            <a href="#" class="tiny muted" onclick="showToast('পাসওয়ার্ড রিসেট লিংক আপনার ইমেইলে পাঠানো হয়েছে (ডেমো)', 'info'); return false;">পাসওয়ার্ড ভুলে গেছেন?</a>
+                        </div>
+                        <input asp-for="Password" class="input" type="password" placeholder="••••••••" required autocomplete="current-password" />
+                        <span asp-validation-for="Password" class="err"></span>
+                    </div>
+
+                    <div class="field" style="margin-bottom: 20px;">
+                        <label class="check-row" for="rememberMe">
+                            <input asp-for="RememberMe" type="checkbox" id="rememberMe" />
+                            <span>আমাকে মনে রাখুন (Remember Me)</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg btn-block">
+                        <i data-lucide="log-in"></i> সাইন ইন করুন / Sign In
+                    </button>
+                </form>
+
+                <hr class="divider" />
+
+                <div class="text-center" style="font-size: 14px; text-align: center;">
+                    নতুন ব্যবহারকারী? <a asp-controller="Account" asp-action="Register" style="font-weight: 700;">নতুন একাউন্ট নিবন্ধন করুন →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
