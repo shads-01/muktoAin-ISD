@@ -36,7 +36,7 @@
 - [x] ~~**[T-1.1]** Initialize .NET 8 Solution (`MuktoAin.sln` 4 Projects + References) — *Tultul* `[Blocked by: S-Setup.1] [Unblocks: T-1.2]`~~
 - [x] ~~**[T-1.2]** Implement All 9 Enums in `MuktoAin.Domain/Enums/` — *Tultul* `[Blocked by: T-1.1] [Unblocks: T-1.3, A-1.1]`~~
 - [x] ~~**[T-1.3]** Implement All 14 Domain Entities in `MuktoAin.Domain/Entities/` — *Tultul* `[Blocked by: T-1.2] [Unblocks: T-1.4, A-1.1]`~~
-- [x] ~~**[T-1.4]** Define Repository & Service Interfaces in Domain/Application — *Tultul* `[Blocked by: T-1.3] [Unblocks: T-1.5, A-2.1]`~~
+- [x] ~~**[T-1.4]** Define Repository & Service Interfaces in Domain/Application — *Tultul* `[Blocked by: T-1.3] [Unblocks: T-1.5, A-2.1]` — amended during T-1.12: `IRepository<T>.GetByIdAsync` changed from `int` to `object` (didn't fit AiLog's long PK)~~
 - [x] ~~**[T-1.5]** EF Core `AppDbContext.cs` in `MuktoAin.Infrastructure` — *Tultul* `[Blocked by: T-1.3, T-1.4] [Unblocks: T-1.6, S-1.1]`~~
 - [x] ~~**[T-1.6]** Manual MSSQL Schema Scripts in SSMS (`scripts/01-14_*.sql`) — *Tultul* `[Blocked by: T-1.3, T-1.5] [Unblocks: S-1.1, T-1.7]`~~
 - [x] ~~**[A-1.1]** All DTOs in `MuktoAin.Application/DTOs/` — *Arpita* `[Blocked by: T-1.2, T-1.3] [Unblocks: A-2.1]`~~
@@ -50,7 +50,7 @@
 - [x] ~~**[T-1.9]** Legal Section Chunking Pipeline (`LegalChunkingService.cs`) — *Tultul* `[Blocked by: T-1.8] [Unblocks: S-1.8]` — verified against real SQL Server: 35,633 sections chunked into 42,858 rows; idempotent restart confirmed. Caught and fixed a runaway-split bug during verification (452 sections producing thousands of 1-char-shrinking duplicate chunks each) by requiring a found boundary to land at least halfway into the target window before using it~~
 - [x] ~~**[T-1.10]** Manual SQL Server Full-Text Search (FTS) SSMS Script — *Tultul* `[Blocked by: T-1.6] [Unblocks: T-2.2]`~~
 - [ ] **[T-1.11]** `QdrantVectorStore.cs` (.NET SDK Vector Implementation) — *Tultul* `[Blocked by: S-Setup.7, T-1.4] [Unblocks: S-1.8]`
-- [ ] **[T-1.12]** MSSQL Repository Implementations (Parameterized SQL) — *Tultul* `[Blocked by: T-1.4, T-1.6] [Unblocks: T-1.13, A-2.1]`
+- [x] ~~**[T-1.12]** MSSQL Repository Implementations (Parameterized SQL) — *Tultul* `[Blocked by: T-1.4, T-1.6] [Unblocks: T-1.13, A-2.1]` — verified against real SQL Server; also added ScenarioMappingRepository for completeness and fixed `IRepository<T>.GetByIdAsync` (see T-1.4 note)~~
 - [ ] **[T-1.13]** DI Registration in `Program.cs` — *Tultul* `[Blocked by: T-1.11, T-1.12] [Unblocks: S-1.9]`
 - [ ] **[T-1.14]** Data Layer Unit Tests (`MuktoAin.UnitTests`) — *Tultul* `[Blocked by: T-1.12]`
 - [ ] **[S-1.8]** `EmbeddingBatchJob.cs` (Embed & Index All Chunks into Qdrant) — *Shads* `[Blocked by: T-1.9, T-1.11, S-1.4] [Unblocks: S-1.9, T-2.1]`
