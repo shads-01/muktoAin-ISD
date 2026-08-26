@@ -53,7 +53,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddTransient<Microsoft.AspNetCore.Authentication.IClaimsTransformation, UserRoleClaimsTransformation>();
 
-// S-1.3 / S-2.6: Gemini client (key rotation inside), shared Polly
+// S-1.3 / S-1.4 / S-2.6: Gemini client (key rotation inside), shared Polly
 // resilience pipeline (timeout -> circuit breaker -> retry). Singleton so the
 // round-robin key index persists across requests.
 builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection(GeminiOptions.SectionName));
@@ -62,6 +62,8 @@ builder.Services.AddSingleton(sp =>
     GeminiResiliencePolicies.Build(sp.GetRequiredService<IOptions<GeminiOptions>>().Value));
 builder.Services.AddSingleton<GeminiClient>();
 builder.Services.AddSingleton<IAiService>(sp => sp.GetRequiredService<GeminiClient>());
+builder.Services.AddSingleton<GeminiEmbeddingService>();
+builder.Services.AddSingleton<IEmbeddingService>(sp => sp.GetRequiredService<GeminiEmbeddingService>());
 
 // Shads will add: GeminiClient, AI services (S-1.x / S-2.x)
 // Tultul will add: repositories, IVectorStore/QdrantVectorStore (T-1.11 to T-1.13)
