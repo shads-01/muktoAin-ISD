@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using MuktoAin.Domain.Interfaces.Repositories;
 using MuktoAin.Domain.Interfaces.Services;
 using MuktoAin.Infrastructure.Data;
 using MuktoAin.Infrastructure.Data.Seeding;
+using MuktoAin.Infrastructure.Repositories;
 using MuktoAin.Infrastructure.VectorStore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,8 +23,18 @@ builder.Services.Configure<QdrantOptions>(builder.Configuration.GetSection("Qdra
 builder.Services.AddSingleton<QdrantVectorStore>();
 builder.Services.AddSingleton<IVectorStore>(sp => sp.GetRequiredService<QdrantVectorStore>());
 
+// T-1.13: Repositories (T-1.12). Generic IRepository<T> covers entities with no custom
+// query needs (District, CaseCategory, ActFootnote, GeneratedDocument, LawyerProfile,
+// LawyerReview, AiLog, CaseActReference); the rest have dedicated interfaces below.
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IActRepository, ActRepository>();
+builder.Services.AddScoped<IActSectionRepository, ActSectionRepository>();
+builder.Services.AddScoped<ICaseRepository, CaseRepository>();
+builder.Services.AddScoped<IActSectionChunkRepository, ActSectionChunkRepository>();
+builder.Services.AddScoped<IScenarioMappingRepository, ScenarioMappingRepository>();
+
 // Shads will add: Identity, GeminiClient, AI services (S-1.x)
-// Tultul will add: repositories, T-1.12/T-1.13 DI wiring
+// Tultul will add: T-2.x search services (SimilaritySearchService, KeywordSearchService, ...)
 // Arpita will add: DocumentService, ReviewService, etc.
 
 var app = builder.Build();
