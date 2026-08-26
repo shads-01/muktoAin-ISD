@@ -78,13 +78,13 @@
 - [ ] **[S-2.7]** AI Logging PII Redaction & Audit Safety — *Shads* `[Blocked by: S-2.4]`
 
 ### 3. Case Lifecycle, Document Generation & Lawyer Review Gate
-- [ ] **[A-2.1]** `CaseService.cs` (Intake, State Machine, Tracking Code) — *Arpita* `[Blocked by: T-1.4, T-1.12, A-1.1] [Unblocks: S-2.5, A-2.4]`
+- [x] ~~**[A-2.1]** `CaseService.cs` (Intake, State Machine, Tracking Code) — *Arpita* `[Blocked by: T-1.4, T-1.12, A-1.1] [Unblocks: S-2.5, A-2.4]` — implemented with `SubmitCaseAsync` returning `CaseSubmissionResultDto(CaseId, AnonymousTrackingCode)` (GUID shown once for FR-8), guest/citizen/lawyer/admin access rules in `GetCaseDetailAsync` (explicit null-compare guard), tuple-switch state machine incl. `Finalized→Submitted` re-open row, name lookups via injected `IRepository<CaseCategory>`/`IRepository<District>`; verified by 10 new Moq unit tests
 - [ ] **[S-2.5]** Wire `EncryptionService` into `CaseService` for PII — *Shads* `[Blocked by: S-1.7, A-2.1]`
 - [ ] **[A-2.2]** `DocumentGenerator.cs` (Core Document Generation Engine) — *Arpita* `[Blocked by: S-2.2, S-2.3] [Unblocks: A-2.3]`
 - [ ] **[A-2.3]** `LabourComplaintTemplate.cs` (First Structured Template) — *Arpita* `[Blocked by: A-2.2] [Unblocks: A-2.4]`
 - [ ] **[A-2.4]** `DocumentService.cs` (Document CRUD, Lifecycle & Lockout) — *Arpita* `[Blocked by: A-2.3, A-2.1] [Unblocks: A-2.5, A-2.7]`
 - [ ] **[A-2.5]** `PdfExportService.cs` with QuestPDF (Bengali Font) — *Arpita* `[Blocked by: E-1.3, A-2.4] [Wires to E-2.6]`
-- [ ] **[A-2.6]** `LawyerVerificationService.cs` (Bar Council Verification) — *Arpita* `[Blocked by: T-1.4, T-1.12] [Unblocks: A-2.7]`
+- [x] ~~**[A-2.6]** `LawyerVerificationService.cs` (Bar Council Verification) — *Arpita* `[Blocked by: T-1.4, T-1.12] [Unblocks: A-2.7]` — implemented Apply/Verify/GetPendingApplications with duplicate-application guard, VerifiedByAdminId + VerifiedAt stamping on decision; verified by 6 new Moq unit tests
 - [ ] **[A-2.7]** `LawyerReviewService.cs` (Queue, Claim Race Guard, Decisions) — *Arpita* `[Blocked by: A-2.6, A-2.4] [Wires to E-2.7]`
 - [ ] **[A-2.8]** Checkpoint 2 Document & Review Exit Gate — *Arpita* `[Blocked by: A-2.1 to A-2.7]`
 
