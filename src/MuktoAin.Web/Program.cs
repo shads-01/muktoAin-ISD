@@ -10,6 +10,7 @@ using MuktoAin.Infrastructure.Ai;
 using MuktoAin.Infrastructure.Data;
 using MuktoAin.Infrastructure.Data.Seeding;
 using MuktoAin.Infrastructure.Repositories;
+using MuktoAin.Infrastructure.Search;
 using MuktoAin.Infrastructure.VectorStore;
 using MuktoAin.Web.Auth;
 
@@ -119,7 +120,10 @@ builder.Services.AddScoped<IScenarioMappingRepository, ScenarioMappingRepository
 // Case lifecycle service
 builder.Services.AddScoped<CaseService>();
 
-// Tultul will add: T-2.x search services (SimilaritySearchService, KeywordSearchService, ...)
+// T-2.2: SQL Server FTS keyword search (FR-7 standalone search + FR-3 vector fallback).
+builder.Services.AddScoped<IKeywordSectionSearch, KeywordSearchService>();
+
+// Tultul will add: T-2.1 SimilaritySearchService, T-2.3 RagContextBuilder, ...
 // Arpita will add: DocumentService, ReviewService, etc.
 
 var app = builder.Build();
