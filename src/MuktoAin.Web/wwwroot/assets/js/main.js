@@ -137,6 +137,11 @@
         if (bd) bd.classList.remove("open");
       });
     });
+    document.querySelectorAll(".modal-backdrop").forEach(function (bd) {
+      bd.addEventListener("click", function (e) {
+        if (e.target === bd) bd.classList.remove("open");
+      });
+    });
     function closeAllModals() {
       document.querySelectorAll(".modal-backdrop.open").forEach(function (m) { m.classList.remove("open"); });
     }
