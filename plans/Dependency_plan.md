@@ -63,7 +63,7 @@
 
 ### 1. Retrieval & RAG Context Assembly
 - [ ] **[T-2.1]** `SimilaritySearchService.cs` (Qdrant Vector Retrieval) — *Tultul* `[Blocked by: S-1.4, S-1.8, T-1.11] [Unblocks: T-2.3]`
-- [ ] **[T-2.2]** `KeywordSearchService.cs` (SQL FTS Fallback) — *Tultul* `[Blocked by: T-1.10] [Unblocks: T-2.3]`
+- [x] ~~**[T-2.2]** `KeywordSearchService.cs` (SQL FTS Fallback) — *Tultul* `[Blocked by: T-1.10] [Unblocks: T-2.3]` — implemented in `Infrastructure/Search/KeywordSearchService.cs` against `IActSectionRepository.FullTextSearchAsync`, exposed via new `IKeywordSectionSearch` Domain interface (Domain seam for T-2.3's `RagContextBuilder` fallback), registered in `Program.cs`; verified by 6 new Moq unit tests (mapping, quote-escaping, null SectionNumber, blank-query short-circuit) — full suite 38/38 passing~~
 - [ ] **[T-2.3]** `RagContextBuilder.cs` (Vector-Primary with FTS Fallback) — *Tultul* `[Blocked by: T-2.1, T-2.2] [Unblocks: S-2.1]`
 - [ ] **[T-2.4]** `SearchService.cs` (Standalone Keyword Search for FR-7) — *Tultul* `[Blocked by: T-2.2] [Wires to E-2.4]`
 - [ ] **[T-2.5]** `CategoryService.cs` (Category Hierarchy for FR-6) — *Tultul* `[Blocked by: T-1.12] [Wires to E-2.5]`
