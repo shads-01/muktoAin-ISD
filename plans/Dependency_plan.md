@@ -66,7 +66,7 @@
 - [x] ~~**[T-2.2]** `KeywordSearchService.cs` (SQL FTS Fallback) — *Tultul* `[Blocked by: T-1.10] [Unblocks: T-2.3]` — implemented in `Infrastructure/Search/KeywordSearchService.cs` against `IActSectionRepository.FullTextSearchAsync`, exposed via new `IKeywordSectionSearch` Domain interface (Domain seam for T-2.3's `RagContextBuilder` fallback), registered in `Program.cs`; verified by 6 new Moq unit tests (mapping, quote-escaping, null SectionNumber, blank-query short-circuit) — full suite 38/38 passing~~
 - [ ] **[T-2.3]** `RagContextBuilder.cs` (Vector-Primary with FTS Fallback) — *Tultul* `[Blocked by: T-2.1, T-2.2] [Unblocks: S-2.1]`
 - [ ] **[T-2.4]** `SearchService.cs` (Standalone Keyword Search for FR-7) — *Tultul* `[Blocked by: T-2.2] [Wires to E-2.4]`
-- [ ] **[T-2.5]** `CategoryService.cs` (Category Hierarchy for FR-6) — *Tultul* `[Blocked by: T-1.12] [Wires to E-2.5]`
+- [x] ~~**[T-2.5]** `CategoryService.cs` (Category Hierarchy for FR-6) — *Tultul* `[Blocked by: T-1.12] [Wires to E-2.5]` — implemented as thin CRUD passthrough over `IRepository<CaseCategory>` in `Application/Services/CategoryService.cs`; note: `CaseCategory` is a flat lookup table (no `ParentCategoryId`), so there's no actual tree despite the task label — registered in `Program.cs`; verified by 3 new Moq unit tests — full suite 41/41 passing~~
 - [ ] **[T-2.6]** Checkpoint 2 Search Infrastructure Exit Gate — *Tultul* `[Blocked by: T-2.1 to T-2.5]`
 
 ### 2. AI Orchestration, Prompt Assembly & Logging
