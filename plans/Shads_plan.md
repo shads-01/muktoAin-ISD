@@ -226,6 +226,22 @@ Once Tultul's schema PR is merged and scripts executed in SSMS:
    ```
 3. Make the admin password configurable via `appsettings` for production (don't hardcode in prod).
 
+> **🚧 [ENV-BUG][OPEN] Dev-machine port binding failure — found during S-1.1/S-1.2 verification (2026-08-26)**
+>
+> Startup seeding completed successfully, but Kestrel then failed to bind both
+> `http://localhost:5080` and `http://localhost:5082` with:
+> *"An attempt was made to access a socket in a way forbidden by its access permissions."*
+>
+> **Likely cause:** Windows has those ports inside an **excluded TCP port range**
+> (dynamic reservations made by Hyper-V / WSL2 / winnat) — not a code bug.
+>
+> **How to address (pick one, owner: Shads):**
+> 1. Diagnose first: `netsh interface ipv4 show excludedportrange protocol=tcp` — confirm 5080–5090 fall inside a reserved range.
+> 2. *Preferred durable fix:* move the `http`/`https` profile ports in `src/MuktoAin.Web/Properties/launchSettings.json` to a port outside all excluded ranges (e.g. `5188`). Note this changes the URL Erin's README/docs reference (`http://localhost:5082`) — update docs in the same change.
+> 3. *Quick but non-durable:* run `net stop winnat && net start winnat` as admin — releases dynamic reservations, but they can come back after reboot.
+>
+> **Status:** deliberately NOT fixed yet (user decision — focus is CP1 tasks). Revisit when wiring up AccountController sign-in flows or before demoing locally.
+
 #### Step 1.3: GeminiClient.cs (with key rotation)
 
 > **Depends on**: Nothing — can start immediately, only needs the Gemini API keys from teammates.

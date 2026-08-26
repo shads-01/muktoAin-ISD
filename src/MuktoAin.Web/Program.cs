@@ -1,10 +1,16 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using MuktoAin.Domain.Entities;
+using MuktoAin.Domain.Interfaces;
 using MuktoAin.Domain.Interfaces.Repositories;
 using MuktoAin.Domain.Interfaces.Services;
+using MuktoAin.Infrastructure.Ai;
 using MuktoAin.Infrastructure.Data;
 using MuktoAin.Infrastructure.Data.Seeding;
 using MuktoAin.Infrastructure.Repositories;
 using MuktoAin.Infrastructure.VectorStore;
+using MuktoAin.Web.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +21,56 @@ builder.Services.AddControllersWithViews();
 // this context only maps onto that predefined schema. No EF migrations by design.
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// S-1.1: ASP.NET Core Identity against the manually-authored [dbo].[USER] table.
+// Role tables do not exist in the SSMS schema by design -- authorization runs off
+// the User.Role enum via UserRoleClaimsTransformation (see Auth/ folder).
+builder.Services.AddIdentityCore<User>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequiredLength = 8;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<AppDbContext>()
+.AddSignInManager<SignInManager<User>>()
+.AddDefaultTokenProviders();
+
+// AddIdentityCore does NOT wire cookie authentication -- done explicitly here.
+builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
+    .AddIdentityCookies();
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.Name = "MuktoAin.Auth";
+    options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Home/Forbidden";
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.SlidingExpiration = true;
+});
+
+builder.Services.AddTransient<Microsoft.AspNetCore.Authentication.IClaimsTransformation, UserRoleClaimsTransformation>();
+
+// S-1.3 / S-1.4 / S-2.6: Gemini client (key rotation inside), shared Polly
+// resilience pipeline (timeout -> circuit breaker -> retry). Singleton so the
+// round-robin key index persists across requests.
+builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection(GeminiOptions.SectionName));
+builder.Services.AddHttpClient(nameof(GeminiClient));
+builder.Services.AddSingleton(sp =>
+    GeminiResiliencePolicies.Build(sp.GetRequiredService<IOptions<GeminiOptions>>().Value));
+builder.Services.AddSingleton<GeminiClient>();
+// NOTE: fully qualified on purpose -- Domain.Interfaces.* and
+// Domain.Interfaces.Services.* both define IAiService/IEmbeddingService after the
+// T-1.13 merge; GeminiClient/GeminiEmbeddingService implement the former.
+builder.Services.AddSingleton<MuktoAin.Domain.Interfaces.IAiService>(sp => sp.GetRequiredService<GeminiClient>());
+builder.Services.AddSingleton<GeminiEmbeddingService>();
+builder.Services.AddSingleton<MuktoAin.Domain.Interfaces.IEmbeddingService>(sp => sp.GetRequiredService<GeminiEmbeddingService>());
 
 // T-1.11: Qdrant vector store. Registered as both the concrete type (so Program.cs can
 // call EnsureCollectionAsync below) and the IVectorStore interface (so consumers like
@@ -33,7 +89,6 @@ builder.Services.AddScoped<ICaseRepository, CaseRepository>();
 builder.Services.AddScoped<IActSectionChunkRepository, ActSectionChunkRepository>();
 builder.Services.AddScoped<IScenarioMappingRepository, ScenarioMappingRepository>();
 
-// Shads will add: Identity, GeminiClient, AI services (S-1.x)
 // Tultul will add: T-2.x search services (SimilaritySearchService, KeywordSearchService, ...)
 // Arpita will add: DocumentService, ReviewService, etc.
 
@@ -63,7 +118,10 @@ using (var scope = app.Services.CreateScope())
     await ActImportService.SeedAsync(context, app.Environment.ContentRootPath, logger);
     await LegalChunkingService.ChunkAsync(context, logger);
     await SeedScenarioMappings.SeedAsync(context, app.Environment.ContentRootPath, logger);
-    // TODO: [Shads] SeedAdminUser will be added here.
+
+    // S-1.2: bootstrap the first admin account (idempotent).
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+    await SeedAdminUser.SeedAsync(userManager, builder.Configuration, logger);
 
     var vectorStore = scope.ServiceProvider.GetRequiredService<QdrantVectorStore>();
     await vectorStore.EnsureCollectionAsync();
@@ -74,6 +132,8 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// S-1.1: authentication must run before authorization.
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(

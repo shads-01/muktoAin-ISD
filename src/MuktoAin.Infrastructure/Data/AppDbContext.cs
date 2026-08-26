@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MuktoAin.Domain.Entities;
 
@@ -10,9 +12,13 @@ namespace MuktoAin.Infrastructure.Data;
 // Step 1.6 alongside the SQL DDL, via IEntityTypeConfiguration<T> classes applied
 // below, so the two stay in lockstep.
 //
-// User is intentionally not a DbSet here -- it is wired up separately as part of
-// ASP.NET Core Identity configuration (S-1.1, Shads).
-public class AppDbContext : DbContext
+// S-1.1: inherits IdentityDbContext so ASP.NET Core Identity's store entities
+// (claims, logins, tokens) are part of the model for UserStore to function.
+// IMPORTANT: only [dbo].[USER] physically exists -- scripts/02_schema.sql
+// deliberately has no role/claim/login tables. Role authorization runs off the
+// User.Role enum column (see UserRoleClaimsTransformation in MuktoAin.Web), never
+// against IdentityRole tables. Nothing must query those entity types at runtime.
+public class AppDbContext : IdentityDbContext<User, IdentityRole<int>, int>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

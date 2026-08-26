@@ -12,25 +12,25 @@
 ## 🏁 Checkpoint 1: Foundation, Schema & Data Ingestion (30%)
 
 ### 1. Day 0 Setup & Independent Start (No Cross-Teammate Blockers)
-- [ ] **[S-Setup.1]** Create GitHub Repository (`muktoAin-ISD`) — *Shads* `[Unblocks: T-1.1, S-Setup.2]`
-- [ ] **[S-Setup.2]** Set Up Branch Protection on `main` — *Shads* `[Unblocks: S-Setup.3]`
-- [ ] **[S-Setup.3]** Create Feature Branches for Each Teammate — *Shads* `[Unblocks: All Teammates]`
-- [ ] **[S-Setup.4]** Assign Teammate Starting Points — *Shads*
-- [ ] **[S-Setup.5]** Prepare Seed Data Files (`districts.json`, `categories.json`, etc.) — *Shads* `[Unblocks: T-1.7]`
-- [ ] **[S-Setup.6]** Set Up Multi-Key Gemini API Key Rotation Config — *Shads* `[Unblocks: S-1.3]`
-- [ ] **[S-Setup.7]** Set Up Qdrant Cloud Cluster — *Shads* `[Unblocks: T-1.11]`
-- [ ] **[S-Setup.8]** Share `appsettings.Development.json.template` — *Shads*
-- [ ] **[S-1.3]** Implement `GeminiClient.cs` with Key Rotation — *Shads* `[Unblocks: S-1.4]`
-- [ ] **[S-1.4]** Implement `GeminiEmbeddingService.cs` (`text-embedding-004`) — *Shads* `[Unblocks: T-2.1]`
+- [x] ~~**[S-Setup.1]** Create GitHub Repository (`muktoAin-ISD`) — *Shads* `[Unblocks: T-1.1, S-Setup.2]`~~
+- [x] ~~**[S-Setup.2]** Set Up Branch Protection on `main` — *Shads* `[Unblocks: S-Setup.3]`~~
+- [x] ~~**[S-Setup.3]** Create Feature Branches for Each Teammate — *Shads* `[Unblocks: All Teammates]`~~
+- [x] ~~**[S-Setup.4]** Assign Teammate Starting Points — *Shads*~~
+- [x] ~~**[S-Setup.5]** Prepare Seed Data Files (`districts.json`, `categories.json`, etc.) — *Shads* `[Unblocks: T-1.7]`~~
+- [x] ~~**[S-Setup.6]** Set Up Multi-Key Gemini API Key Rotation Config — *Shads* `[Unblocks: S-1.3]`~~
+- [x] ~~**[S-Setup.7]** Set Up Qdrant Cloud Cluster — *Shads* `[Unblocks: T-1.11]`~~
+- [x] ~~**[S-Setup.8]** Share `appsettings.Development.json.template` — *Shads*~~
+- [x] ~~**[S-1.3]** Implement `GeminiClient.cs` with Key Rotation — *Shads* `[Unblocks: S-1.4]`~~
+- [x] ~~**[S-1.4]** Implement `GeminiEmbeddingService.cs` (`text-embedding-004`) — *Shads* `[Unblocks: T-2.1]`~~
 - [ ] **[S-1.5]** Define Legal Prompt Templates & Disclaimers (`Disclaimers.cs`) — *Shads* `[Unblocks: S-1.6, S-2.1]`
 - [ ] **[S-1.6]** Implement `DisclaimerInjector.cs` — *Shads* `[Blocked by: S-1.5] [Unblocks: S-2.2]`
 - [ ] **[S-1.7]** Implement `EncryptionService.cs` (ASP.NET Data Protection API) — *Shads* `[Unblocks: S-2.5]`
-- [ ] **[E-1.1]** Master Layout `_Layout.cshtml` (Bootstrap 5, Nav, Footer) — *Erin* `[Unblocks: E-1.4]`
-- [ ] **[E-1.2]** `_DisclaimerBanner.cshtml` & `_LanguageToggle.cshtml` — *Erin* `[Unblocks: E-1.1]`
-- [ ] **[E-1.3]** Static Assets (CSS, JS & Noto Sans Bengali Fonts in `wwwroot/`) — *Erin* `[Unblocks: A-2.5]`
-- [ ] **[E-1.4]** Home Controller & Views (Landing page with mock data) — *Erin* `[Blocked by: E-1.1]`
-- [ ] **[E-1.5]** Identity Views (`Login.cshtml`, `Register.cshtml`) — *Erin* `[Blocked by: E-1.1]`
-- [ ] **[E-1.6]** Checkpoint 1 Frontend Exit Gate — *Erin* `[Blocked by: E-1.1 to E-1.5]`
+- [x] ~~**[E-1.1]** Master Layout `_Layout.cshtml` (Bootstrap 5, Nav, Footer) — *Erin* `[Unblocks: E-1.4]`~~
+- [x] ~~**[E-1.2]** `_DisclaimerBanner.cshtml` & `_LanguageToggle.cshtml` — *Erin* `[Unblocks: E-1.1]`~~
+- [x] ~~**[E-1.3]** Static Assets (CSS, JS & Noto Sans Bengali Fonts in `wwwroot/`) — *Erin* `[Unblocks: A-2.5]`~~
+- [x] ~~**[E-1.4]** Home Controller & Views (Landing page with mock data) — *Erin* `[Blocked by: E-1.1]`~~
+- [x] ~~**[E-1.5]** Identity Views (`Login.cshtml`, `Register.cshtml`) — *Erin* `[Blocked by: E-1.1]`~~
+- [x] ~~**[E-1.6]** Checkpoint 1 Frontend Exit Gate — *Erin* `[Blocked by: E-1.1 to E-1.5]`~~
 
 ### 2. Core Architecture Critical Path (Tultul's First Wave)
 - [x] ~~**[T-1.1]** Initialize .NET 8 Solution (`MuktoAin.sln` 4 Projects + References) — *Tultul* `[Blocked by: S-Setup.1] [Unblocks: T-1.2]`~~
@@ -43,8 +43,8 @@
 - [x] ~~**[A-1.2]** Checkpoint 1 DTOs Exit Gate — *Arpita* `[Blocked by: A-1.1]`~~
 
 ### 3. Identity, Data Ingestion & Vector Indexing
-- [ ] **[S-1.1]** ASP.NET Core Identity Configuration in `MuktoAin.Infrastructure` — *Shads* `[Blocked by: T-1.5, T-1.6] [Unblocks: S-1.2, S-3.6]`
-- [ ] **[S-1.2]** `SeedAdminUser.cs` Startup Seeding — *Shads* `[Blocked by: S-1.1]`
+- [x] ~~**[S-1.1]** ASP.NET Core Identity Configuration in `MuktoAin.Infrastructure` — *Shads* `[Blocked by: T-1.5, T-1.6] [Unblocks: S-1.2, S-3.6]` — verified against real SQL Server; `AppDbContext` now inherits `IdentityDbContext<User, IdentityRole<int>, int>` (no role/claim tables exist in the SSMS schema by design — authorization runs off `User.Role` enum via `UserRoleClaimsTransformation` in Web/Auth); cookie auth via `AddIdentityCore` + explicit `AddAuthentication(IdentityConstants.ApplicationScheme)`; `UserConfiguration.cs` maps `User.Id` → physical `UserId` column~~
+- [x] ~~**[S-1.2]** `SeedAdminUser.cs` Startup Seeding — *Shads* `[Blocked by: S-1.1]` — idempotent; credentials from `SeedAdmin` config section (template updated); verified live: seeded `admin@muktoain.bd` (UserId=1, Role=Admin) on real SQL Server — ⚠️ **open env issue found during this verification:** dev machine cannot bind ports 5080/5082 (Windows excluded port range, not a code bug); diagnosis + fix options in Shads_plan Step 1.2 `[ENV-BUG][OPEN]`; also note the local admin row was seeded with the bootstrap default password BEFORE `SeedAdmin:Password` was configured — reset/delete that row or sign in with the default~~
 - [x] ~~**[T-1.7]** Seed Data Loaders (`SeedDistricts`, `SeedCategories`, `SeedScenarioMappings`) — *Tultul* `[Blocked by: S-Setup.5, T-1.6] [Unblocks: T-1.8]` — note: no `SeedDocumentTypes` exists because `DocumentType` is an enum column, not a lookup table (scripts/02_schema.sql has no `DOCUMENT_TYPE` table); `SeedScenarioMappings` safely no-ops until `ACT_SECTION` rows exist (T-1.8)~~
 - [x] ~~**[T-1.8]** 1,484 Bangladesh Acts Ingestion Pipeline (`ActImportService.cs`) — *Tultul* `[Blocked by: T-1.6, T-1.7] [Unblocks: T-1.9]` — verified against real SQL Server: 1,484 acts, 35,633 sections, 14,523 footnotes imported; idempotent restart confirmed (0 duplicates); unblocked all 26 `SeedScenarioMappings` rows in the same run~~
 - [x] ~~**[T-1.9]** Legal Section Chunking Pipeline (`LegalChunkingService.cs`) — *Tultul* `[Blocked by: T-1.8] [Unblocks: S-1.8]` — verified against real SQL Server: 35,633 sections chunked into 42,858 rows; idempotent restart confirmed. Caught and fixed a runaway-split bug during verification (452 sections producing thousands of 1-char-shrinking duplicate chunks each) by requiring a found boundary to land at least halfway into the target window before using it~~
@@ -89,13 +89,13 @@
 - [ ] **[A-2.8]** Checkpoint 2 Document & Review Exit Gate — *Arpita* `[Blocked by: A-2.1 to A-2.7]`
 
 ### 4. Frontend Citizen Views & Contract Handoff
-- [ ] **[E-2.1]** Citizen Case Intake View (`/Case/Submit`) — *Erin* `[Mock Ready -> Wires to A-2.1]`
-- [ ] **[E-2.2]** Legal Analysis & Rights Explanation View (`/Case/Result`) — *Erin* `[Mock Ready -> Wires to S-2.3]`
-- [ ] **[E-2.3]** Anonymous Case Tracking View (`/Case/Track`) — *Erin* `[Mock Ready -> Wires to A-2.1]`
-- [ ] **[E-2.4]** Acts Keyword Search View (`/Search`) — *Erin* `[Mock Ready -> Wires to T-2.4]`
-- [ ] **[E-2.5]** Act Category Browsing & Detail Views (`/Category`) — *Erin* `[Mock Ready -> Wires to T-2.5]`
+- [x] ~~**[E-2.1]** Citizen Case Intake View (`/Case/Submit`) — *Erin* `[Mock Ready -> Wires to A-2.1]`~~
+- [x] ~~**[E-2.2]** Legal Analysis & Rights Explanation View (`/Case/Result`) — *Erin* `[Mock Ready -> Wires to S-2.3]`~~
+- [x] ~~**[E-2.3]** Anonymous Case Tracking View (`/Case/Track`) — *Erin* `[Mock Ready -> Wires to A-2.1]`~~
+- [x] ~~**[E-2.4]** Acts Keyword Search View (`/Search`) — *Erin* `[Mock Ready -> Wires to T-2.4]`~~
+- [x] ~~**[E-2.5]** Act Category Browsing & Detail Views (`/Category`) — *Erin* `[Mock Ready -> Wires to T-2.5]`~~
 - [ ] **[E-2.6]** Generated Document Preview View (`/Document/Preview`) — *Erin* `[Mock Ready -> Wires to A-2.4]`
-- [ ] **[E-2.7]** Lawyer Verification & Review Views (`/Lawyer/Queue`, `/Lawyer/Review`) — *Erin* `[Mock Ready -> Wires to A-2.7]`
+- [x] ~~**[E-2.7]** Lawyer Verification & Review Views (`/Lawyer/Queue`, `/Lawyer/Review`) — *Erin* `[Mock Ready -> Wires to A-2.7]`~~
 - [ ] **[E-2.8]** `api-contracts.md` Specification & `.resx` Resource Files — *Erin* `[Unblocks: S-3.5]`
 - [ ] **[E-2.9]** Checkpoint 2 Frontend Views Exit Gate — *Erin* `[Blocked by: E-2.1 to E-2.8]`
 - [ ] **[S-2.8]** Checkpoint 2 Overall Citizen Flow & RAG Integration Exit Gate — *Shads* `[Blocked by: S-2.1 to S-2.7, T-2.6, A-2.8, E-2.9]`
@@ -112,7 +112,7 @@
 - [ ] **[S-3.6]** `UserManagementService.cs` (Admin Role Management) — *Shads* `[Blocked by: S-1.1] [Wires to E-3.3]`
 
 ### 2. Admin Frontend Views & Integration Wiring
-- [ ] **[E-3.1]** Admin Dashboard & Analytics Views (`/Admin/Analytics`) — *Erin* `[Blocked by: E-1.1] [Wires to A-3.2]`
+- [x] ~~**[E-3.1]** Admin Dashboard & Analytics Views (`/Admin/Analytics`) — *Erin* `[Blocked by: E-1.1] [Wires to A-3.2]`~~
 - [ ] **[E-3.2]** Admin Acts Management & Scenario Views (`/Admin/Acts`) — *Erin* `[Blocked by: E-1.1] [Wires to T-3.1, T-3.2]`
 - [ ] **[E-3.3]** Admin User Management Views (`/Admin/Users`) — *Erin* `[Blocked by: E-1.1] [Wires to S-3.6]`
 - [ ] **[E-3.4]** Final Integration: Wiring Controllers to Real Services — *Erin* `[Blocked by: All Backend Services]`

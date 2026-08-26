@@ -10,8 +10,8 @@
       "REPLACE_WITH_KEY_4"
     ],
     "EmbeddingModel": "gemini-embedding-001",
-    "GenerationModel": "gemini-2.0-flash",
-    "GenerationModel_Comment": "gemini-2.0-flash provides highest free tier quota (1M TPM, 1500 RPD). Switch to gemini-2.5-flash or gemini-3.7-flash for benchmark evaluation."
+    "GenerationModel": "gemini-3.6-flash",
+    "GenerationModel_Comment": "gemini-3.6-flash is the current free-tier generation model (gemini-2.0-flash was retired by Google). Switch models for benchmark evaluation as needed."
   },
   "Qdrant": {
     "Endpoint": "https://your-cluster-id.cloud.qdrant.io:6333",
@@ -20,6 +20,10 @@
     "Collection_Comment": "Per-developer namespace, avoids clashing local IDs. Canonical (no suffix) is EmbeddingBatchJob-only.",
     "VectorSize": 768,
     "VectorSize_Comment": "Must match the embedding model's output dimension."
+  },
+  "SeedAdmin": {
+    "Email": "admin@muktoain.bd",
+    "Password": "REPLACE_WITH_STRONG_ADMIN_PASSWORD"
   },
   "Logging": {
     "LogLevel": {
