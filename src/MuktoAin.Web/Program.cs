@@ -80,7 +80,10 @@ using (var scope = app.Services.CreateScope())
     await ActImportService.SeedAsync(context, app.Environment.ContentRootPath, logger);
     await LegalChunkingService.ChunkAsync(context, logger);
     await SeedScenarioMappings.SeedAsync(context, app.Environment.ContentRootPath, logger);
-    // TODO: [Shads] SeedAdminUser will be added here.
+
+    // S-1.2: bootstrap the first admin account (idempotent).
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+    await SeedAdminUser.SeedAsync(userManager, builder.Configuration, logger);
 }
 
 app.UseHttpsRedirection();
