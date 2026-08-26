@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Interfaces;
 using MuktoAin.Domain.Interfaces.Repositories;
@@ -17,10 +18,19 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddDistributedMemoryCache();
+
+builder.Services.AddSession(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 // Schema is authored and controlled directly in SSMS via scripts/*.sql (T-1.6) --
 // this context only maps onto that predefined schema. No EF migrations by design.
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // S-1.1: ASP.NET Core Identity against the manually-authored [dbo].[USER] table.
 // Role tables do not exist in the SSMS schema by design -- authorization runs off
@@ -55,39 +65,59 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
-builder.Services.AddTransient<Microsoft.AspNetCore.Authentication.IClaimsTransformation, UserRoleClaimsTransformation>();
+builder.Services.AddTransient<
+    Microsoft.AspNetCore.Authentication.IClaimsTransformation,
+    UserRoleClaimsTransformation>();
 
 // S-1.3 / S-1.4 / S-2.6: Gemini client (key rotation inside), shared Polly
 // resilience pipeline (timeout -> circuit breaker -> retry). Singleton so the
 // round-robin key index persists across requests.
-builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection(GeminiOptions.SectionName));
+builder.Services.Configure<GeminiOptions>(
+    builder.Configuration.GetSection(GeminiOptions.SectionName));
+
 builder.Services.AddHttpClient(nameof(GeminiClient));
+
 builder.Services.AddSingleton(sp =>
-    GeminiResiliencePolicies.Build(sp.GetRequiredService<IOptions<GeminiOptions>>().Value));
+    GeminiResiliencePolicies.Build(
+        sp.GetRequiredService<IOptions<GeminiOptions>>().Value));
+
 builder.Services.AddSingleton<GeminiClient>();
+
 // NOTE: fully qualified on purpose -- Domain.Interfaces.* and
 // Domain.Interfaces.Services.* both define IAiService/IEmbeddingService after the
 // T-1.13 merge; GeminiClient/GeminiEmbeddingService implement the former.
-builder.Services.AddSingleton<MuktoAin.Domain.Interfaces.IAiService>(sp => sp.GetRequiredService<GeminiClient>());
+builder.Services.AddSingleton<MuktoAin.Domain.Interfaces.IAiService>(
+    sp => sp.GetRequiredService<GeminiClient>());
+
 builder.Services.AddSingleton<GeminiEmbeddingService>();
-builder.Services.AddSingleton<MuktoAin.Domain.Interfaces.IEmbeddingService>(sp => sp.GetRequiredService<GeminiEmbeddingService>());
+
+builder.Services.AddSingleton<MuktoAin.Domain.Interfaces.IEmbeddingService>(
+    sp => sp.GetRequiredService<GeminiEmbeddingService>());
 
 // T-1.11: Qdrant vector store. Registered as both the concrete type (so Program.cs can
 // call EnsureCollectionAsync below) and the IVectorStore interface (so consumers like
 // SimilaritySearchService depend on the Domain abstraction, not Infrastructure).
-builder.Services.Configure<QdrantOptions>(builder.Configuration.GetSection("Qdrant"));
+builder.Services.Configure<QdrantOptions>(
+    builder.Configuration.GetSection("Qdrant"));
+
 builder.Services.AddSingleton<QdrantVectorStore>();
-builder.Services.AddSingleton<IVectorStore>(sp => sp.GetRequiredService<QdrantVectorStore>());
+
+builder.Services.AddSingleton<IVectorStore>(
+    sp => sp.GetRequiredService<QdrantVectorStore>());
 
 // T-1.13: Repositories (T-1.12). Generic IRepository<T> covers entities with no custom
 // query needs (District, CaseCategory, ActFootnote, GeneratedDocument, LawyerProfile,
 // LawyerReview, AiLog, CaseActReference); the rest have dedicated interfaces below.
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+
 builder.Services.AddScoped<IActRepository, ActRepository>();
 builder.Services.AddScoped<IActSectionRepository, ActSectionRepository>();
 builder.Services.AddScoped<ICaseRepository, CaseRepository>();
 builder.Services.AddScoped<IActSectionChunkRepository, ActSectionChunkRepository>();
 builder.Services.AddScoped<IScenarioMappingRepository, ScenarioMappingRepository>();
+
+// Case lifecycle service
+builder.Services.AddScoped<CaseService>();
 
 // Tultul will add: T-2.x search services (SimilaritySearchService, KeywordSearchService, ...)
 // Arpita will add: DocumentService, ReviewService, etc.
@@ -107,23 +137,47 @@ else
 
 app.UseStatusCodePagesWithReExecute("/Home/Error", "?statusCode={0}");
 
+app.UseSession();
+
 // Do NOT call Database.MigrateAsync() -- see the "No EF migrations" note above.
 // Seeders assume the SSMS scripts have already been executed.
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    await SeedDistricts.SeedAsync(context, app.Environment.ContentRootPath);
-    await SeedCategories.SeedAsync(context, app.Environment.ContentRootPath);
-    await ActImportService.SeedAsync(context, app.Environment.ContentRootPath, logger);
-    await LegalChunkingService.ChunkAsync(context, logger);
-    await SeedScenarioMappings.SeedAsync(context, app.Environment.ContentRootPath, logger);
+
+    await SeedDistricts.SeedAsync(
+        context,
+        app.Environment.ContentRootPath);
+
+    await SeedCategories.SeedAsync(
+        context,
+        app.Environment.ContentRootPath);
+
+    await ActImportService.SeedAsync(
+        context,
+        app.Environment.ContentRootPath,
+        logger);
+
+    await LegalChunkingService.ChunkAsync(
+        context,
+        logger);
+
+    await SeedScenarioMappings.SeedAsync(
+        context,
+        app.Environment.ContentRootPath,
+        logger);
 
     // S-1.2: bootstrap the first admin account (idempotent).
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
-    await SeedAdminUser.SeedAsync(userManager, builder.Configuration, logger);
+
+    await SeedAdminUser.SeedAsync(
+        userManager,
+        builder.Configuration,
+        logger);
 
     var vectorStore = scope.ServiceProvider.GetRequiredService<QdrantVectorStore>();
+
     await vectorStore.EnsureCollectionAsync();
 }
 

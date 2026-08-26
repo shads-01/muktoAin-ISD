@@ -66,7 +66,17 @@
             </button>
         </div>
         <div style="font-size: 16.5px; line-height: 1.85;">
-            @Html.Raw(Model.RightsExplanation)
+            @if (!string.IsNullOrEmpty(Model.RightsExplanation))
+            {
+                @Html.Raw(Model.RightsExplanation)
+            }
+            else
+            {
+                <p class="muted" style="margin-bottom: 0;">
+                    আপনার মামলাটি গ্রহণ করা হয়েছে। AI অধিকার বিশ্লেষণ (FR-3) শীঘ্রই এখানে প্রদর্শিত হবে।
+                    <em>Your case has been received — the AI rights analysis will appear here once generated.</em>
+                </p>
+            }
         </div>
     </div>
 
