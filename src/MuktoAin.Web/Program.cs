@@ -123,6 +123,9 @@ builder.Services.AddScoped<CaseService>();
 // T-2.2: SQL Server FTS keyword search (FR-7 standalone search + FR-3 vector fallback).
 builder.Services.AddScoped<IKeywordSectionSearch, KeywordSearchService>();
 
+// T-2.4: Standalone Acts search (FR-7).
+builder.Services.AddScoped<SearchService>();
+
 // T-2.5: Category browsing (FR-6).
 builder.Services.AddScoped<CategoryService>();
 
