@@ -40,6 +40,7 @@ using (var scope = app.Services.CreateScope())
     await SeedDistricts.SeedAsync(context, app.Environment.ContentRootPath);
     await SeedCategories.SeedAsync(context, app.Environment.ContentRootPath);
     await ActImportService.SeedAsync(context, app.Environment.ContentRootPath, logger);
+    await LegalChunkingService.ChunkAsync(context, logger);
     await SeedScenarioMappings.SeedAsync(context, app.Environment.ContentRootPath, logger);
     // TODO: [Shads] SeedAdminUser will be added here.
 }
