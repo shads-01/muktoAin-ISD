@@ -108,6 +108,11 @@ Now listening on: http://localhost:5082
 ```
 Welcome to MuktoAin! 
 
+> [!NOTE]
+> **Data seeds automatically on startup — no separate seed command.** Every `dotnet run` seeds districts, categories, and (if `data/bangladesh-acts-dataset.json` is present) the 1,484 Bangladesh Acts into your DB. It's idempotent — safe to run every time, it only inserts what's missing.
+>
+> The Acts dataset is large and **not committed to git** — see [data/README.md](data/README.md) to download it from Kaggle. Don't have it yet? That's fine: the app logs a warning and starts normally without it, you just won't have Acts/Sections data until you download it. First import with the file present takes a couple of minutes (1,484 rows, one at a time) — later runs are instant since it skips what's already there.
+
 ---
 
 ## 3. 🔄 Every-Time Local Dev Workflow
@@ -180,6 +185,12 @@ Get-Process MuktoAin.Web -ErrorAction SilentlyContinue | Stop-Process -Force
 <summary><b>scripts/03_fulltext.sql fails or Acts search returns no results</b></summary>
 <br>
 Your SQL Server instance lacks Full-Text Search. See the verification query in Step 1. Remember: LocalDB does not support this!
+</details>
+
+<details>
+<summary><b>"ActImportService: 'bangladesh-acts-dataset.json' not found -- skipping" warning on startup</b></summary>
+<br>
+This is expected if you haven't downloaded the Acts dataset yet — it's optional for most tasks. See <a href="data/README.md">data/README.md</a> for the Kaggle link and SHA256 to verify it. The app runs fine without it; you just won't have Acts/Sections data until it's in place.
 </details>
 
 <details>
