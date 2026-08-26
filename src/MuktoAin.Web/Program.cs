@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using MuktoAin.Domain.Interfaces.Services;
 using MuktoAin.Infrastructure.Data;
 using MuktoAin.Infrastructure.Data.Seeding;
+using MuktoAin.Infrastructure.VectorStore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,8 +14,15 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// T-1.11: Qdrant vector store. Registered as both the concrete type (so Program.cs can
+// call EnsureCollectionAsync below) and the IVectorStore interface (so consumers like
+// SimilaritySearchService depend on the Domain abstraction, not Infrastructure).
+builder.Services.Configure<QdrantOptions>(builder.Configuration.GetSection("Qdrant"));
+builder.Services.AddSingleton<QdrantVectorStore>();
+builder.Services.AddSingleton<IVectorStore>(sp => sp.GetRequiredService<QdrantVectorStore>());
+
 // Shads will add: Identity, GeminiClient, AI services (S-1.x)
-// Tultul will add: repositories, IVectorStore/QdrantVectorStore (T-1.11 to T-1.13)
+// Tultul will add: repositories, T-1.12/T-1.13 DI wiring
 // Arpita will add: DocumentService, ReviewService, etc.
 
 var app = builder.Build();
@@ -43,6 +52,9 @@ using (var scope = app.Services.CreateScope())
     await LegalChunkingService.ChunkAsync(context, logger);
     await SeedScenarioMappings.SeedAsync(context, app.Environment.ContentRootPath, logger);
     // TODO: [Shads] SeedAdminUser will be added here.
+
+    var vectorStore = scope.ServiceProvider.GetRequiredService<QdrantVectorStore>();
+    await vectorStore.EnsureCollectionAsync();
 }
 
 app.UseHttpsRedirection();
