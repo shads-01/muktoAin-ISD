@@ -52,7 +52,7 @@
 - [ ] **[T-1.11]** `QdrantVectorStore.cs` (.NET SDK Vector Implementation) — *Tultul* `[Blocked by: S-Setup.7, T-1.4] [Unblocks: S-1.8]`
 - [x] ~~**[T-1.12]** MSSQL Repository Implementations (Parameterized SQL) — *Tultul* `[Blocked by: T-1.4, T-1.6] [Unblocks: T-1.13, A-2.1]` — verified against real SQL Server; also added ScenarioMappingRepository for completeness and fixed `IRepository<T>.GetByIdAsync` (see T-1.4 note)~~
 - [ ] **[T-1.13]** DI Registration in `Program.cs` — *Tultul* `[Blocked by: T-1.11, T-1.12] [Unblocks: S-1.9]`
-- [ ] **[T-1.14]** Data Layer Unit Tests (`MuktoAin.UnitTests`) — *Tultul* `[Blocked by: T-1.12]`
+- [x] ~~**[T-1.14]** Data Layer Unit Tests (`MuktoAin.UnitTests`) — *Tultul* `[Blocked by: T-1.12]` — 14 tests, all passing on EF InMemory; FromSqlRaw/CONTAINSTABLE/ExecuteUpdateAsync methods excluded (unsupported by InMemory) and deferred to T-3.3~~
 - [ ] **[S-1.8]** `EmbeddingBatchJob.cs` (Embed & Index All Chunks into Qdrant) — *Shads* `[Blocked by: T-1.9, T-1.11, S-1.4] [Unblocks: S-1.9, T-2.1]`
 - [ ] **[T-1.15]** Checkpoint 1 Data Foundation Exit Gate — *Tultul* `[Blocked by: T-1.1 to T-1.14]`
 - [ ] **[S-1.9]** Checkpoint 1 Overall RAG Ingestion Smoke Test Exit Gate — *Shads* `[Blocked by: S-1.8, T-1.13, T-2.1]` *(retrieval leg requires T-2.1 — may land early CP2)*
