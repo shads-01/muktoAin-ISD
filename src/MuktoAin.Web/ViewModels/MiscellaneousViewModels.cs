@@ -16,6 +16,10 @@ public class SearchResultItemViewModel
     public string SectionNumber { get; set; } = string.Empty;
     public string SectionTitle { get; set; } = string.Empty;
     public string SectionTextSnippet { get; set; } = string.Empty;
+    public string SectionTextFull { get; set; } = string.Empty;
+    public bool IsTruncated { get; set; }
+    public string SectionIntro { get; set; } = string.Empty;
+    public List<string> SectionClauses { get; set; } = new();
 }
 
 public class CategoryViewModel
