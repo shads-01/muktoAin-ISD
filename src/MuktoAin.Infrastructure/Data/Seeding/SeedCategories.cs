@@ -9,15 +9,62 @@ namespace MuktoAin.Infrastructure.Data.Seeding;
 // already ordered 1-4, so the assigned ids line up in practice).
 public static class SeedCategories
 {
-    private sealed record CategorySeedDto(int CategoryId, string Name, string Description);
+    private const string CommonActionsDelimiter = "|";
+
+    private sealed record CategorySeedDto(
+        int CategoryId,
+        string Name,
+        string Description,
+        string NameBn,
+        string DescriptionBn,
+        List<string>? CommonActions);
 
     public static async Task SeedAsync(AppDbContext context, string contentRootPath)
     {
-        if (await context.CaseCategories.AnyAsync()) return; // idempotent
-
         var dtos = await SeedJsonLoader.LoadAsync<CategorySeedDto>(contentRootPath, "categories.json");
-        var categories = dtos.Select(d => new CaseCategory { Name = d.Name, Description = d.Description });
-        context.CaseCategories.AddRange(categories);
-        await context.SaveChangesAsync();
+        var existing = await context.CaseCategories.OrderBy(c => c.CategoryId).ToListAsync();
+
+        if (existing.Count == 0)
+        {
+            var categories = dtos.Select(d => new CaseCategory
+            {
+                Name = d.Name,
+                Description = d.Description,
+                NameBn = d.NameBn,
+                DescriptionBn = d.DescriptionBn,
+                CommonActions = JoinCommonActions(d.CommonActions),
+            });
+            context.CaseCategories.AddRange(categories);
+            await context.SaveChangesAsync();
+            return;
+        }
+
+        // Backfill: rows seeded before NameBn/DescriptionBn/CommonActions existed on
+        // CaseCategory are still blank on those columns. Matched by insertion order --
+        // CategoryId is IDENTITY-assigned in seed order, same order as the JSON.
+        var changed = false;
+        foreach (var (category, dto) in existing.Zip(dtos))
+        {
+            if (string.IsNullOrEmpty(category.NameBn))
+            {
+                category.NameBn = dto.NameBn;
+                category.DescriptionBn = dto.DescriptionBn;
+                changed = true;
+            }
+
+            if (string.IsNullOrEmpty(category.CommonActions))
+            {
+                category.CommonActions = JoinCommonActions(dto.CommonActions);
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            await context.SaveChangesAsync();
+        }
     }
+
+    private static string JoinCommonActions(List<string>? items) =>
+        items == null ? string.Empty : string.Join(CommonActionsDelimiter, items);
 }
