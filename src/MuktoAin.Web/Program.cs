@@ -3,9 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Interfaces;
+using MuktoAin.Domain.Interfaces.Repositories;
+using MuktoAin.Domain.Interfaces.Services;
 using MuktoAin.Infrastructure.Ai;
 using MuktoAin.Infrastructure.Data;
 using MuktoAin.Infrastructure.Data.Seeding;
+using MuktoAin.Infrastructure.Repositories;
+using MuktoAin.Infrastructure.VectorStore;
 using MuktoAin.Web.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -61,12 +65,31 @@ builder.Services.AddHttpClient(nameof(GeminiClient));
 builder.Services.AddSingleton(sp =>
     GeminiResiliencePolicies.Build(sp.GetRequiredService<IOptions<GeminiOptions>>().Value));
 builder.Services.AddSingleton<GeminiClient>();
-builder.Services.AddSingleton<IAiService>(sp => sp.GetRequiredService<GeminiClient>());
+// NOTE: fully qualified on purpose -- Domain.Interfaces.* and
+// Domain.Interfaces.Services.* both define IAiService/IEmbeddingService after the
+// T-1.13 merge; GeminiClient/GeminiEmbeddingService implement the former.
+builder.Services.AddSingleton<MuktoAin.Domain.Interfaces.IAiService>(sp => sp.GetRequiredService<GeminiClient>());
 builder.Services.AddSingleton<GeminiEmbeddingService>();
-builder.Services.AddSingleton<IEmbeddingService>(sp => sp.GetRequiredService<GeminiEmbeddingService>());
+builder.Services.AddSingleton<MuktoAin.Domain.Interfaces.IEmbeddingService>(sp => sp.GetRequiredService<GeminiEmbeddingService>());
 
-// Shads will add: GeminiClient, AI services (S-1.x / S-2.x)
-// Tultul will add: repositories, IVectorStore/QdrantVectorStore (T-1.11 to T-1.13)
+// T-1.11: Qdrant vector store. Registered as both the concrete type (so Program.cs can
+// call EnsureCollectionAsync below) and the IVectorStore interface (so consumers like
+// SimilaritySearchService depend on the Domain abstraction, not Infrastructure).
+builder.Services.Configure<QdrantOptions>(builder.Configuration.GetSection("Qdrant"));
+builder.Services.AddSingleton<QdrantVectorStore>();
+builder.Services.AddSingleton<IVectorStore>(sp => sp.GetRequiredService<QdrantVectorStore>());
+
+// T-1.13: Repositories (T-1.12). Generic IRepository<T> covers entities with no custom
+// query needs (District, CaseCategory, ActFootnote, GeneratedDocument, LawyerProfile,
+// LawyerReview, AiLog, CaseActReference); the rest have dedicated interfaces below.
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IActRepository, ActRepository>();
+builder.Services.AddScoped<IActSectionRepository, ActSectionRepository>();
+builder.Services.AddScoped<ICaseRepository, CaseRepository>();
+builder.Services.AddScoped<IActSectionChunkRepository, ActSectionChunkRepository>();
+builder.Services.AddScoped<IScenarioMappingRepository, ScenarioMappingRepository>();
+
+// Tultul will add: T-2.x search services (SimilaritySearchService, KeywordSearchService, ...)
 // Arpita will add: DocumentService, ReviewService, etc.
 
 var app = builder.Build();
@@ -99,6 +122,9 @@ using (var scope = app.Services.CreateScope())
     // S-1.2: bootstrap the first admin account (idempotent).
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
     await SeedAdminUser.SeedAsync(userManager, builder.Configuration, logger);
+
+    var vectorStore = scope.ServiceProvider.GetRequiredService<QdrantVectorStore>();
+    await vectorStore.EnsureCollectionAsync();
 }
 
 app.UseHttpsRedirection();
