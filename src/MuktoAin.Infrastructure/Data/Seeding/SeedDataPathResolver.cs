@@ -12,14 +12,28 @@ internal static class SeedDataPathResolver
 
     public static string Resolve(string contentRootPath, string fileName)
     {
+        if (TryResolve(contentRootPath, fileName, out var path)) return path;
+
+        throw new FileNotFoundException(
+            $"Could not locate '{fileName}' in a 'data' directory above '{contentRootPath}'.", fileName);
+    }
+
+    // Non-throwing variant for seed files that are optional at a given point in
+    // time (e.g. a large, git-ignored dataset a teammate may not have downloaded yet).
+    public static bool TryResolve(string contentRootPath, string fileName, out string path)
+    {
         var dir = new DirectoryInfo(contentRootPath);
         for (var i = 0; i < MaxLevelsUp && dir is not null; i++, dir = dir.Parent)
         {
             var candidate = Path.Combine(dir.FullName, "data", fileName);
-            if (File.Exists(candidate)) return candidate;
+            if (File.Exists(candidate))
+            {
+                path = candidate;
+                return true;
+            }
         }
 
-        throw new FileNotFoundException(
-            $"Could not locate '{fileName}' in a 'data' directory above '{contentRootPath}'.", fileName);
+        path = string.Empty;
+        return false;
     }
 }

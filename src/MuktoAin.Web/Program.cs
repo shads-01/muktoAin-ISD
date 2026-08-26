@@ -39,6 +39,7 @@ using (var scope = app.Services.CreateScope())
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     await SeedDistricts.SeedAsync(context, app.Environment.ContentRootPath);
     await SeedCategories.SeedAsync(context, app.Environment.ContentRootPath);
+    await ActImportService.SeedAsync(context, app.Environment.ContentRootPath, logger);
     await SeedScenarioMappings.SeedAsync(context, app.Environment.ContentRootPath, logger);
     // TODO: [Shads] SeedAdminUser will be added here.
 }
