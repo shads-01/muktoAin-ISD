@@ -40,9 +40,10 @@
                 <div style="background: var(--surface-2); padding: 18px; border-radius: var(--radius); border: 1px solid var(--border);">
                     <h4 class="cat-claims-h" style="font-size: 15px; margin-bottom: 10px;"><i data-lucide="check-square"></i> এই বিভাগে সচরাচর দাখিলযোগ্য অভিযোগসমূহ:</h4>
                     <ul class="cat-claims-list" style="padding-left: 20px; font-size: 14.5px; line-height: 1.8; color: var(--ink-2);">
-                        @foreach (var action in Model.CommonActions)
+                        @for (var i = 0; i < Model.CommonActions.Count; i++)
                         {
-                            <li>@action</li>
+                            var enText = i < Model.CommonActionsEn.Count ? Model.CommonActionsEn[i] : Model.CommonActions[i];
+                            <li data-bn="@Model.CommonActions[i]" data-en="@enText">@Model.CommonActions[i]</li>
                         }
                     </ul>
                 </div>

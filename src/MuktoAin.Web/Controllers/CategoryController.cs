@@ -54,6 +54,9 @@ public class CategoryController : Controller
             CommonActions = category.CommonActions
                 .Split('|', StringSplitOptions.RemoveEmptyEntries)
                 .ToList(),
+            CommonActionsEn = category.CommonActionsEn
+                .Split('|', StringSplitOptions.RemoveEmptyEntries)
+                .ToList(),
         };
     }
 }

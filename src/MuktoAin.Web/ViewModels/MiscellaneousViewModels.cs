@@ -31,6 +31,7 @@ public class CategoryViewModel
     public string DescriptionEn { get; set; } = string.Empty;
     public string Icon { get; set; } = "folder";
     public List<string> CommonActions { get; set; } = new();
+    public List<string> CommonActionsEn { get; set; } = new();
 }
 
 public class LawyerApplyViewModel
