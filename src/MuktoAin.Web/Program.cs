@@ -52,7 +52,11 @@ builder.Services.AddIdentityCore<User>(options =>
 })
 .AddEntityFrameworkStores<AppDbContext>()
 .AddSignInManager<SignInManager<User>>()
-.AddDefaultTokenProviders();
+.AddDefaultTokenProviders()
+// Works around AspNetUserClaims not existing in the SSMS schema -- see
+// NoClaimsStoreUserClaimsPrincipalFactory for why the default factory breaks real
+// sign-in without this.
+.AddClaimsPrincipalFactory<NoClaimsStoreUserClaimsPrincipalFactory>();
 
 // AddIdentityCore does NOT wire cookie authentication -- done explicitly here.
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
@@ -121,8 +125,15 @@ builder.Services.AddScoped<IScenarioMappingRepository, ScenarioMappingRepository
 // Case lifecycle service
 builder.Services.AddScoped<CaseService>();
 
+// T-2.1: Qdrant vector similarity search (FR-3 primary retrieval path).
+builder.Services.AddScoped<IVectorSectionSearch, SimilaritySearchService>();
+
 // T-2.2: SQL Server FTS keyword search (FR-7 standalone search + FR-3 vector fallback).
 builder.Services.AddScoped<IKeywordSectionSearch, KeywordSearchService>();
+
+// T-2.3: Vector-primary/keyword-fallback context retrieval for FR-3 (PromptAssembler's
+// upstream seam).
+builder.Services.AddScoped<IRagContextBuilder, RagContextBuilder>();
 
 // T-2.4: Standalone Acts search (FR-7).
 builder.Services.AddScoped<SearchService>();
@@ -141,7 +152,6 @@ builder.Services.AddScoped<IEncryptionService, EncryptionService>();
 // Controlled by Embedding:RunOnStartup config flag.
 builder.Services.AddHostedService<EmbeddingBatchJob>();
 
-// Tultul will add: T-2.1 SimilaritySearchService, T-2.3 RagContextBuilder, ...
 // Arpita will add: DocumentService, ReviewService, etc.
 
 var app = builder.Build();

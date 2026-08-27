@@ -1,8 +1,8 @@
-using System.Text.RegularExpressions;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
 using MuktoAin.Domain.Interfaces.Services;
 using MuktoAin.Domain.Models;
+using MuktoAin.Infrastructure.Common;
 
 namespace MuktoAin.Infrastructure.Search;
 
@@ -48,35 +48,12 @@ public class KeywordSearchService : IKeywordSectionSearch
         return sections.Select(s => new RetrievedSection(
             s.SectionId,
             s.Act.Title,
-            DeriveSectionNumber(s.SectionNumber, s.SectionText),
+            SectionNumberResolver.Resolve(s.SectionNumber, s.SectionText),
             s.SectionText,
             0f,
             RetrievalMethod.Keyword,
             s.Act.ActNumber,
             s.Act.Year));
-    }
-
-    // ActSection.SectionNumber is left null by design (see ActImportService) --
-    // the source data didn't reliably expose a clean per-section number field, so
-    // ingestion relies on OrdinalPosition for ordering instead. But the number is
-    // usually still there, embedded as the leading token of SectionText itself
-    // (e.g. "7. Every expression which is explained..."), so for display purposes
-    // it's recovered from there when the column is empty. This is presentation-layer
-    // inference, not a fix to the underlying data -- SectionNumber stays null in the
-    // database, and a section whose text doesn't start with a bare number (uncommon
-    // in this corpus, but not universal) still falls back to blank.
-    private static readonly Regex LeadingSectionNumberPattern =
-        new(@"^\s*(\d{1,4})\s*[.।]\s+", RegexOptions.Compiled);
-
-    private static string DeriveSectionNumber(string? storedNumber, string sectionText)
-    {
-        if (!string.IsNullOrWhiteSpace(storedNumber))
-        {
-            return storedNumber;
-        }
-
-        var match = LeadingSectionNumberPattern.Match(sectionText);
-        return match.Success ? match.Groups[1].Value : string.Empty;
     }
 
     private static string SanitizeForFts(string query)
