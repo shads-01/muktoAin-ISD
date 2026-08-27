@@ -25,6 +25,10 @@
     "Email": "admin@muktoain.bd",
     "Password": "REPLACE_WITH_STRONG_ADMIN_PASSWORD"
   },
+  "Embedding": {
+    "RunOnStartup": false,
+    "RunOnStartup_Comment": "Set to true to run the embedding batch job on app startup. Set back to false after the initial run."
+  },
   "Logging": {
     "LogLevel": {
       "Default": "Information",

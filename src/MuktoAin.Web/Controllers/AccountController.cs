@@ -40,6 +40,21 @@ public class AccountController : Controller
             return Redirect(returnUrl);
         }
 
+        if (string.Equals(model.Email, "admin@muktoain.bd", StringComparison.OrdinalIgnoreCase))
+        {
+            return RedirectToAction("Dashboard", "Admin");
+        }
+
+        if (string.Equals(model.Email, "lawyer@muktoain.bd", StringComparison.OrdinalIgnoreCase))
+        {
+            return RedirectToAction("Queue", "Lawyer");
+        }
+
+        if (string.Equals(model.Email, "citizen@muktoain.bd", StringComparison.OrdinalIgnoreCase))
+        {
+            return RedirectToAction("Track", "Case");
+        }
+
         return RedirectToAction("Index", "Home");
     }
 
