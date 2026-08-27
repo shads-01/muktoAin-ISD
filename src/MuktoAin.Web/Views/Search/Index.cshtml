@@ -1,6 +1,17 @@
 @model MuktoAin.Web.ViewModels.SearchViewModel
 @{
     ViewData["Title"] = "আইন অনুসন্ধান — Search Acts";
+
+    // Display-only Bengali numeral rendering (page numbers stay real ints in the
+    // querystring/asp-route-page -- only the rendered label switches script).
+    static string ToBn(int n) => n.ToString()
+        .Select(c => char.IsDigit(c) ? (char)(c - '0' + '০') : c)
+        .Aggregate(new System.Text.StringBuilder(), (sb, c) => sb.Append(c))
+        .ToString();
+
+    var totalPages = Model.PageSize > 0
+        ? (int)Math.Ceiling(Model.TotalResults / (double)Model.PageSize)
+        : 1;
 }
 
 <main class="container" id="main">
@@ -28,7 +39,7 @@
                 <a class="chip chip-sm" asp-action="Index" asp-route-q="মজুরি পরিশোধ">মজুরি পরিশোধ</a>
                 <a class="chip chip-sm" asp-action="Index" asp-route-q="ধারা ১২৩">ধারা ১২৩</a>
                 <a class="chip chip-sm" asp-action="Index" asp-route-q="তথ্য অধিকার">তথ্য অধিকার</a>
-                <a class="chip chip-sm" asp-action="Index" asp-route-q="দণ্ডবিধি ৪২০">দণ্ডবিধি ৪২০</a>
+                <a class="chip chip-sm" asp-action="Index" asp-route-q="চুক্তি ভঙ্গ">চুক্তি ভঙ্গ</a>
             </div>
         </form>
     </div>
@@ -42,7 +53,6 @@
                     <span class="tiny muted">
                         “<b>@Model.Query</b>”-এর জন্য প্রায় <b>@Model.TotalResults টি ফলাফল</b> পাওয়া গেছে (পৃষ্ঠা @Model.Page)
                     </span>
-                    <span class="citation-chip">SQL Server FTS / Qdrant Hybrid</span>
                 </div>
 
                 @if (Model.Results.Count > 0)
@@ -65,25 +75,100 @@
                                     @Html.Raw(res.SectionTextSnippet.Replace(Model.Query, $"<mark>{Model.Query}</mark>"))
                                 </div>
                                 <div class="row spread wrap" style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
-                                    <a class="tiny" href="#" onclick="showToast('ধারা @res.SectionNumber ক্লিপবোর্ডে কপি হয়েছে', 'success'); return false;">
-                                        <i data-lucide="copy"></i> ধারা উদ্ধৃতি কপি
-                                    </a>
+                                    <div class="row" style="gap: 14px;">
+                                        <a class="tiny" href="#" onclick="showToast('ধারা @res.SectionNumber ক্লিপবোর্ডে কপি হয়েছে', 'success'); return false;">
+                                            <i data-lucide="copy"></i> ধারা উদ্ধৃতি কপি
+                                        </a>
+                                        @if (res.IsTruncated)
+                                        {
+                                            <a class="tiny" href="#" data-open-modal="#section-modal-@res.SectionId" onclick="return false;">
+                                                <i data-lucide="maximize-2"></i> সম্পূর্ণ ধারা দেখুন
+                                            </a>
+                                        }
+                                    </div>
                                     <a class="btn btn-quiet btn-sm" asp-controller="Case" asp-action="Submit">
                                         এই ধারা উদ্ধৃত করে মামলা দাখিল →
                                     </a>
                                 </div>
                             </div>
+
+                            @if (res.IsTruncated)
+                            {
+                                <div class="modal-backdrop" id="section-modal-@res.SectionId" role="dialog" aria-modal="true" aria-labelledby="section-modal-title-@res.SectionId">
+                                    <div class="modal reading-modal">
+                                        <div class="modal-handle"></div>
+                                        <div class="modal-head">
+                                            <h3 class="serif" id="section-modal-title-@res.SectionId">@res.SectionNumber: @res.SectionTitle</h3>
+                                            <button class="icon-btn" type="button" data-close-modal aria-label="Close modal">
+                                                <i data-lucide="x"></i>
+                                            </button>
+                                        </div>
+                                        <div class="tiny" style="color: var(--primary); font-weight: 600; margin-bottom: 12px;">
+                                            @res.ActTitle
+                                        </div>
+                                        <div class="section-full-text" style="max-height: 60vh; overflow-y: auto;">
+                                            @if (res.SectionClauses.Count > 0)
+                                            {
+                                                <p style="margin: 0 0 10px;">@res.SectionIntro</p>
+                                                <ul style="list-style: none; margin: 0; padding-left: 4px; display: flex; flex-direction: column; gap: 6px;">
+                                                    @foreach (var clause in res.SectionClauses)
+                                                    {
+                                                        <li>@clause</li>
+                                                    }
+                                                </ul>
+                                            }
+                                            else
+                                            {
+                                                <span style="white-space: pre-wrap;">@res.SectionTextFull</span>
+                                            }
+                                        </div>
+                                        <div class="row spread wrap" style="margin-top: 20px; gap: 10px;">
+                                            <button class="btn btn-ghost" type="button" data-close-modal>বন্ধ করুন</button>
+                                            <a class="btn btn-primary" asp-controller="Case" asp-action="Submit">
+                                                এই ধারা উদ্ধৃত করে মামলা দাখিল →
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
                         }
                     </div>
 
                     <!-- Pagination -->
-                    <div class="pagination">
-                        <button type="button" disabled><i data-lucide="chevron-left"></i></button>
-                        <button type="button" class="active">১</button>
-                        <button type="button" onclick="showToast('পৃষ্ঠা ২ লোড হচ্ছে...')">২</button>
-                        <button type="button" onclick="showToast('পৃষ্ঠা ৩ লোড হচ্ছে...')">৩</button>
-                        <button type="button" onclick="showToast('পরবর্তী পৃষ্ঠা...')"><i data-lucide="chevron-right"></i></button>
-                    </div>
+                    @if (totalPages > 1)
+                    {
+                        <div class="pagination">
+                            @if (Model.Page > 1)
+                            {
+                                <a asp-action="Index" asp-route-q="@Model.Query" asp-route-page="@(Model.Page - 1)"><i data-lucide="chevron-left"></i></a>
+                            }
+                            else
+                            {
+                                <button type="button" disabled><i data-lucide="chevron-left"></i></button>
+                            }
+
+                            @for (var p = 1; p <= totalPages; p++)
+                            {
+                                @if (p == Model.Page)
+                                {
+                                    <button type="button" class="active">@ToBn(p)</button>
+                                }
+                                else
+                                {
+                                    <a asp-action="Index" asp-route-q="@Model.Query" asp-route-page="@p">@ToBn(p)</a>
+                                }
+                            }
+
+                            @if (Model.Page < totalPages)
+                            {
+                                <a asp-action="Index" asp-route-q="@Model.Query" asp-route-page="@(Model.Page + 1)"><i data-lucide="chevron-right"></i></a>
+                            }
+                            else
+                            {
+                                <button type="button" disabled><i data-lucide="chevron-right"></i></button>
+                            }
+                        </div>
+                    }
                 }
                 else
                 {
