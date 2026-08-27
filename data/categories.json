@@ -2,21 +2,53 @@
   {
     "categoryId": 1,
     "name": "Labour Complaint",
-    "description": "Unpaid wages, wrongful termination, unsafe working conditions, maternity benefits, overtime disputes"
+    "description": "Unpaid wages, wrongful termination, unsafe working conditions, maternity benefits, overtime disputes",
+    "nameBn": "শ্রম অধিকার ও অভিযোগ",
+    "descriptionBn": "বকেয়া মজুরি, অন্যায় বরখাস্ত, ওভারটাইম বকেয়া, মাতৃত্বকালীন সুবিধা ও কর্মক্ষেত্রের ক্ষতিপূরণ সংক্রান্ত আইনি সুরক্ষা।",
+    "commonActions": [
+      "বকেয়া বা বিলম্বিত মজুরি পরিশোধের লিখিত দাবি",
+      "বেআইনি বরখাস্ত বা ছাঁটাইয়ের ক্ষতিপূরণ দাবি",
+      "মাতৃত্বকালীন ছুটি ও আর্থিক সুবিধা প্রাপ্তির আবেদন",
+      "কর্মস্থলে দুর্ঘটনাজনিত স্বাস্থ্য ও নিরাপত্তা ক্ষতিপূরণ"
+    ]
   },
   {
     "categoryId": 2,
     "name": "General Diary (GD)",
-    "description": "Police station report for theft, assault, threats, missing persons, document loss, harassment"
+    "description": "Police station report for theft, assault, threats, missing persons, document loss, harassment",
+    "nameBn": "সাধারণ ডায়েরি (GD)",
+    "descriptionBn": "জাতীয় পরিচয়পত্র, পাসপোর্ট বা গুরুত্বপূর্ণ সার্টিফিকেট হারানো, পারিবারিক ও ব্যক্তিগত নিরাপত্তা হুমকি ও থানায় জিডি।",
+    "commonActions": [
+      "হারানো জাতীয় পরিচয়পত্র, পাসপোর্ট বা সার্টিফিকেটের জিডি",
+      "চুরি বা মূল্যবান সম্পদ খোয়া যাওয়ার অভিযোগ",
+      "প্রাণনাশের হুমকি বা হয়রানির সাধারণ ডায়েরি",
+      "নিখোঁজ ব্যক্তির সন্ধানে থানায় জিডি এন্ট্রি"
+    ]
   },
   {
     "categoryId": 3,
     "name": "RTI Request",
-    "description": "Right to Information application to government bodies, public authorities, administrative transparency"
+    "description": "Right to Information application to government bodies, public authorities, administrative transparency",
+    "nameBn": "তথ্য অধিকার আবেদন (RTI)",
+    "descriptionBn": "সরকারি, আধা-সরকারি বা সংবিধিবদ্ধ সংস্থার উন্নয়ন বাজেট, প্রশাসনিক সিদ্ধান্ত ও জনস্বার্থমূলক তথ্য চেয়ে আবেদন।",
+    "commonActions": [
+      "সরকারি দপ্তরের উন্নয়ন বাজেট ও ব্যয়ের তথ্য চেয়ে আবেদন",
+      "প্রশাসনিক সিদ্ধান্তের নথি ও কার্যবিবরণী প্রাপ্তির আবেদন",
+      "সরকারি প্রকল্পের অগ্রগতি প্রতিবেদন চাওয়া",
+      "তথ্য প্রদানে অস্বীকৃতির বিরুদ্ধে আপিল আবেদন"
+    ]
   },
   {
     "categoryId": 4,
     "name": "Consumer Complaint",
-    "description": "Defective products, fraudulent services, adulterated food, overpricing, consumer rights violations"
+    "description": "Defective products, fraudulent services, adulterated food, overpricing, consumer rights violations",
+    "nameBn": "ভোক্তা অধিকার সংরক্ষণ",
+    "descriptionBn": "মেয়াদোত্তীর্ণ বা নকল পণ্য, ওজনে কম, নির্ধারিত মূল্যের চেয়ে অতিরিক্ত দাম দাবি ও সেবায় প্রতারণার প্রতিকার।",
+    "commonActions": [
+      "মেয়াদোত্তীর্ণ বা নকল পণ্য বিক্রয়ের অভিযোগ",
+      "নির্ধারিত মূল্যের অতিরিক্ত দাম আদায়ের প্রতিকার",
+      "ওজনে কম দেওয়া বা প্রতারণামূলক বিক্রয়ের অভিযোগ",
+      "ত্রুটিপূর্ণ পণ্য বা সেবার ক্ষতিপূরণ দাবি"
+    ]
   }
 ]

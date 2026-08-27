@@ -35,15 +35,19 @@
                 <p class="cat-details-desc" style="font-size: 16px; line-height: 1.8;" data-bn="@Model.DescriptionBn" data-en="@Model.DescriptionEn">@Model.DescriptionBn</p>
             </div>
 
-            <div style="background: var(--surface-2); padding: 18px; border-radius: var(--radius); border: 1px solid var(--border);">
-                <h4 class="cat-claims-h" style="font-size: 15px; margin-bottom: 10px;"><i data-lucide="check-square"></i> এই বিভাগে সচরাচর দাখিলযোগ্য অভিযোগসমূহ:</h4>
-                <ul class="cat-claims-list" style="padding-left: 20px; font-size: 14.5px; line-height: 1.8; color: var(--ink-2);">
-                    <li data-bn="বকেয়া বা বিলম্বিত মজুরি পরিশোধের লিখিত দাবি" data-en="Formal claim for unpaid or delayed wages">বকেয়া বা বিলম্বিত মজুরি পরিশোধের লিখিত দাবি</li>
-                    <li data-bn="বেআইনি বরখাস্ত বা ছাঁটাইয়ের ক্ষতিপূরণ দাবি" data-en="Compensation for unlawful termination or severance">বেআইনি বরখাস্ত বা ছাঁটাইয়ের ক্ষতিপূরণ দাবি</li>
-                    <li data-bn="মাতৃত্বকালীন ছুটি ও আর্থিক সুবিধা প্রাপ্তির আবেদন" data-en="Application for maternity leave & cash benefits">মাতৃত্বকালীন ছুটি ও আর্থিক সুবিধা প্রাপ্তির আবেদন</li>
-                    <li data-bn="কর্মস্থলে দুর্ঘটনাজনিত স্বাস্থ্য ও নিরাপত্তা ক্ষতিপূরণ" data-en="Workplace injury health and safety compensation">কর্মস্থলে দুর্ঘটনাজনিত স্বাস্থ্য ও নিরাপত্তা ক্ষতিপূরণ</li>
-                </ul>
-            </div>
+            @if (Model.CommonActions != null && Model.CommonActions.Count > 0)
+            {
+                <div style="background: var(--surface-2); padding: 18px; border-radius: var(--radius); border: 1px solid var(--border);">
+                    <h4 class="cat-claims-h" style="font-size: 15px; margin-bottom: 10px;"><i data-lucide="check-square"></i> এই বিভাগে সচরাচর দাখিলযোগ্য অভিযোগসমূহ:</h4>
+                    <ul class="cat-claims-list" style="padding-left: 20px; font-size: 14.5px; line-height: 1.8; color: var(--ink-2);">
+                        @foreach (var action in Model.CommonActions)
+                        {
+                            <li>@action</li>
+                        }
+                    </ul>
+                </div>
+            }
+
         </div>
     </div>
 </main>

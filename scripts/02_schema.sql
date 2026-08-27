@@ -46,9 +46,12 @@ IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CA
 BEGIN
     CREATE TABLE [dbo].[CASE_CATEGORY]
     (
-        CategoryId  INT IDENTITY(1,1) NOT NULL,
-        Name        NVARCHAR(100)     NOT NULL,
-        Description NVARCHAR(500)     NOT NULL,
+        CategoryId    INT IDENTITY(1,1) NOT NULL,
+        Name          NVARCHAR(100)     NOT NULL,
+        Description   NVARCHAR(500)     NOT NULL,
+        NameBn        NVARCHAR(100)     NOT NULL DEFAULT N'',
+        DescriptionBn NVARCHAR(500)     NOT NULL DEFAULT N'',
+        CommonActions NVARCHAR(MAX)     NOT NULL DEFAULT N'', -- pipe-delimited display copy
         CONSTRAINT PK_CASE_CATEGORY PRIMARY KEY (CategoryId)
     );
 END
