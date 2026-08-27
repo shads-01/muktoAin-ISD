@@ -131,6 +131,10 @@ builder.Services.AddScoped<IVectorSectionSearch, SimilaritySearchService>();
 // T-2.2: SQL Server FTS keyword search (FR-7 standalone search + FR-3 vector fallback).
 builder.Services.AddScoped<IKeywordSectionSearch, KeywordSearchService>();
 
+// T-2.3: Vector-primary/keyword-fallback context retrieval for FR-3 (PromptAssembler's
+// upstream seam).
+builder.Services.AddScoped<IRagContextBuilder, RagContextBuilder>();
+
 // T-2.4: Standalone Acts search (FR-7).
 builder.Services.AddScoped<SearchService>();
 
@@ -148,7 +152,6 @@ builder.Services.AddScoped<IEncryptionService, EncryptionService>();
 // Controlled by Embedding:RunOnStartup config flag.
 builder.Services.AddHostedService<EmbeddingBatchJob>();
 
-// Tultul will add: T-2.3 RagContextBuilder, ...
 // Arpita will add: DocumentService, ReviewService, etc.
 
 var app = builder.Build();
