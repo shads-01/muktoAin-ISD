@@ -17,7 +17,8 @@ public static class SeedCategories
         string Description,
         string NameBn,
         string DescriptionBn,
-        List<string>? CommonActions);
+        List<string>? CommonActions,
+        List<string>? CommonActionsEn);
 
     public static async Task SeedAsync(AppDbContext context, string contentRootPath)
     {
@@ -33,6 +34,7 @@ public static class SeedCategories
                 NameBn = d.NameBn,
                 DescriptionBn = d.DescriptionBn,
                 CommonActions = JoinCommonActions(d.CommonActions),
+                CommonActionsEn = JoinCommonActions(d.CommonActionsEn),
             });
             context.CaseCategories.AddRange(categories);
             await context.SaveChangesAsync();
@@ -55,6 +57,12 @@ public static class SeedCategories
             if (string.IsNullOrEmpty(category.CommonActions))
             {
                 category.CommonActions = JoinCommonActions(dto.CommonActions);
+                changed = true;
+            }
+
+            if (string.IsNullOrEmpty(category.CommonActionsEn))
+            {
+                category.CommonActionsEn = JoinCommonActions(dto.CommonActionsEn);
                 changed = true;
             }
         }

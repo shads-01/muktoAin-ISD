@@ -24,6 +24,14 @@
     return '<i data-lucide="' + name + '"></i>';
   }
 
+  /* Converts a string of Latin digits to Bengali digits (display only --
+     mirrors the server-side ToBn() helper used for pagination labels etc). */
+  function toBengaliDigits(s) {
+    return String(s).replace(/[0-9]/g, function (d) {
+      return String.fromCharCode(d.charCodeAt(0) - 48 + "০".charCodeAt(0));
+    });
+  }
+
   /* ---------- Lucide render helper ---------- */
   function renderIcons(root) {
     if (window.lucide) window.lucide.createIcons(root ? { nameAttr: "data-lucide", attrs: {}, root: root } : undefined);
@@ -67,6 +75,7 @@
       "footer-role-2": "নতুন নিবন্ধন",
       "footer-role-3": "আইনজীবী রিভিউ পোর্টাল",
       "footer-role-4": "অ্যাডমিন ওভারভিউ",
+      "footer-copyright": "© 2026 মুক্ত আইন MuktoAin · AI-Augmented Legal Aid for Bangladesh · Academic Project · Not formal legal advice",
 
       // Home
       "home-kicker": "AI-সহায়ক আইনি তথ্য ও পরামর্শ",
@@ -164,6 +173,8 @@
       "search-pop-4": "দণ্ডবিধি ৪২০",
       "search-empty-t": "আইন ও ধারার নাম লিখে অনুসন্ধান শুরু করুন",
       "search-empty-d": "বাংলা বা ইংরেজিতে সার্চ করুন। নির্দিষ্ট ধারা নম্বর যেমন 'ধারা ৩৩' বা 'section 33' দিয়েও সার্চ করতে পারেন।",
+      "search-noresults-t": "কোনো ধারা খুঁজে পাওয়া যায়নি",
+      "search-noresults-d": "অনুগ্রহ করে ভিন্ন কোনো শব্দ বা আইনের নাম দিয়ে আবার অনুসন্ধান করুন।",
 
       // Categories
       "cat-kicker": "Legal Scenarios · FR-6",
@@ -235,6 +246,7 @@
       "footer-role-2": "New Registration",
       "footer-role-3": "Lawyer Review Portal",
       "footer-role-4": "Admin Overview",
+      "footer-copyright": "© 2026 MuktoAin · AI-Augmented Legal Aid for Bangladesh · Academic Project · Not formal legal advice",
 
       // Home
       "home-kicker": "AI-Augmented Legal Aid for Bangladesh",
@@ -332,6 +344,8 @@
       "search-pop-4": "Penal Code 420",
       "search-empty-t": "Search Across All Bangladesh Statutes",
       "search-empty-d": "Search in English or Bangla. You can also look up specific sections directly (e.g. 'section 33' or 'ধারা ৩৩').",
+      "search-noresults-t": "No Matching Sections Found",
+      "search-noresults-d": "Please try again with a different keyword or Act name.",
 
       // Categories
       "cat-kicker": "Legal Scenarios · FR-6",
@@ -486,6 +500,13 @@
       }
     });
 
+    // 6b. Generic bilingual block pairs -- used where the Bangla/English phrasing
+    // differs enough (word order, nested inline tags) that swapping a single
+    // text node via data-bn/data-en isn't enough. Markup ships both variants;
+    // this just shows the one matching currentLang and hides the other.
+    document.querySelectorAll(".i18n-bn").forEach(function (el) { el.style.display = currentLang === "en" ? "none" : ""; });
+    document.querySelectorAll(".i18n-en").forEach(function (el) { el.style.display = currentLang === "en" ? "" : "none"; });
+
     // 7. Route-Scoped Page Content Translation
     var path = window.location.pathname.toLowerCase();
 
@@ -617,7 +638,7 @@
       // Security section
       var secKicker = document.querySelector("section.card .kicker");
       if (secKicker) secKicker.innerHTML = '<i data-lucide="shield-check"></i> ' + dict["home-sec-kicker"];
-      var secH = document.querySelector("section.card h2");
+      var secH = document.querySelector("section.card h3");
       if (secH) secH.textContent = dict["home-sec-h"];
       var secP = document.querySelector("section.card p.muted");
       if (secP) secP.textContent = dict["home-sec-p"];
@@ -724,21 +745,56 @@
       var popLabel = document.querySelector(".search-bar .row.wrap .tiny.muted");
       if (popLabel) popLabel.textContent = dict["search-popular-label"];
 
+      // Popular-search chips carry both a label and the actual query they submit
+      // (via asp-route-q at render time) -- translating the label alone leaves the
+      // href pointing at whichever language rendered the page, so a chip that now
+      // *reads* in English still searched for the Bangla term underneath. Rebuild
+      // the href from the same dict entry driving the label so they can't diverge.
       var popChips = document.querySelectorAll(".search-bar a.chip.chip-sm");
       if (popChips.length >= 4) {
-        popChips[0].textContent = dict["search-pop-1"];
-        popChips[1].textContent = dict["search-pop-2"];
-        popChips[2].textContent = dict["search-pop-3"];
-        popChips[3].textContent = dict["search-pop-4"];
+        var popKeys = ["search-pop-1", "search-pop-2", "search-pop-3", "search-pop-4"];
+        popKeys.forEach(function (key, i) {
+          var term = dict[key];
+          popChips[i].textContent = term;
+          popChips[i].setAttribute("href", window.location.pathname + "?q=" + encodeURIComponent(term));
+        });
       }
 
+      // Empty state comes in two flavors sharing the same markup class: the
+      // "start searching" prompt (no query yet) and "no results" (query ran, 0
+      // hits). Distinguish by whether a query is present on the page so the
+      // right copy is translated instead of always applying the prompt text.
       var emptyBox = document.querySelector(".search-empty, .empty-state");
       if (emptyBox) {
+        var qInput = document.querySelector('.search-bar input[name="q"]');
+        var hasQuery = !!(qInput && qInput.value);
         var h3 = emptyBox.querySelector("h3");
-        if (h3) h3.textContent = dict["search-empty-t"];
         var p = emptyBox.querySelector("p");
-        if (p) p.textContent = dict["search-empty-d"];
+        if (hasQuery) {
+          if (h3) h3.textContent = dict["search-noresults-t"];
+          if (p) p.textContent = dict["search-noresults-d"];
+        } else {
+          if (h3) h3.textContent = dict["search-empty-t"];
+          if (p) p.textContent = dict["search-empty-d"];
+        }
       }
+
+      // Result cards, reading modals, and the rail (filter checkboxes + search-tips
+      // card) all render hardcoded Bangla in the view. Translate every element
+      // carrying the data-bn/data-en pair the view now emits for these (icons,
+      // where present, are untouched since they live outside the translated
+      // span/text node).
+      document.querySelectorAll(".result-item [data-bn][data-en], .reading-modal [data-bn][data-en], .rail [data-bn][data-en]").forEach(function (el) {
+        el.textContent = currentLang === "en" ? el.dataset.en : el.dataset.bn;
+      });
+
+      // Pagination page numbers render as real digits carried in data-page --
+      // reformat them into the active script (Bengali vs Latin) rather than
+      // leaving them permanently Bengali regardless of language.
+      document.querySelectorAll(".pagination [data-page]").forEach(function (el) {
+        var n = el.getAttribute("data-page");
+        el.textContent = currentLang === "en" ? n : toBengaliDigits(n);
+      });
 
     } else if (path.indexOf("/category/details") !== -1 || path.indexOf("/category/") !== -1 && path.length > "/category/".length) {
       // Category Details Page
@@ -1156,6 +1212,9 @@
       footRoleLinks[3].textContent = dict["footer-role-4"];
     }
 
+    var footerBottom = document.querySelector(".footer-bottom");
+    if (footerBottom) footerBottom.textContent = dict["footer-copyright"];
+
     // 9. Slashed Labels (e.g. "পূর্ণ নাম / Full Name", "ইমেইল / Email", "পাসওয়ার্ড / Password")
     document.querySelectorAll("label").forEach(function(lbl) {
       if (lbl.children.length === 0) {
@@ -1315,7 +1374,12 @@
     document.querySelectorAll("[data-copy]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var text = btn.dataset.copy || "";
-        function done() { window.showToast(btn.dataset.copyMsg || (currentLang === "en" ? "Copied ✓" : "কপি হয়েছে ✓")); }
+        function done() {
+          var msg = currentLang === "en"
+            ? (btn.dataset.copyMsgEn || btn.dataset.copyMsg || "Copied ✓")
+            : (btn.dataset.copyMsgBn || btn.dataset.copyMsg || "কপি হয়েছে ✓");
+          window.showToast(msg);
+        }
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(text).then(done, done);
         } else { done(); }

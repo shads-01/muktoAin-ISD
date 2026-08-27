@@ -10,6 +10,12 @@
       "বেআইনি বরখাস্ত বা ছাঁটাইয়ের ক্ষতিপূরণ দাবি",
       "মাতৃত্বকালীন ছুটি ও আর্থিক সুবিধা প্রাপ্তির আবেদন",
       "কর্মস্থলে দুর্ঘটনাজনিত স্বাস্থ্য ও নিরাপত্তা ক্ষতিপূরণ"
+    ],
+    "commonActionsEn": [
+      "Written claim for unpaid or delayed wages",
+      "Compensation claim for unlawful dismissal or termination",
+      "Application for maternity leave and financial benefits",
+      "Compensation for workplace accident health and safety damages"
     ]
   },
   {
@@ -23,6 +29,12 @@
       "চুরি বা মূল্যবান সম্পদ খোয়া যাওয়ার অভিযোগ",
       "প্রাণনাশের হুমকি বা হয়রানির সাধারণ ডায়েরি",
       "নিখোঁজ ব্যক্তির সন্ধানে থানায় জিডি এন্ট্রি"
+    ],
+    "commonActionsEn": [
+      "GD for a lost national ID, passport, or certificate",
+      "Complaint for theft or loss of valuable property",
+      "General diary for death threats or harassment",
+      "GD entry at the police station to trace a missing person"
     ]
   },
   {
@@ -36,6 +48,12 @@
       "প্রশাসনিক সিদ্ধান্তের নথি ও কার্যবিবরণী প্রাপ্তির আবেদন",
       "সরকারি প্রকল্পের অগ্রগতি প্রতিবেদন চাওয়া",
       "তথ্য প্রদানে অস্বীকৃতির বিরুদ্ধে আপিল আবেদন"
+    ],
+    "commonActionsEn": [
+      "Application requesting a government office's development budget and expenditure information",
+      "Application for administrative decision documents and meeting minutes",
+      "Requesting a progress report on a government project",
+      "Appeal application against refusal to provide information"
     ]
   },
   {
@@ -49,6 +67,12 @@
       "নির্ধারিত মূল্যের অতিরিক্ত দাম আদায়ের প্রতিকার",
       "ওজনে কম দেওয়া বা প্রতারণামূলক বিক্রয়ের অভিযোগ",
       "ত্রুটিপূর্ণ পণ্য বা সেবার ক্ষতিপূরণ দাবি"
+    ],
+    "commonActionsEn": [
+      "Complaint for selling expired or counterfeit products",
+      "Remedy for charging above the fixed price",
+      "Complaint for short-weighing or fraudulent sales",
+      "Compensation claim for defective goods or services"
     ]
   }
 ]

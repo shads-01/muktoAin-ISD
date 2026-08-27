@@ -17,6 +17,8 @@ public class SearchResultItemViewModel
     public string SectionTitle { get; set; } = string.Empty;
     public string SectionTextSnippet { get; set; } = string.Empty;
     public string SectionTextFull { get; set; } = string.Empty;
+    public string ActNumber { get; set; } = string.Empty;
+    public int ActYear { get; set; }
     public bool IsTruncated { get; set; }
     public string SectionIntro { get; set; } = string.Empty;
     public List<string> SectionClauses { get; set; } = new();
@@ -31,6 +33,7 @@ public class CategoryViewModel
     public string DescriptionEn { get; set; } = string.Empty;
     public string Icon { get; set; } = "folder";
     public List<string> CommonActions { get; set; } = new();
+    public List<string> CommonActionsEn { get; set; } = new();
 }
 
 public class LawyerApplyViewModel

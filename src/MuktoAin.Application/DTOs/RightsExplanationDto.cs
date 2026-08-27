@@ -13,5 +13,7 @@ public record CitedSectionDto(
     string SectionNumber,
     string SectionText,
     float RelevanceScore,
-    string RetrievalMethod
+    string RetrievalMethod,
+    string ActNumber = "",
+    int ActYear = 0
 );

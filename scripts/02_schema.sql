@@ -52,6 +52,7 @@ BEGIN
         NameBn        NVARCHAR(100)     NOT NULL DEFAULT N'',
         DescriptionBn NVARCHAR(500)     NOT NULL DEFAULT N'',
         CommonActions NVARCHAR(MAX)     NOT NULL DEFAULT N'', -- pipe-delimited display copy
+        CommonActionsEn NVARCHAR(MAX)   NOT NULL DEFAULT N'', -- English counterpart, same index order
         CONSTRAINT PK_CASE_CATEGORY PRIMARY KEY (CategoryId)
     );
 END

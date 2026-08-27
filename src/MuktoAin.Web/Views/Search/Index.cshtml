@@ -36,10 +36,14 @@
             </div>
             <div class="row wrap" style="justify-content: center; gap: 8px; margin-top: 4px;">
                 <span class="tiny muted">জনপ্রিয় সার্চ:</span>
+                @* Chip labels/hrefs are kept in sync with translations["search-pop-N"] in
+                   main.js -- the JS rewrites both textContent and href together on language
+                   toggle so a chip can never show one language while linking to a query in
+                   the other. Server-rendered values here are just the Bangla (default) state. *@
                 <a class="chip chip-sm" asp-action="Index" asp-route-q="মজুরি পরিশোধ">মজুরি পরিশোধ</a>
                 <a class="chip chip-sm" asp-action="Index" asp-route-q="ধারা ১২৩">ধারা ১২৩</a>
                 <a class="chip chip-sm" asp-action="Index" asp-route-q="তথ্য অধিকার">তথ্য অধিকার</a>
-                <a class="chip chip-sm" asp-action="Index" asp-route-q="চুক্তি ভঙ্গ">চুক্তি ভঙ্গ</a>
+                <a class="chip chip-sm" asp-action="Index" asp-route-q="দণ্ডবিধি ৪২০">দণ্ডবিধি ৪২০</a>
             </div>
         </form>
     </div>
@@ -66,7 +70,13 @@
                                         <i data-lucide="bookmark" style="color:var(--gold)"></i>
                                         <b class="serif">@res.SectionNumber: @res.SectionTitle</b>
                                     </div>
-                                    <span class="badge badge-neutral">আইন নং ৪২/২০০৬</span>
+                                    @if (!string.IsNullOrWhiteSpace(res.ActNumber) && res.ActNumber != "NaN" && res.ActYear > 0)
+                                    {
+                                        <span class="badge badge-neutral">
+                                            <span class="i18n-bn">আইন নং @res.ActNumber/@ToBn(res.ActYear)</span>
+                                            <span class="i18n-en" style="display:none">Act No. @res.ActNumber/@res.ActYear</span>
+                                        </span>
+                                    }
                                 </div>
                                 <div class="tiny" style="color: var(--primary); font-weight: 600; margin-bottom: 6px;">
                                     @res.ActTitle
@@ -76,17 +86,22 @@
                                 </div>
                                 <div class="row spread wrap" style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
                                     <div class="row" style="gap: 14px;">
-                                        <a class="tiny" href="#" onclick="showToast('ধারা @res.SectionNumber ক্লিপবোর্ডে কপি হয়েছে', 'success'); return false;">
-                                            <i data-lucide="copy"></i> ধারা উদ্ধৃতি কপি
+                                        <a class="tiny" href="#"
+                                           data-copy="@res.SectionNumber: @res.SectionTitle — @res.ActTitle"
+                                           data-copy-msg-bn="ধারা @res.SectionNumber ক্লিপবোর্ডে কপি হয়েছে"
+                                           data-copy-msg-en="Section @res.SectionNumber copied to clipboard"
+                                           onclick="return false;">
+                                            <i data-lucide="copy"></i> <span data-bn="ধারা উদ্ধৃতি কপি" data-en="Copy Section Citation">ধারা উদ্ধৃতি কপি</span>
                                         </a>
                                         @if (res.IsTruncated)
                                         {
                                             <a class="tiny" href="#" data-open-modal="#section-modal-@res.SectionId" onclick="return false;">
-                                                <i data-lucide="maximize-2"></i> সম্পূর্ণ ধারা দেখুন
+                                                <i data-lucide="maximize-2"></i> <span data-bn="সম্পূর্ণ ধারা দেখুন" data-en="View Full Section">সম্পূর্ণ ধারা দেখুন</span>
                                             </a>
                                         }
                                     </div>
-                                    <a class="btn btn-quiet btn-sm" asp-controller="Case" asp-action="Submit">
+                                    <a class="btn btn-quiet btn-sm" asp-controller="Case" asp-action="Submit"
+                                       data-bn="এই ধারা উদ্ধৃত করে মামলা দাখিল →" data-en="File a Case Citing This Section →">
                                         এই ধারা উদ্ধৃত করে মামলা দাখিল →
                                     </a>
                                 </div>
@@ -123,8 +138,9 @@
                                             }
                                         </div>
                                         <div class="row spread wrap" style="margin-top: 20px; gap: 10px;">
-                                            <button class="btn btn-ghost" type="button" data-close-modal>বন্ধ করুন</button>
-                                            <a class="btn btn-primary" asp-controller="Case" asp-action="Submit">
+                                            <button class="btn btn-ghost" type="button" data-close-modal data-bn="বন্ধ করুন" data-en="Close">বন্ধ করুন</button>
+                                            <a class="btn btn-primary" asp-controller="Case" asp-action="Submit"
+                                               data-bn="এই ধারা উদ্ধৃত করে মামলা দাখিল →" data-en="File a Case Citing This Section →">
                                                 এই ধারা উদ্ধৃত করে মামলা দাখিল →
                                             </a>
                                         </div>
@@ -147,15 +163,18 @@
                                 <button type="button" disabled><i data-lucide="chevron-left"></i></button>
                             }
 
+                            @* Page numbers render as Bengali numerals by default (data-page carries
+                               the real int); main.js re-renders each one in Latin digits when the
+                               page is switched to English, same convention as ToBn's callers elsewhere. *@
                             @for (var p = 1; p <= totalPages; p++)
                             {
                                 @if (p == Model.Page)
                                 {
-                                    <button type="button" class="active">@ToBn(p)</button>
+                                    <button type="button" class="active" data-page="@p">@ToBn(p)</button>
                                 }
                                 else
                                 {
-                                    <a asp-action="Index" asp-route-q="@Model.Query" asp-route-page="@p">@ToBn(p)</a>
+                                    <a asp-action="Index" asp-route-q="@Model.Query" asp-route-page="@p" data-page="@p">@ToBn(p)</a>
                                 }
                             }
 
@@ -183,19 +202,24 @@
             <!-- Rail / Filter sidebar -->
             <aside class="rail">
                 <div class="card">
-                    <h3 style="font-size: 16px; margin-bottom: 12px;"><i data-lucide="filter"></i> আইন অনুযায়ী ফিল্টার</h3>
+                    <h3 style="font-size: 16px; margin-bottom: 12px;">
+                        <i data-lucide="filter"></i> <span data-bn="আইন অনুযায়ী ফিল্টার" data-en="Filter by Act">আইন অনুযায়ী ফিল্টার</span>
+                    </h3>
                     <div class="stack" style="gap: 8px;">
-                        <label class="check-row"><input type="checkbox" checked /> <span>বাংলাদেশ শ্রম আইন, ২০০৬</span></label>
-                        <label class="check-row"><input type="checkbox" checked /> <span>দণ্ডবিধি, ১৮৬০</span></label>
-                        <label class="check-row"><input type="checkbox" checked /> <span>তথ্য অধিকার আইন, ২০০৯</span></label>
-                        <label class="check-row"><input type="checkbox" checked /> <span>ভোক্তা অধিকার আইন, ২০০৯</span></label>
+                        <label class="check-row"><input type="checkbox" checked /> <span data-bn="বাংলাদেশ শ্রম আইন, ২০০৬" data-en="Bangladesh Labour Act, 2006">বাংলাদেশ শ্রম আইন, ২০০৬</span></label>
+                        <label class="check-row"><input type="checkbox" checked /> <span data-bn="দণ্ডবিধি, ১৮৬০" data-en="Penal Code, 1860">দণ্ডবিধি, ১৮৬০</span></label>
+                        <label class="check-row"><input type="checkbox" checked /> <span data-bn="তথ্য অধিকার আইন, ২০০৯" data-en="Right to Information Act, 2009">তথ্য অধিকার আইন, ২০০৯</span></label>
+                        <label class="check-row"><input type="checkbox" checked /> <span data-bn="ভোক্তা অধিকার আইন, ২০০৯" data-en="Consumer Rights Act, 2009">ভোক্তা অধিকার আইন, ২০০৯</span></label>
                     </div>
                 </div>
 
                 <div class="card" style="background: var(--surface-2);">
-                    <div class="kicker"><i data-lucide="help-circle"></i> অনুসন্ধান সহায়িকা</div>
+                    <div class="kicker">
+                        <i data-lucide="help-circle"></i> <span data-bn="অনুসন্ধান সহায়িকা" data-en="Search Tips">অনুসন্ধান সহায়িকা</span>
+                    </div>
                     <p class="tiny muted" style="margin-top: 6px; line-height: 1.6;">
-                        আপনি সুনির্দিষ্ট ধারা নম্বর লিখেও সার্চ করতে পারেন (যেমন: <i>ধারা ১২৩</i> বা <i>Section 123</i>)।
+                        <span class="i18n-bn">আপনি সুনির্দিষ্ট ধারা নম্বর লিখেও সার্চ করতে পারেন (যেমন: <i>ধারা ১২৩</i> বা <i>Section 123</i>)।</span>
+                        <span class="i18n-en" style="display:none">You can also search for a specific section number directly (e.g. <i>section 123</i> or <i>ধারা ১২৩</i>).</span>
                     </p>
                 </div>
             </aside>

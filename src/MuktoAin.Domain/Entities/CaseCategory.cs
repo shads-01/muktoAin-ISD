@@ -15,5 +15,10 @@ public class CaseCategory
     // Name/Description. Split on '|' at the presentation edge (CategoryController).
     public string CommonActions { get; set; } = string.Empty;
 
+    // English counterpart of CommonActions, same pipe-delimited/index-aligned
+    // shape. Kept as a separate column (not a translation table) for the same
+    // reason as CommonActions itself -- display-only copy, no independent identity.
+    public string CommonActionsEn { get; set; } = string.Empty;
+
     public ICollection<Case> Cases { get; set; } = new List<Case>();
 }
