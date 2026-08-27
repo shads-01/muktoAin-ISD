@@ -121,6 +121,9 @@ builder.Services.AddScoped<IScenarioMappingRepository, ScenarioMappingRepository
 // Case lifecycle service
 builder.Services.AddScoped<CaseService>();
 
+// T-2.1: Qdrant vector similarity search (FR-3 primary retrieval path).
+builder.Services.AddScoped<IVectorSectionSearch, SimilaritySearchService>();
+
 // T-2.2: SQL Server FTS keyword search (FR-7 standalone search + FR-3 vector fallback).
 builder.Services.AddScoped<IKeywordSectionSearch, KeywordSearchService>();
 
@@ -141,7 +144,7 @@ builder.Services.AddScoped<IEncryptionService, EncryptionService>();
 // Controlled by Embedding:RunOnStartup config flag.
 builder.Services.AddHostedService<EmbeddingBatchJob>();
 
-// Tultul will add: T-2.1 SimilaritySearchService, T-2.3 RagContextBuilder, ...
+// Tultul will add: T-2.3 RagContextBuilder, ...
 // Arpita will add: DocumentService, ReviewService, etc.
 
 var app = builder.Build();
