@@ -52,7 +52,11 @@ builder.Services.AddIdentityCore<User>(options =>
 })
 .AddEntityFrameworkStores<AppDbContext>()
 .AddSignInManager<SignInManager<User>>()
-.AddDefaultTokenProviders();
+.AddDefaultTokenProviders()
+// Works around AspNetUserClaims not existing in the SSMS schema -- see
+// NoClaimsStoreUserClaimsPrincipalFactory for why the default factory breaks real
+// sign-in without this.
+.AddClaimsPrincipalFactory<NoClaimsStoreUserClaimsPrincipalFactory>();
 
 // AddIdentityCore does NOT wire cookie authentication -- done explicitly here.
 builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
