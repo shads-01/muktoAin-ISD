@@ -492,9 +492,12 @@ a.card.click { color: var(--ink); }
 }
 .input::placeholder, .textarea::placeholder, .form-control::placeholder { color: var(--ink-3); }
 select.input, .form-select { appearance: none; background-image: linear-gradient(45deg, transparent 49%, var(--ink-3) 50%), linear-gradient(-45deg, transparent 49%, var(--ink-2) 50%); background-position: calc(100% - 20px) 55%, calc(100% - 14px) 55%; background-size: 6px 6px; background-repeat: no-repeat; padding-right: 38px; }
-.check-row, .form-check { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
-.check-row input, .form-check-input { width: 20px; height: 20px; accent-color: var(--primary); margin-top: 3px; flex: none; }
-.check-row span, .form-check-label { font-size: 14.5px; }
+.check-row, .form-check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+.check-row input, .form-check-input { width: 18px; height: 18px; accent-color: var(--primary); margin: 0; flex: none; cursor: pointer; }
+.check-row span, .form-check-label { font-size: 14px; line-height: 1.2; display: inline-flex; align-items: center; }
+.check-row.align-start { align-items: flex-start; }
+.check-row.align-start input { margin-top: 3px; }
+.check-row.align-start span { display: block; }
 .char-counter { font-size: 12px; color: var(--ink-3); text-align: right; }
 .char-counter.warn { color: var(--danger); font-weight: 700; }
 
