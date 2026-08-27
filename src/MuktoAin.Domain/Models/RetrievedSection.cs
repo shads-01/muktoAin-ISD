@@ -8,4 +8,6 @@ public record RetrievedSection(
     string SectionNumber,
     string SectionText,
     float RelevanceScore,
-    RetrievalMethod Method);
+    RetrievalMethod Method,
+    string ActNumber = "",
+    int ActYear = 0);

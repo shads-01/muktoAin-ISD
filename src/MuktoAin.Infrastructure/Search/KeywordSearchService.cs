@@ -51,7 +51,9 @@ public class KeywordSearchService : IKeywordSectionSearch
             DeriveSectionNumber(s.SectionNumber, s.SectionText),
             s.SectionText,
             0f,
-            RetrievalMethod.Keyword));
+            RetrievalMethod.Keyword,
+            s.Act.ActNumber,
+            s.Act.Year));
     }
 
     // ActSection.SectionNumber is left null by design (see ActImportService) --

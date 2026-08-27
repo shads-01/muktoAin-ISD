@@ -45,6 +45,6 @@ public class SearchService
             Page: page,
             Results: paged.Select(r => new CitedSectionDto(
                 r.SectionId, r.ActTitle, r.SectionNumber, r.SectionText,
-                r.RelevanceScore, r.Method.ToString())).ToList());
+                r.RelevanceScore, r.Method.ToString(), r.ActNumber, r.ActYear)).ToList());
     }
 }

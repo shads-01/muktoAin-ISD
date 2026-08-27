@@ -72,6 +72,8 @@ public class SearchController : Controller
             SectionTitle = string.Empty,
             SectionTextSnippet = Truncate(section.SectionText, SnippetLength),
             SectionTextFull = section.SectionText,
+            ActNumber = section.ActNumber,
+            ActYear = section.ActYear,
             IsTruncated = section.SectionText.Length > SnippetLength,
             SectionIntro = intro,
             SectionClauses = clauses,
