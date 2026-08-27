@@ -11,6 +11,7 @@ using MuktoAin.Infrastructure.Data;
 using MuktoAin.Infrastructure.Data.Seeding;
 using MuktoAin.Infrastructure.Repositories;
 using MuktoAin.Infrastructure.Search;
+using MuktoAin.Infrastructure.Security;
 using MuktoAin.Infrastructure.VectorStore;
 using MuktoAin.Web.Auth;
 
@@ -128,6 +129,17 @@ builder.Services.AddScoped<SearchService>();
 
 // T-2.5: Category browsing (FR-6).
 builder.Services.AddScoped<CategoryService>();
+
+// S-1.6: Disclaimer injector (surface 2 of 3 — AI output disclaimer).
+builder.Services.AddSingleton<DisclaimerInjector>();
+
+// S-1.7: Data Protection + field-level PII encryption.
+builder.Services.AddDataProtection();
+builder.Services.AddScoped<IEncryptionService, EncryptionService>();
+
+// S-1.8: Embedding batch job — indexes un-embedded chunks into Qdrant.
+// Controlled by Embedding:RunOnStartup config flag.
+builder.Services.AddHostedService<EmbeddingBatchJob>();
 
 // Tultul will add: T-2.1 SimilaritySearchService, T-2.3 RagContextBuilder, ...
 // Arpita will add: DocumentService, ReviewService, etc.
