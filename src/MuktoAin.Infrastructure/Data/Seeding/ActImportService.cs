@@ -56,6 +56,14 @@ public static class ActImportService
             return;
         }
 
+        // Fast-path: if acts are already populated, skip reading and deserializing the 100MB JSON on startup.
+        var actCount = await context.Acts.CountAsync();
+        if (actCount >= 1484)
+        {
+            logger?.LogInformation("ActImportService: all {Count} acts already present, skipping import.", actCount);
+            return;
+        }
+
         var dataset = await SeedJsonLoader.LoadObjectAsync<ActsDatasetDto>(contentRootPath, FileName);
 
         // Idempotent per-act (Title+Year), not just "table is empty" -- an

@@ -30,13 +30,31 @@ public static class LegalChunkingService
 
     public static async Task ChunkAsync(AppDbContext context, ILogger? logger = null)
     {
-        // NOT EXISTS-style query via the nav collection -- scales fine even once
-        // most sections already have chunks, unlike pulling every chunked SectionId
-        // into memory to check membership client-side.
-        var pendingSectionIds = await context.ActSections
-            .Where(s => !s.Chunks.Any())
+        // Fast-path: chunking is idempotent and pre-seeded; if chunks already exist, skip immediately.
+        if (await context.ActSectionChunks.AnyAsync())
+        {
+            logger?.LogInformation("LegalChunkingService: chunks already present, skipping.");
+            return;
+        }
+
+        var totalSectionCount = await context.ActSections.CountAsync();
+        if (totalSectionCount == 0)
+        {
+            return;
+        }
+
+        // Fast in-memory diff (35k ints takes < 1 MB and < 20ms, avoiding 30s SQL correlated subquery timeout)
+        var chunkedIds = (await context.ActSectionChunks
+            .Select(c => c.SectionId)
+            .Distinct()
+            .ToListAsync())
+            .ToHashSet();
+
+        var pendingSectionIds = (await context.ActSections
             .Select(s => s.SectionId)
-            .ToListAsync();
+            .ToListAsync())
+            .Where(id => !chunkedIds.Contains(id))
+            .ToList();
 
         if (pendingSectionIds.Count == 0)
         {
