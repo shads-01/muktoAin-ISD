@@ -13,7 +13,12 @@ public class ActSectionChunkRepository : Repository<ActSectionChunk>, IActSectio
     // (WHERE VectorId IS NULL) already in scripts/02_schema.sql -- this is what
     // Shads's EmbeddingBatchJob (S-1.8) polls to find work.
     public async Task<IEnumerable<ActSectionChunk>> GetUnembeddedChunksAsync(int batchSize)
-        => await _dbSet.Where(c => c.VectorId == null).Take(batchSize).ToListAsync();
+        => await _dbSet
+            .Include(c => c.Section)
+                .ThenInclude(s => s.Act)
+            .Where(c => c.VectorId == null)
+            .Take(batchSize)
+            .ToListAsync();
 
     // Single round-trip UPDATE via EF Core's ExecuteUpdateAsync rather than
     // fetch-then-save -- this only ever touches 2 columns on one known row, so
