@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using MuktoAin.Application.Documents;
+using MuktoAin.Application.Documents.Templates;
 using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Interfaces;
@@ -176,7 +178,15 @@ builder.Services.AddScoped<IRightsExplanationService, RightsExplanationService>(
 // S-3.6: Admin user management (FR-18)
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 
-// Arpita will add: DocumentService, ReviewService, etc.
+// A-2.2 & A-2.3: Document generation engine and templates
+builder.Services.AddScoped<IDocumentTemplate, LabourComplaintTemplate>();
+builder.Services.AddScoped<DocumentGenerator>();
+
+// A-2.4: Document lifecycle service
+builder.Services.AddScoped<DocumentService>();
+
+// A-2.6: Lawyer verification service
+builder.Services.AddScoped<LawyerVerificationService>();
 
 var app = builder.Build();
 
