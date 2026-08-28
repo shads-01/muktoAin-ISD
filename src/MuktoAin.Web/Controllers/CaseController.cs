@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using MuktoAin.Application.DTOs;
@@ -14,15 +15,21 @@ public class CaseController : Controller
     private const string TrackedCasesKey = "TrackedCases";
 
     private readonly CaseService _caseService;
+    private readonly IRightsExplanationService _rightsExplanationService;
+    private readonly ICaseRepository _caseRepo;
     private readonly IRepository<CaseCategory> _categoryRepo;
     private readonly IRepository<District> _districtRepo;
 
     public CaseController(
         CaseService caseService,
+        IRightsExplanationService rightsExplanationService,
+        ICaseRepository caseRepo,
         IRepository<CaseCategory> categoryRepo,
         IRepository<District> districtRepo)
     {
         _caseService = caseService;
+        _rightsExplanationService = rightsExplanationService;
+        _caseRepo = caseRepo;
         _categoryRepo = categoryRepo;
         _districtRepo = districtRepo;
     }
@@ -52,8 +59,8 @@ public class CaseController : Controller
             vm.Language,
             vm.IsAnonymous);
 
-        // Identity not wired yet (S-1.1 pending) -- submissions are guest submissions.
-        var result = await _caseService.SubmitCaseAsync(dto, userId: null);
+        var currentUserId = GetCurrentUserId();
+        var result = await _caseService.SubmitCaseAsync(dto, currentUserId);
 
         RememberTrackedCase(result.CaseId, result.AnonymousTrackingCode);
 
@@ -70,12 +77,38 @@ public class CaseController : Controller
     public async Task<IActionResult> Result(int id, string? code)
     {
         var trackingCode = ResolveTrackingCode(id, code);
-        if (trackingCode == null) return NotFound();
+        var currentUserId = GetCurrentUserId();
+        var role = GetCurrentUserRole();
 
-        var detail = await _caseService.GetCaseDetailAsync(id, userId: null, UserRole.Citizen, trackingCode);
+        var detail = await _caseService.GetCaseDetailAsync(id, currentUserId, role, trackingCode);
         if (detail == null) return NotFound();
 
-        return View(MapToResultViewModel(detail));
+        var vm = MapToResultViewModel(detail);
+
+        var caseEntity = await _caseRepo.GetByIdAsync(id);
+        if (caseEntity != null)
+        {
+            try
+            {
+                var explanation = await _rightsExplanationService.ExplainRightsAsync(caseEntity);
+                vm.RightsExplanation = explanation.Explanation;
+                vm.CitedSections = explanation.CitedSections
+                    .Select(s => new CitedSectionViewModel
+                    {
+                        ActTitle = s.ActTitle,
+                        SectionNumber = string.IsNullOrWhiteSpace(s.SectionNumber) ? string.Empty : $"ধারা {s.SectionNumber}",
+                        SectionText = s.SectionText,
+                        RelevanceScore = $"{Math.Round(s.RelevanceScore * 100)}%"
+                    })
+                    .ToList();
+            }
+            catch
+            {
+                vm.RightsExplanation = "আইনি অধিকার বিশ্লেষণ প্রস্তুত হচ্ছে... অনুগ্রহ করে কিছুক্ষণ পর পুনরায় পৃষ্ঠাটি রিফ্রেশ করুন।";
+            }
+        }
+
+        return View(vm);
     }
 
     [HttpGet]
@@ -83,8 +116,30 @@ public class CaseController : Controller
     {
         var vm = new CaseTrackViewModel();
 
+        var currentUserId = GetCurrentUserId();
+        var role = GetCurrentUserRole();
+
+        if (currentUserId.HasValue)
+        {
+            var userCases = await _caseService.GetUserCasesAsync(currentUserId.Value);
+            foreach (var detail in userCases)
+            {
+                vm.Cases.Add(new CaseListItemViewModel
+                {
+                    CaseId = detail.CaseId,
+                    TrackingCode = string.Empty,
+                    Title = detail.Title,
+                    CategoryName = detail.CategoryName,
+                    Status = detail.Status,
+                    CreatedAt = detail.CreatedAt
+                });
+            }
+        }
+
         foreach (var (caseId, code) in GetTrackedCases())
         {
+            if (vm.Cases.Any(c => c.CaseId == caseId)) continue;
+
             var detail = await _caseService.GetCaseDetailAsync(caseId, userId: null, UserRole.Citizen, code);
             if (detail == null) continue;
 
@@ -171,5 +226,18 @@ public class CaseController : Controller
             CreatedAt = detail.CreatedAt,
             RightsExplanation = string.Empty
         };
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var idStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(idStr, out var id) ? id : null;
+    }
+
+    private UserRole GetCurrentUserRole()
+    {
+        if (User.IsInRole(nameof(UserRole.Admin))) return UserRole.Admin;
+        if (User.IsInRole(nameof(UserRole.Lawyer))) return UserRole.Lawyer;
+        return UserRole.Citizen;
     }
 }
