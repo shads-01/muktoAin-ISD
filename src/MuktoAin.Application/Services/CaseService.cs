@@ -1,6 +1,7 @@
 using MuktoAin.Application.DTOs;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
+using MuktoAin.Domain.Interfaces;
 using MuktoAin.Domain.Interfaces.Repositories;
 
 namespace MuktoAin.Application.Services;
@@ -10,15 +11,18 @@ public class CaseService
     private readonly ICaseRepository _caseRepo;
     private readonly IRepository<CaseCategory> _categoryRepo;
     private readonly IRepository<District> _districtRepo;
+    private readonly IEncryptionService _encryptionService;
 
     public CaseService(
         ICaseRepository caseRepo,
         IRepository<CaseCategory> categoryRepo,
-        IRepository<District> districtRepo)
+        IRepository<District> districtRepo,
+        IEncryptionService encryptionService)
     {
         _caseRepo = caseRepo;
         _categoryRepo = categoryRepo;
         _districtRepo = districtRepo;
+        _encryptionService = encryptionService;
     }
 
     public async Task<CaseSubmissionResultDto> SubmitCaseAsync(CaseSubmissionDto dto, int? userId)
@@ -32,8 +36,8 @@ public class CaseService
             UserId = dto.IsAnonymous ? null : userId,
             CategoryId = dto.CategoryId,
             DistrictId = dto.DistrictId,
-            Title = dto.Title,
-            Description = dto.Description,
+            Title = _encryptionService.Encrypt(dto.Title),
+            Description = _encryptionService.Encrypt(dto.Description),
             Language = dto.Language,
             Status = CaseStatus.Submitted,
             IsAnonymous = dto.IsAnonymous,
@@ -117,8 +121,8 @@ public class CaseService
 
         return new CaseDetailDto(
             c.CaseId,
-            c.Title,
-            c.Description,
+            SafeDecrypt(c.Title),
+            SafeDecrypt(c.Description),
             category?.Name ?? string.Empty,
             district?.Name ?? string.Empty,
             c.Status.ToString(),
@@ -132,5 +136,23 @@ public class CaseService
                 d.Status.ToString(),
                 d.CreatedAt)).ToList()
         );
+    }
+
+    private string SafeDecrypt(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            return _encryptionService.Decrypt(value);
+        }
+        catch
+        {
+            // Graceful fallback for unencrypted legacy rows
+            return value;
+        }
     }
 }

@@ -2,6 +2,7 @@ using MuktoAin.Application.DTOs;
 using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
+using MuktoAin.Domain.Interfaces;
 using MuktoAin.Domain.Interfaces.Repositories;
 using Moq;
 
@@ -12,11 +13,53 @@ public class CaseServiceTests
     private readonly Mock<ICaseRepository> _caseRepo = new();
     private readonly Mock<IRepository<CaseCategory>> _categoryRepo = new();
     private readonly Mock<IRepository<District>> _districtRepo = new();
+    private readonly Mock<IEncryptionService> _encryptionService = new();
     private readonly CaseService _service;
 
     public CaseServiceTests()
     {
-        _service = new CaseService(_caseRepo.Object, _categoryRepo.Object, _districtRepo.Object);
+        _encryptionService.Setup(e => e.Encrypt(It.IsAny<string>()))
+            .Returns<string>(s => string.IsNullOrEmpty(s) ? s : $"ENC_{s}");
+        _encryptionService.Setup(e => e.Decrypt(It.IsAny<string>()))
+            .Returns<string>(s => s.StartsWith("ENC_") ? s.Substring(4) : s);
+
+        _service = new CaseService(_caseRepo.Object, _categoryRepo.Object, _districtRepo.Object, _encryptionService.Object);
+    }
+
+    [Fact]
+    public async Task SubmitCaseAsync_EncryptsTitleAndDescriptionBeforeSaving()
+    {
+        var dto = new CaseSubmissionDto(1, 5, "Secret Title", "Secret Description", "bn", IsAnonymous: false);
+
+        var result = await _service.SubmitCaseAsync(dto, userId: 42);
+
+        _caseRepo.Verify(r => r.AddAsync(It.Is<Case>(c =>
+            c.Title == "ENC_Secret Title" &&
+            c.Description == "ENC_Secret Description")), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetCaseDetailAsync_DecryptsTitleAndDescriptionOnRead()
+    {
+        var caseEntity = new Case
+        {
+            CaseId = 1,
+            Title = "ENC_Encrypted Title",
+            Description = "ENC_Encrypted Description",
+            CategoryId = 1,
+            DistrictId = 1,
+            Status = CaseStatus.Submitted,
+            UserId = 42,
+            IsAnonymous = false
+        };
+        SetupLookups(caseEntity);
+        _caseRepo.Setup(r => r.GetWithDocumentsAsync(1)).ReturnsAsync(caseEntity);
+
+        var detail = await _service.GetCaseDetailAsync(1, 42, UserRole.Citizen);
+
+        Assert.NotNull(detail);
+        Assert.Equal("Encrypted Title", detail!.Title);
+        Assert.Equal("Encrypted Description", detail.Description);
     }
 
     [Fact]
