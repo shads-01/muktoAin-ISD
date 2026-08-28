@@ -242,6 +242,14 @@ using (var scope = app.Services.CreateScope())
         builder.Configuration,
         logger);
 
+    // Dev-only demo data (citizens, lawyers, cases, documents, a review) so the app
+    // has something to click through end-to-end. Never runs outside Development.
+    if (app.Environment.IsDevelopment())
+    {
+        var encryptionService = scope.ServiceProvider.GetRequiredService<IEncryptionService>();
+        await SeedDemoData.SeedAsync(context, userManager, encryptionService, logger);
+    }
+
     var vectorStore = scope.ServiceProvider.GetRequiredService<QdrantVectorStore>();
 
     try

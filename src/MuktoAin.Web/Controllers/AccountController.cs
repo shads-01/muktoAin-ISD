@@ -60,6 +60,7 @@ public class AccountController : Controller
         if (result.Succeeded)
         {
             TempData["Success"] = "লগইন সফল হয়েছে!";
+            TempData["SuccessEn"] = "Login successful!";
 
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             {
@@ -143,6 +144,7 @@ public class AccountController : Controller
         }
 
         TempData["Success"] = "নিবন্ধন সম্পন্ন হয়েছে! আপনার একাউন্টে প্রবেশ করুন।";
+        TempData["SuccessEn"] = "Registration complete! Please log in to your account.";
         return RedirectToAction(nameof(Login));
     }
 
@@ -152,6 +154,7 @@ public class AccountController : Controller
     {
         await _signInManager.SignOutAsync();
         TempData["Info"] = "সফলভাবে লগআউট করা হয়েছে।";
+        TempData["InfoEn"] = "You have been logged out successfully.";
         return RedirectToAction("Index", "Home");
     }
 }

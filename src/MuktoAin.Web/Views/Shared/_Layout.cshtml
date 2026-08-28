@@ -55,7 +55,10 @@
                         <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>আইনজীবী রিভিউ কিউ</a>
                         <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i>অ্যাডমিন ড্যাশবোর্ড</a>
                         <hr class="divider" style="margin:4px 0" />
-                        <a asp-controller="Account" asp-action="Login"><i data-lucide="log-out"></i>লগআউট</a>
+                        <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0">
+                            @Html.AntiForgeryToken()
+                            <button type="submit"><i data-lucide="log-out"></i>লগআউট</button>
+                        </form>
                     </div>
                 </div>
                 
@@ -160,6 +163,40 @@
     <!-- Scripts -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="~/assets/js/main.js" asp-append-version="true"></script>
+
+    @* Single place that surfaces TempData["Success"/"Info"/"Error"] as a toast, on
+       whatever page the current redirect actually lands on. Reading the value here
+       (via the C# indexer, once, every request) also consumes it -- so it can no
+       longer leak forward, unread, onto an unrelated later page (see Case/Result and
+       Account/Login history). Controllers should set the matching "*En" key too, so
+       the toast follows the viewer's current language (localStorage "mkt-lang"). *@
+    @{
+        var toasts = new (string? Bn, string? En, string Type)[]
+        {
+            (TempData["Success"] as string, TempData["SuccessEn"] as string, "success"),
+            (TempData["Info"] as string, TempData["InfoEn"] as string, "info"),
+            (TempData["Error"] as string, TempData["ErrorEn"] as string, "error"),
+        };
+    }
+    @foreach (var toast in toasts)
+    {
+        if (toast.Bn != null)
+        {
+            <script>
+                (function () {
+                    var lang = "bn";
+                    try { lang = localStorage.getItem("mkt-lang") || "bn"; } catch (e) {}
+                    var msg = lang === "en"
+                        ? @Html.Raw(System.Text.Json.JsonSerializer.Serialize(toast.En ?? toast.Bn))
+                        : @Html.Raw(System.Text.Json.JsonSerializer.Serialize(toast.Bn));
+                    document.addEventListener("DOMContentLoaded", function () {
+                        if (typeof window.showToast === "function") window.showToast(msg, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(toast.Type)));
+                    });
+                })();
+            </script>
+        }
+    }
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
