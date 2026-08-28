@@ -1,18 +1,28 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using MuktoAin.Domain.Entities;
+using MuktoAin.Domain.Enums;
+using MuktoAin.Domain.Interfaces.Repositories;
 using MuktoAin.Web.ViewModels;
 
 namespace MuktoAin.Web.Controllers;
 
 public class AccountController : Controller
 {
+    private readonly SignInManager<User> _signInManager;
+    private readonly UserManager<User> _userManager;
+    private readonly IRepository<LawyerProfile> _lawyerProfileRepo;
     private readonly ILogger<AccountController> _logger;
 
-    // CP2/CP3: Shads will inject SignInManager / UserManager here
-    // private readonly SignInManager<ApplicationUser> _signInManager;
-    // private readonly UserManager<ApplicationUser> _userManager;
-
-    public AccountController(ILogger<AccountController> logger)
+    public AccountController(
+        SignInManager<User> signInManager,
+        UserManager<User> userManager,
+        IRepository<LawyerProfile> lawyerProfileRepo,
+        ILogger<AccountController> logger)
     {
+        _signInManager = signInManager;
+        _userManager = userManager;
+        _lawyerProfileRepo = lawyerProfileRepo;
         _logger = logger;
     }
 
@@ -25,37 +35,53 @@ public class AccountController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Login(LoginViewModel model, string? returnUrl = null)
+    public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
     {
         if (!ModelState.IsValid)
         {
             return View(model);
         }
 
-        // TODO: [Shads] Replace with SignInManager.PasswordSignInAsync()
-        TempData["Success"] = "লগইন সফল হয়েছে (Mock Session Active)";
-        
-        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+        var user = await _userManager.FindByEmailAsync(model.Email);
+        if (user == null)
         {
-            return Redirect(returnUrl);
+            ModelState.AddModelError(string.Empty, "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।");
+            return View(model);
         }
 
-        if (string.Equals(model.Email, "admin@muktoain.bd", StringComparison.OrdinalIgnoreCase))
+        if (user.AccountStatus == AccountStatus.Suspended)
         {
-            return RedirectToAction("Dashboard", "Admin");
+            ModelState.AddModelError(string.Empty, "আপনার অ্যাকাউন্টটি সাময়িকভাবে স্থগিত করা হয়েছে।");
+            return View(model);
         }
 
-        if (string.Equals(model.Email, "lawyer@muktoain.bd", StringComparison.OrdinalIgnoreCase))
+        var result = await _signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, lockoutOnFailure: true);
+
+        if (result.Succeeded)
         {
-            return RedirectToAction("Queue", "Lawyer");
+            TempData["Success"] = "লগইন সফল হয়েছে!";
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            return user.Role switch
+            {
+                UserRole.Admin => RedirectToAction("Dashboard", "Admin"),
+                UserRole.Lawyer => RedirectToAction("Queue", "Lawyer"),
+                _ => RedirectToAction("Track", "Case")
+            };
         }
 
-        if (string.Equals(model.Email, "citizen@muktoain.bd", StringComparison.OrdinalIgnoreCase))
+        if (result.IsLockedOut)
         {
-            return RedirectToAction("Track", "Case");
+            ModelState.AddModelError(string.Empty, "অ্যাকাউন্টটি সাময়িকভাবে লক হয়েছে। কিছুক্ষণ পর চেষ্টা করুন।");
+            return View(model);
         }
 
-        return RedirectToAction("Index", "Home");
+        ModelState.AddModelError(string.Empty, "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।");
+        return View(model);
     }
 
     [HttpGet]
@@ -66,29 +92,65 @@ public class AccountController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Register(RegisterViewModel model)
+    public async Task<IActionResult> Register(RegisterViewModel model)
     {
         if (!ModelState.IsValid)
         {
             return View(model);
         }
 
-        // TODO: [Shads] Replace with UserManager.CreateAsync() and role assignment
-        if (model.Role == "Lawyer" && string.IsNullOrWhiteSpace(model.BarRegistrationNumber))
+        var isLawyer = string.Equals(model.Role, "Lawyer", StringComparison.OrdinalIgnoreCase);
+        if (isLawyer && string.IsNullOrWhiteSpace(model.BarRegistrationNumber))
         {
             ModelState.AddModelError("BarRegistrationNumber", "আইনজীবীদের জন্য বার রেজিস্ট্রেশন নম্বর আবশ্যক।");
             return View(model);
         }
 
+        var user = new User
+        {
+            FullName = model.FullName,
+            Email = model.Email,
+            UserName = model.Email,
+            PhoneNumber = model.PhoneNumber,
+            Role = isLawyer ? UserRole.Lawyer : UserRole.Citizen,
+            AccountStatus = AccountStatus.Active,
+            PreferredLanguage = "bn",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var result = await _userManager.CreateAsync(user, model.Password);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+            return View(model);
+        }
+
+        if (isLawyer)
+        {
+            var profile = new LawyerProfile
+            {
+                UserId = user.Id,
+                BarRegistrationNumber = model.BarRegistrationNumber!.Trim(),
+                Specialization = model.Specialization,
+                VerificationStatus = VerificationStatus.Pending
+            };
+
+            await _lawyerProfileRepo.AddAsync(profile);
+            await _lawyerProfileRepo.SaveChangesAsync();
+        }
+
         TempData["Success"] = "নিবন্ধন সম্পন্ন হয়েছে! আপনার একাউন্টে প্রবেশ করুন।";
-        return RedirectToAction("Login");
+        return RedirectToAction(nameof(Login));
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
-        // TODO: [Shads] Replace with SignInManager.SignOutAsync()
+        await _signInManager.SignOutAsync();
         TempData["Info"] = "সফলভাবে লগআউট করা হয়েছে।";
         return RedirectToAction("Index", "Home");
     }

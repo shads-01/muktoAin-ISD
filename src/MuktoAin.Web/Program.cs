@@ -152,6 +152,30 @@ builder.Services.AddScoped<IEncryptionService, EncryptionService>();
 // Controlled by Embedding:RunOnStartup config flag.
 builder.Services.AddHostedService<EmbeddingBatchJob>();
 
+// S-2.1: Prompt assembly from retrieved sections + scenario mappings
+builder.Services.AddScoped<IPromptAssembler, PromptAssembler>();
+
+// S-2.4 + S-2.7: AI audit logging with PII redaction
+builder.Services.AddScoped<IAiLogService, AiLogService>();
+
+// S-2.2: Central AI orchestration pipeline
+builder.Services.AddScoped<IAiOrchestrationService>(sp =>
+    new AiOrchestrationService(
+        sp.GetRequiredService<IRagContextBuilder>(),
+        sp.GetRequiredService<IPromptAssembler>(),
+        sp.GetRequiredService<MuktoAin.Domain.Interfaces.IAiService>(),
+        sp.GetRequiredService<DisclaimerInjector>(),
+        sp.GetRequiredService<IAiLogService>(),
+        sp.GetRequiredService<IRepository<AiLog>>(),
+        sp.GetRequiredService<IRepository<CaseActReference>>(),
+        sp.GetRequiredService<IOptions<GeminiOptions>>().Value.GenerationModel));
+
+// S-2.3: Rights explanation facade (FR-4)
+builder.Services.AddScoped<IRightsExplanationService, RightsExplanationService>();
+
+// S-3.6: Admin user management (FR-18)
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+
 // Arpita will add: DocumentService, ReviewService, etc.
 
 var app = builder.Build();

@@ -54,7 +54,7 @@
 - [x] ~~**[T-1.14]** Data Layer Unit Tests (`MuktoAin.UnitTests`) — *Tultul* `[Blocked by: T-1.12]` — 14 tests, all passing on EF InMemory; FromSqlRaw/CONTAINSTABLE/ExecuteUpdateAsync methods excluded (unsupported by InMemory) and deferred to T-3.3~~
 - [x] ~~**[S-1.8]** `EmbeddingBatchJob.cs` (Embed & Index All Chunks into Qdrant) — *Shads* `[Blocked by: T-1.9, T-1.11, S-1.4] [Unblocks: S-1.9, T-2.1]`~~ — implemented as IHostedService in Infrastructure/VectorStore with sequential chunk processing, SHA-256 incremental hashing, Qdrant upsert and SQL status update; registered in DI; verified by 4 unit tests
 - [x] ~~**[T-1.15]** Checkpoint 1 Data Foundation Exit Gate — *Tultul* `[Blocked by: T-1.1 to T-1.14]` — all of T-1.1–T-1.14 confirmed done; full solution build clean (6 projects incl. tests), 14/14 unit tests pass, end-to-end app startup verified against real SQL Server + live Qdrant with no errors, and a direct SQL check confirms data integrity: 1,484 Acts, 35,633 Sections, 42,858 Chunks, 64 Districts, 4 Categories, FTS catalog fully indexed (35,633 items = full section count)~~
-- [ ] **[S-1.9]** Checkpoint 1 Overall RAG Ingestion Smoke Test Exit Gate — *Shads* `[Blocked by: S-1.8, T-1.13, T-2.1]` *(retrieval leg requires T-2.1 — may land early CP2)*
+- [x] ~~**[S-1.9]** Checkpoint 1 Overall RAG Ingestion Smoke Test Exit Gate — *Shads* `[Blocked by: S-1.8, T-1.13, T-2.1]`~~ — end-to-end RAG retrieval smoke tests implemented in `tests/MuktoAin.IntegrationTests/AiPipeline/RagRetrievalSmokeTests.cs` and Gemini client multi-key rotation unit tests in `tests/MuktoAin.UnitTests/Services/GeminiClientTests.cs`; verified vector-primary retrieval with Labour Act query, FTS fallback on empty vector results, and Gemini key rotation on 429 quota exhaustion; all 93 tests passing across unit and integration test suites.
 
 ---
 
@@ -69,16 +69,16 @@
 - [ ] **[T-2.6]** Checkpoint 2 Search Infrastructure Exit Gate — *Tultul* `[Blocked by: T-2.1 to T-2.5]`
 
 ### 2. AI Orchestration, Prompt Assembly & Logging
-- [ ] **[S-2.1]** `PromptAssembler.cs` (Context Assembly & Grounding) — *Shads* `[Blocked by: T-2.3, S-1.5] [Unblocks: S-2.2]`
-- [ ] **[S-2.2]** `AiOrchestrationService.cs` (Gemini Flash Pipeline) — *Shads* `[Blocked by: S-2.1, S-1.3, S-1.6, S-2.6] [Unblocks: S-2.3, S-2.4, A-2.2]`
-- [ ] **[S-2.3]** `RightsExplanationService.cs` (Explain My Rights) — *Shads* `[Blocked by: S-2.2] [Unblocks: A-2.2, Wires to E-2.2]`
-- [ ] **[S-2.4]** `AiLogService.cs` (Audit Logging & Token Tracking) — *Shads* `[Blocked by: T-1.4, S-2.2] [Unblocks: S-2.7]`
-- [ ] **[S-2.6]** Polly Resilience Policies (Retry, Key Rotation & Fallback) — *Shads* `[Blocked by: S-1.3] [Unblocks: S-2.2]`
-- [ ] **[S-2.7]** AI Logging PII Redaction & Audit Safety — *Shads* `[Blocked by: S-2.4]`
+- [x] ~~**[S-2.1]** `PromptAssembler.cs` (Context Assembly & Grounding) — *Shads* `[Blocked by: T-2.3, S-1.5] [Unblocks: S-2.2]`~~ — implemented `IPromptAssembler` and `PromptAssembler` in Application layer; builds grounded prompts from retrieved sections, scenario mappings, and language disclaimers; verified with unit tests
+- [x] ~~**[S-2.2]** `AiOrchestrationService.cs` (Gemini Flash Pipeline) — *Shads* `[Blocked by: S-2.1, S-1.3, S-1.6, S-2.6] [Unblocks: S-2.3, S-2.4, A-2.2]`~~ — implemented `IAiOrchestrationService` and `AiOrchestrationService`; orchestrates cache checks, RAG context retrieval, prompt assembly, Gemini generation, disclaimer injection, token estimation, AI audit logging, and citation persistence in `CASE_ACT_REFERENCE`; verified with unit tests
+- [x] ~~**[S-2.3]** `RightsExplanationService.cs` (Explain My Rights) — *Shads* `[Blocked by: S-2.2] [Unblocks: A-2.2, Wires to E-2.2]`~~ — implemented `IRightsExplanationService` and `RightsExplanationService` facade returning `RightsExplanationDto`; verified with unit tests
+- [x] ~~**[S-2.4]** `AiLogService.cs` (Audit Logging & Token Tracking) — *Shads* `[Blocked by: T-1.4, S-2.2] [Unblocks: S-2.7]`~~ — implemented `IAiLogService` and `AiLogService` persisting latency, model, tokens, and response to `AI_LOG` table; verified with unit tests
+- [x] ~~**[S-2.6]** Polly Resilience Policies (Retry, Key Rotation & Fallback) — *Shads* `[Blocked by: S-1.3] [Unblocks: S-2.2]`~~ — implemented `GeminiResiliencePolicies` (timeout -> circuit breaker -> exponential backoff retry) and registered in DI; verified with unit tests
+- [x] ~~**[S-2.7]** AI Logging PII Redaction & Audit Safety — *Shads* `[Blocked by: S-2.4]`~~ — integrated regex-based citizen problem description redaction in `AiLogService` before saving to `AI_LOG`; verified with unit tests
 
 ### 3. Case Lifecycle, Document Generation & Lawyer Review Gate
 - [x] ~~**[A-2.1]** `CaseService.cs` (Intake, State Machine, Tracking Code) — *Arpita* `[Blocked by: T-1.4, T-1.12, A-1.1] [Unblocks: S-2.5, A-2.4]` — implemented with `SubmitCaseAsync` returning `CaseSubmissionResultDto(CaseId, AnonymousTrackingCode)` (GUID shown once for FR-8), guest/citizen/lawyer/admin access rules in `GetCaseDetailAsync` (explicit null-compare guard), tuple-switch state machine incl. `Finalized→Submitted` re-open row, name lookups via injected `IRepository<CaseCategory>`/`IRepository<District>`; verified by 10 new Moq unit tests~~
-- [ ] **[S-2.5]** Wire `EncryptionService` into `CaseService` for PII — *Shads* `[Blocked by: S-1.7, A-2.1]`
+- [x] ~~**[S-2.5]** Wire `EncryptionService` into `CaseService` for PII — *Shads* `[Blocked by: S-1.7, A-2.1]`~~ — wired `IEncryptionService` into `CaseService` for encrypt-on-write and decrypt-on-read of `Title` and `Description` with graceful plaintext fallback; verified with unit tests
 - [ ] **[A-2.2]** `DocumentGenerator.cs` (Core Document Generation Engine) — *Arpita* `[Blocked by: S-2.2, S-2.3] [Unblocks: A-2.3]`
 - [ ] **[A-2.3]** `LabourComplaintTemplate.cs` (First Structured Template) — *Arpita* `[Blocked by: A-2.2] [Unblocks: A-2.4]`
 - [ ] **[A-2.4]** `DocumentService.cs` (Document CRUD, Lifecycle & Lockout) — *Arpita* `[Blocked by: A-2.3, A-2.1] [Unblocks: A-2.5, A-2.7]`
@@ -108,7 +108,7 @@
 - [ ] **[A-3.2]** `AdminAnalyticsService.cs` (KPIs, Funnels, Workloads) — *Arpita* `[Blocked by: T-1.12] [Wires to E-3.1]`
 - [ ] **[T-3.1]** `ActsManagementService.cs` (Admin CRUD & SHA256 Re-indexing) — *Tultul* `[Blocked by: T-1.8, S-1.8] [Wires to E-3.2]`
 - [ ] **[T-3.2]** `ScenarioMappingService.cs` (Admin Keyword Boosts for FR-18) — *Tultul* `[Blocked by: T-1.12] [Wires to E-3.2]`
-- [ ] **[S-3.6]** `UserManagementService.cs` (Admin Role Management) — *Shads* `[Blocked by: S-1.1] [Wires to E-3.3]`
+- [x] ~~**[S-3.6]** `UserManagementService.cs` (Admin Role Management) — *Shads* `[Blocked by: S-1.1] [Wires to E-3.3]`~~ — implemented `IUserManagementService` and `UserManagementService` wrapping `UserManager<User>` with suspension and admin protection guardrails; registered in DI; verified with unit tests
 
 ### 2. Admin Frontend Views & Integration Wiring
 - [x] ~~**[E-3.1]** Admin Dashboard & Analytics Views (`/Admin/Analytics`) — *Erin* `[Blocked by: E-1.1] [Wires to A-3.2]`~~
