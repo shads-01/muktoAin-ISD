@@ -68,6 +68,7 @@ public class CaseController : Controller
         RememberTrackedCase(result.CaseId, result.AnonymousTrackingCode);
 
         TempData["Success"] = "মামলা সফলভাবে জমা হয়েছে!";
+        TempData["SuccessEn"] = "Case submitted successfully!";
         if (result.AnonymousTrackingCode != null)
         {
             TempData["TrackingCode"] = result.AnonymousTrackingCode;

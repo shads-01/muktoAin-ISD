@@ -47,21 +47,6 @@
                     <p class="page-sub">মামলার অগ্রগতি দেখতে বা আইনজীবী রিভিউ করতে লগইন করুন</p>
                 </div>
 
-                @if (TempData["Success"] != null)
-                {
-                    <div class="alert alert-success" style="margin-bottom: 16px;">
-                        <i data-lucide="check-circle-2"></i>
-                        <div>@TempData["Success"]</div>
-                    </div>
-                }
-                @if (TempData["Info"] != null)
-                {
-                    <div class="alert alert-info" style="margin-bottom: 16px;">
-                        <i data-lucide="info"></i>
-                        <div>@TempData["Info"]</div>
-                    </div>
-                }
-
                 <div class="demo-accounts-card" style="margin-bottom: 20px; padding: 14px 16px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius);">
                     <div class="row spread" style="align-items: center; margin-bottom: 10px;">
                         <span class="tiny" style="font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 6px;">
