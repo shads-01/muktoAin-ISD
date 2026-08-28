@@ -234,7 +234,14 @@ using (var scope = app.Services.CreateScope())
 
     var vectorStore = scope.ServiceProvider.GetRequiredService<QdrantVectorStore>();
 
-    await vectorStore.EnsureCollectionAsync();
+    try
+    {
+        await vectorStore.EnsureCollectionAsync();
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning("Qdrant collection check failed -- vector search will be unavailable until the Qdrant endpoint is reachable. Error: {Error}", ex.Message);
+    }
 }
 
 app.UseHttpsRedirection();
