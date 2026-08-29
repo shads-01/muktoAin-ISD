@@ -93,10 +93,10 @@
 - [x] ~~**[E-2.3]** Anonymous Case Tracking View (`/Case/Track`) — *Erin* `[Mock Ready -> Wires to A-2.1]`~~
 - [x] ~~**[E-2.4]** Acts Keyword Search View (`/Search`) — *Erin* `[Mock Ready -> Wires to T-2.4]`~~
 - [x] ~~**[E-2.5]** Act Category Browsing & Detail Views (`/Category`) — *Erin* `[Mock Ready -> Wires to T-2.5]`~~
-- [ ] **[E-2.6]** Generated Document Preview View (`/Document/Preview`) — *Erin* `[Mock Ready -> Wires to A-2.4]`
+- [x] ~~**[E-2.6]** Generated Document Preview View (`/Document/Preview`) — *Erin* `[Mock Ready -> Wires to A-2.4]`~~ — implemented `DocumentController.cs` with `Preview` and `Download` actions, `DocumentPreviewViewModel`, and `Views/Document/Preview.cshtml` with parchment styling, Surface 3 disclaimer stamp, and lawyer approval PDF gate
 - [x] ~~**[E-2.7]** Lawyer Verification & Review Views (`/Lawyer/Queue`, `/Lawyer/Review`) — *Erin* `[Mock Ready -> Wires to A-2.7]`~~
-- [ ] **[E-2.8]** `api-contracts.md` Specification & `.resx` Resource Files — *Erin* `[Unblocks: S-3.5]`
-- [ ] **[E-2.9]** Checkpoint 2 Frontend Views Exit Gate — *Erin* `[Blocked by: E-2.1 to E-2.8]`
+- [x] ~~**[E-2.8]** `api-contracts.md` Specification & `.resx` Resource Files — *Erin* `[Unblocks: S-3.5]`~~ — created `docs/api-contracts.md` specifying all controller-to-service contracts, and populated `SharedResource.bn.resx` / `SharedResource.en.resx` with UI strings
+- [x] ~~**[E-2.9]** Checkpoint 2 Frontend Views Exit Gate — *Erin* `[Blocked by: E-2.1 to E-2.8]`~~ — all 8 Checkpoint 2 citizen, search, category, document, and lawyer review views implemented and verified; live HTTP audit passing across all routes
 - [ ] **[S-2.8]** Checkpoint 2 Overall Citizen Flow & RAG Integration Exit Gate — *Shads* `[Blocked by: S-2.1 to S-2.7, T-2.6, A-2.8, E-2.9]`
 
 ---
