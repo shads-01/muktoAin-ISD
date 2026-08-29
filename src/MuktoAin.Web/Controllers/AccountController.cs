@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
+using MuktoAin.Web.Auth;
 using MuktoAin.Web.ViewModels;
 
 namespace MuktoAin.Web.Controllers;
@@ -45,13 +46,13 @@ public class AccountController : Controller
         var user = await _userManager.FindByEmailAsync(model.Email);
         if (user == null)
         {
-            ModelState.AddModelError(string.Empty, "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।");
+            ModelState.AddModelError(string.Empty, "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়। / The email or password is incorrect.");
             return View(model);
         }
 
         if (user.AccountStatus == AccountStatus.Suspended)
         {
-            ModelState.AddModelError(string.Empty, "আপনার অ্যাকাউন্টটি সাময়িকভাবে স্থগিত করা হয়েছে।");
+            ModelState.AddModelError(string.Empty, "আপনার একাউন্টটি স্থগিত করা হয়েছে। সহায়তার জন্য যোগাযোগ করুন। / Your account has been suspended. Please contact support.");
             return View(model);
         }
 
@@ -77,11 +78,11 @@ public class AccountController : Controller
 
         if (result.IsLockedOut)
         {
-            ModelState.AddModelError(string.Empty, "অ্যাকাউন্টটি সাময়িকভাবে লক হয়েছে। কিছুক্ষণ পর চেষ্টা করুন।");
+            ModelState.AddModelError(string.Empty, "অনেকবার ভুল চেষ্টার কারণে একাউন্টটি সাময়িকভাবে লক হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন। / Account temporarily locked due to too many failed attempts. Please try again later.");
             return View(model);
         }
 
-        ModelState.AddModelError(string.Empty, "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।");
+        ModelState.AddModelError(string.Empty, "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়। / The email or password is incorrect.");
         return View(model);
     }
 
@@ -103,7 +104,7 @@ public class AccountController : Controller
         var isLawyer = string.Equals(model.Role, "Lawyer", StringComparison.OrdinalIgnoreCase);
         if (isLawyer && string.IsNullOrWhiteSpace(model.BarRegistrationNumber))
         {
-            ModelState.AddModelError("BarRegistrationNumber", "আইনজীবীদের জন্য বার রেজিস্ট্রেশন নম্বর আবশ্যক।");
+            ModelState.AddModelError("BarRegistrationNumber", "আইনজীবীদের জন্য বার রেজিস্ট্রেশন সনদ নম্বর আবশ্যক। / Bar Registration Number is required for lawyer accounts.");
             return View(model);
         }
 
@@ -124,7 +125,8 @@ public class AccountController : Controller
         {
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError(string.Empty, error.Description);
+                var (field, message) = IdentityErrorMapper.Map(error);
+                ModelState.AddModelError(field ?? string.Empty, message);
             }
             return View(model);
         }
