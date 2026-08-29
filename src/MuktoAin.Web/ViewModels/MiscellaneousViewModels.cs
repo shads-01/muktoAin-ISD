@@ -90,3 +90,17 @@ public class LawyerApplicationViewModel
     public string AppliedDate { get; set; } = string.Empty;
     public string Status { get; set; } = "Pending";
 }
+
+public class DocumentPreviewViewModel
+{
+    public int DocumentId { get; set; }
+    public int CaseId { get; set; }
+    public string CaseTitle { get; set; } = string.Empty;
+    public string DocumentType { get; set; } = string.Empty;
+    public string ContentDraft { get; set; } = string.Empty;
+    public string? ContentFinal { get; set; }
+    public string Status { get; set; } = "Draft"; // Draft, UnderReview, Approved, EditedApproved, Rejected
+    public bool CanDownloadPdf { get; set; }
+    public string? LawyerComments { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
