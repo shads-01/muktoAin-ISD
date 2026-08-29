@@ -1,8 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MuktoAin.Web.Controllers;
 
-// [Authorize(Roles = "Admin")] // TODO: [Shads] Enable after Identity role claims configured
+[Authorize(Roles = "Admin")]
 public class AdminController : Controller
 {
     private readonly ILogger<AdminController> _logger;

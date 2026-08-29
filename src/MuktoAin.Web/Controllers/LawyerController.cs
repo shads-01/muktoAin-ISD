@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MuktoAin.Web.ViewModels;
 
 namespace MuktoAin.Web.Controllers;
 
+[Authorize(Roles = "Admin,Lawyer")]
 public class LawyerController : Controller
 {
     [HttpGet]
