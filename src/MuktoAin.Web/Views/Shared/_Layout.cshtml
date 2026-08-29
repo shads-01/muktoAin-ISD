@@ -55,9 +55,8 @@
                         <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>আইনজীবী রিভিউ কিউ</a>
                         <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i>অ্যাডমিন ড্যাশবোর্ড</a>
                         <hr class="divider" style="margin:4px 0" />
-                        <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0">
-                            @Html.AntiForgeryToken()
-                            <button type="submit"><i data-lucide="log-out"></i>লগআউট</button>
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="user-logout-form">
+                            <button type="submit" class="user-logout-btn"><i data-lucide="log-out"></i>লগআউট</button>
                         </form>
                     </div>
                 </div>

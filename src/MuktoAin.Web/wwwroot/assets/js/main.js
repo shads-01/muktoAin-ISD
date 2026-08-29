@@ -441,7 +441,7 @@
       { sel: '#user-pop a[href*="/Case/Track"]', text: dict["nav-mycases"], icon: "folder" },
       { sel: '#user-pop a[href*="/Lawyer/Queue"]', text: dict["nav-lawyerqueue"], icon: "file-check-2" },
       { sel: '#user-pop a[href*="/Admin/Dashboard"], #user-pop a[href*="/Admin"]', text: dict["nav-admindash"], icon: "shield" },
-      { sel: '#user-pop a[href*="/Account/Login"]', text: dict["nav-logout"], icon: "log-out" }
+      { sel: '#user-pop .user-logout-btn', text: dict["nav-logout"], icon: "log-out" }
     ];
     userPopMap.forEach(function (item) {
       document.querySelectorAll(item.sel).forEach(function (el) {

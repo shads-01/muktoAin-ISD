@@ -241,6 +241,7 @@ i[data-lucide], svg.lucide { width: 20px; height: 20px; flex: none; }
   font-family: var(--font-body); font-size: 14px; font-weight: 600; color: var(--ink); text-align: left; text-decoration: none;
 }
 .menu-pop a:hover, .menu-pop button:hover { background: var(--surface-2); }
+.menu-pop form { margin: 0; }
 .pop-wrap { position: relative; }
 
 /* Hamburger + drawer */
