@@ -39,6 +39,10 @@ public class UserRoleClaimsTransformation(UserManager<User> userManager) : IClai
         }
 
         identity.AddClaim(new Claim(RoleClaimType, user.Role.ToString()));
+        if (!identity.HasClaim(c => c.Type == "FullName") && !string.IsNullOrWhiteSpace(user.FullName))
+        {
+            identity.AddClaim(new Claim("FullName", user.FullName));
+        }
         return principal;
     }
 }

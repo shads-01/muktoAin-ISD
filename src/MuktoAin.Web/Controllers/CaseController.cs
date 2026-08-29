@@ -92,10 +92,10 @@ public class CaseController : Controller
         var caseEntity = await _caseRepo.GetByIdAsync(id);
         if (caseEntity != null)
         {
-            if (caseEntity.District == null)
-            caseEntity.District = await _districtRepo.GetByIdAsync(caseEntity.DistrictId);
-        if (caseEntity.Category == null)
-            caseEntity.Category = await _categoryRepo.GetByIdAsync(caseEntity.CategoryId);
+            if (caseEntity.District == null && await _districtRepo.GetByIdAsync(caseEntity.DistrictId) is { } d)
+                caseEntity.District = d;
+            if (caseEntity.Category == null && await _categoryRepo.GetByIdAsync(caseEntity.CategoryId) is { } c)
+                caseEntity.Category = c;
         
                 var explanation = await _rightsExplanationService.ExplainRightsAsync(caseEntity);
                 vm.RightsExplanation = explanation.Explanation;

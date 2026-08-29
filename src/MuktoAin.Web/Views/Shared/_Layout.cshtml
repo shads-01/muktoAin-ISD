@@ -1,3 +1,18 @@
+@{
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var userDisplayName = User.FindFirst("FullName")?.Value;
+    if (string.IsNullOrWhiteSpace(userDisplayName))
+    {
+        userDisplayName = User.Identity?.Name ?? string.Empty;
+    }
+    
+    var userInitial = "U";
+    if (!string.IsNullOrWhiteSpace(userDisplayName))
+    {
+        var trimmed = userDisplayName.Trim();
+        userInitial = trimmed.Substring(0, 1).ToUpperInvariant();
+    }
+}
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -41,25 +56,40 @@
                 <partial name="_LanguageToggle" />
                 <button class="icon-btn theme-toggle" type="button" aria-label="থিম পরিবর্তন"></button>
                 
-                <div class="nav-desktop-auth row" style="gap:8px">
-                    <a class="btn btn-outline btn-sm" asp-controller="Account" asp-action="Login">সাইন ইন</a>
-                    <a class="btn btn-primary btn-sm" asp-controller="Account" asp-action="Register">নিবন্ধন</a>
-                </div>
-
-                <div class="pop-wrap">
-                    <button class="avatar" type="button" data-pop="user-pop" aria-label="ব্যবহারকারী মেনু">
-                        ম
-                    </button>
-                    <div class="menu-pop" id="user-pop">
-                        <a asp-controller="Case" asp-action="Track"><i data-lucide="folder"></i>আমার মামলাসমূহ</a>
-                        <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>আইনজীবী রিভিউ কিউ</a>
-                        <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i>অ্যাডমিন ড্যাশবোর্ড</a>
-                        <hr class="divider" style="margin:4px 0" />
-                        <form asp-controller="Account" asp-action="Logout" method="post" class="user-logout-form">
-                            <button type="submit" class="user-logout-btn"><i data-lucide="log-out"></i>লগআউট</button>
-                        </form>
+                @if (!isAuthenticated)
+                {
+                    <div class="nav-desktop-auth row" style="gap:8px">
+                        <a class="btn btn-outline btn-sm" asp-controller="Account" asp-action="Login">সাইন ইন</a>
+                        <a class="btn btn-primary btn-sm" asp-controller="Account" asp-action="Register">নিবন্ধন</a>
                     </div>
-                </div>
+                }
+                else
+                {
+                    <div class="pop-wrap">
+                        <button class="avatar" type="button" data-pop="user-pop" aria-label="ব্যবহারকারী মেনু" title="@userDisplayName">
+                            @userInitial
+                        </button>
+                        <div class="menu-pop" id="user-pop">
+                            <div style="padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px;">
+                                <strong style="display:block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@userDisplayName</strong>
+                                <span class="muted tiny">@(User.IsInRole("Admin") ? "অ্যাডমিন / Administrator" : User.IsInRole("Lawyer") ? "আইনজীবী / Advocate" : "নাগরিক / Citizen")</span>
+                            </div>
+                            <a asp-controller="Case" asp-action="Track"><i data-lucide="folder"></i>আমার মামলাসমূহ</a>
+                            @if (User.IsInRole("Admin") || User.IsInRole("Lawyer"))
+                            {
+                                <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>আইনজীবী রিভিউ কিউ</a>
+                            }
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i>অ্যাডমিন ড্যাশবোর্ড</a>
+                            }
+                            <hr class="divider" style="margin:4px 0" />
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="user-logout-form">
+                                <button type="submit" class="user-logout-btn"><i data-lucide="log-out"></i>লগআউট</button>
+                            </form>
+                        </div>
+                    </div>
+                }
                 
                 <button class="icon-btn nav-burger" type="button" aria-label="মেনু খুলুন" aria-expanded="false" aria-controls="drawer">
                     <i data-lucide="menu"></i>
@@ -99,12 +129,32 @@
             <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i> মামলা ট্র্যাকিং</a>
             <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i> আইন খুঁজুন</a>
             <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i> আইনি বিভাগসমূহ</a>
-            <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i> আইনজীবী কিউ</a>
-            <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i> অ্যাডমিন কনসোল</a>
+            @if (User.IsInRole("Admin") || User.IsInRole("Lawyer"))
+            {
+                <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i> আইনজীবী কিউ</a>
+            }
+            @if (User.IsInRole("Admin"))
+            {
+                <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i> অ্যাডমিন কনসোল</a>
+            }
             <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i> পরিচিতি ও দাবিত্যাগ</a>
             <hr class="divider" style="margin:8px 0" />
-            <a asp-controller="Account" asp-action="Login"><i data-lucide="log-in"></i> সাইন ইন</a>
-            <a asp-controller="Account" asp-action="Register"><i data-lucide="user-plus"></i> নতুন একাউন্ট নিবন্ধন</a>
+            @if (!isAuthenticated)
+            {
+                <a asp-controller="Account" asp-action="Login"><i data-lucide="log-in"></i> সাইন ইন</a>
+                <a asp-controller="Account" asp-action="Register"><i data-lucide="user-plus"></i> নতুন একাউন্ট নিবন্ধন</a>
+            }
+            else
+            {
+                <div style="padding: 4px 12px; font-size: 13px; color: var(--muted);">
+                    সাইন ইন আছেন: <strong>@userDisplayName</strong>
+                </div>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="user-logout-form" style="margin: 4px 0;">
+                    <button type="submit" class="user-logout-btn" style="background:none; border:none; width:100%; text-align:left; padding:8px 12px; font:inherit; font-size:14px; font-weight:600; color:var(--ink); display:flex; align-items:center; gap:10px; cursor:pointer;">
+                        <i data-lucide="log-out"></i> লগআউট
+                    </button>
+                </form>
+            }
         </nav>
         <div class="drawer-foot">
             <div class="row spread">
