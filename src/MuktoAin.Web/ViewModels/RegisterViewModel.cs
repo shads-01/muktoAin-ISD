@@ -19,7 +19,12 @@ public class RegisterViewModel
     public string? PhoneNumber { get; set; }
 
     [Required(ErrorMessage = "পাসওয়ার্ড প্রয়োজন / Password is required")]
-    [StringLength(100, MinimumLength = 6, ErrorMessage = "কমপক্ষে ৬ অক্ষর প্রয়োজন / Minimum 6 characters")]
+    [StringLength(100, MinimumLength = 8, ErrorMessage = "কমপক্ষে ৮ অক্ষর প্রয়োজন (সর্বোচ্চ ১০০) / Minimum 8 characters (max 100)")]
+    // Mirrors the Identity password policy configured in Program.cs
+    // (RequireDigit/RequireUppercase/RequireLowercase/RequireNonAlphanumeric,
+    // RequiredLength = 8) so users get the same feedback before submitting.
+    [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,100}$",
+        ErrorMessage = "পাসওয়ার্ডে ছোট হাতের অক্ষর, বড় হাতের অক্ষর, সংখ্যা ও বিশেষ চিহ্ন থাকতে হবে (যেমন @, #, !) / Password needs a lowercase, an uppercase, a digit and a special character (e.g. @, #, !)")]
     [DataType(DataType.Password)]
     [Display(Name = "পাসওয়ার্ড / Password")]
     public string Password { get; set; } = string.Empty;

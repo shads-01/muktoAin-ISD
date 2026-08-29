@@ -87,8 +87,11 @@
                     <div class="grid grid-2" style="gap: 12px;">
                         <div class="field">
                             <label asp-for="Password">পাসওয়ার্ড / Password</label>
-                            <input asp-for="Password" class="input" type="password" placeholder="কমপক্ষে ৬ অক্ষর" required autocomplete="new-password" />
+                            <input asp-for="Password" class="input" type="password" placeholder="কমপক্ষে ৮ অক্ষরসহ জটিল" required autocomplete="new-password" />
                             <span asp-validation-for="Password" class="err"></span>
+                            <small class="tiny muted" style="display: block; margin-top: 4px;">
+                                কমপক্ষে ৮ অক্ষর, একটি বড় হাতের (A-Z), একটি ছোট হাতের (a-z), একটি সংখ্যা (0-9) ও একটি বিশেষ চিহ্ন (@@, #, !) — At least 8 characters incl. one uppercase, one lowercase, one digit and one special character.
+                            </small>
                         </div>
                         <div class="field">
                             <label asp-for="ConfirmPassword">নিশ্চিত করুন / Confirm</label>
