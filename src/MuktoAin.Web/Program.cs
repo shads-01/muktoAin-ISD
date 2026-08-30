@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using MuktoAin.Application.Documents;
+using MuktoAin.Application.Documents.Templates;
 using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Interfaces;
@@ -18,7 +20,11 @@ using MuktoAin.Web.Auth;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+var mvcBuilder = builder.Services.AddControllersWithViews();
+if (builder.Environment.IsDevelopment())
+{
+    mvcBuilder.AddRazorRuntimeCompilation();
+}
 
 builder.Services.AddDistributedMemoryCache();
 
@@ -66,7 +72,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.Name = "MuktoAin.Auth";
     options.LoginPath = "/Account/Login";
-    options.AccessDeniedPath = "/Home/Forbidden";
+    options.AccessDeniedPath = "/Home/AccessDenied";
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
 });
@@ -176,7 +182,15 @@ builder.Services.AddScoped<IRightsExplanationService, RightsExplanationService>(
 // S-3.6: Admin user management (FR-18)
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 
-// Arpita will add: DocumentService, ReviewService, etc.
+// A-2.2 & A-2.3: Document generation engine and templates
+builder.Services.AddScoped<IDocumentTemplate, LabourComplaintTemplate>();
+builder.Services.AddScoped<DocumentGenerator>();
+
+// A-2.4: Document lifecycle service
+builder.Services.AddScoped<DocumentService>();
+
+// A-2.6: Lawyer verification service
+builder.Services.AddScoped<LawyerVerificationService>();
 
 var app = builder.Build();
 
@@ -232,9 +246,29 @@ using (var scope = app.Services.CreateScope())
         builder.Configuration,
         logger);
 
+    // Dev-only demo data (citizens, lawyers, cases, documents, a review) so the app
+    // has something to click through end-to-end. Never runs outside Development.
+    if (app.Environment.IsDevelopment())
+    {
+        var encryptionService = scope.ServiceProvider.GetRequiredService<IEncryptionService>();
+        await SeedDemoData.SeedAsync(context, userManager, encryptionService, logger);
+
+        await SeedDemoUsers.SeedAsync(
+            userManager,
+            scope.ServiceProvider.GetRequiredService<IRepository<LawyerProfile>>(),
+            logger);
+    }
+
     var vectorStore = scope.ServiceProvider.GetRequiredService<QdrantVectorStore>();
 
-    await vectorStore.EnsureCollectionAsync();
+    try
+    {
+        await vectorStore.EnsureCollectionAsync();
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning("Qdrant collection check failed -- vector search will be unavailable until the Qdrant endpoint is reachable. Error: {Error}", ex.Message);
+    }
 }
 
 app.UseHttpsRedirection();

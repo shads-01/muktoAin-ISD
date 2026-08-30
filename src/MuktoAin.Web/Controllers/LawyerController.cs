@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MuktoAin.Web.ViewModels;
 
 namespace MuktoAin.Web.Controllers;
 
+[Authorize(Roles = "Admin,Lawyer")]
 public class LawyerController : Controller
 {
     [HttpGet]
@@ -26,6 +28,7 @@ public class LawyerController : Controller
     {
         // TODO: [Arpita] Replace with LawyerReviewService.SubmitReviewAsync()
         TempData["Success"] = $"দলিল #{vm.DocumentId} সফলভাবে পর্যালোচনা সম্পন্ন হয়েছে (সিদ্ধান্ত: {vm.Decision})।";
+        TempData["SuccessEn"] = $"Document #{vm.DocumentId} reviewed successfully (decision: {vm.Decision}).";
         return RedirectToAction("Queue");
     }
 }

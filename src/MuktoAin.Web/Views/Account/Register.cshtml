@@ -87,8 +87,11 @@
                     <div class="grid grid-2" style="gap: 12px;">
                         <div class="field">
                             <label asp-for="Password">পাসওয়ার্ড / Password</label>
-                            <input asp-for="Password" class="input" type="password" placeholder="কমপক্ষে ৬ অক্ষর" required autocomplete="new-password" />
+                            <input asp-for="Password" class="input" type="password" placeholder="কমপক্ষে ৮ অক্ষরসহ জটিল" required autocomplete="new-password" />
                             <span asp-validation-for="Password" class="err"></span>
+                            <small class="tiny muted" style="display: block; margin-top: 4px;">
+                                কমপক্ষে ৮ অক্ষর, একটি বড় হাতের (A-Z), একটি ছোট হাতের (a-z), একটি সংখ্যা (0-9) ও একটি বিশেষ চিহ্ন (@@, #, !) — At least 8 characters incl. one uppercase, one lowercase, one digit and one special character.
+                            </small>
                         </div>
                         <div class="field">
                             <label asp-for="ConfirmPassword">নিশ্চিত করুন / Confirm</label>
@@ -112,6 +115,11 @@
                             <input asp-for="BarRegistrationNumber" class="input" placeholder="e.g., DHA-1234 বা বার সনদ নম্বর" />
                             <span asp-validation-for="BarRegistrationNumber" class="err"></span>
                         </div>
+                        <div class="field" style="margin-bottom: 8px;">
+        <label asp-for="Specialization">বিশেষায়িত ক্ষেত্র / Specialization</label>
+        <input asp-for="Specialization" class="input" placeholder="e.g., Family Law, Criminal Law, Property Law" />
+        <span asp-validation-for="Specialization" class="err"></span>
+    </div>
                         <p class="tiny muted" style="margin-bottom: 0;">
                             আইনজীবী একাউন্টের ক্ষেত্রে অ্যাডমিন কর্তৃক বার নম্বর যাচাইয়ের পর রিভিউ কিউতে প্রবেশাধিকার সক্রিয় হবে।
                         </p>

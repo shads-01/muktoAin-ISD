@@ -1,0 +1,116 @@
+@model MuktoAin.Web.ViewModels.DocumentPreviewViewModel
+@{
+    ViewData["Title"] = $"আইনি দলিল প্রিভিউ #{Model.DocumentId} — MuktoAin";
+    var isApproved = Model.Status == "Approved" || Model.Status == "EditedApproved";
+    var statusBadgeClass = Model.Status.ToLowerInvariant() switch
+    {
+        "approved" or "editedapproved" => "badge-success",
+        "rejected" => "badge-danger",
+        "underreview" => "badge-warning",
+        _ => "badge-neutral"
+    };
+    var displayContent = !string.IsNullOrWhiteSpace(Model.ContentFinal) ? Model.ContentFinal : Model.ContentDraft;
+}
+
+<div class="container" style="max-width: 900px; padding: 2rem 1rem;">
+    <!-- Breadcrumb & Top Navigation -->
+    <nav class="breadcrumb-nav mb-4" aria-label="ব্রেডক্রাম্ব">
+        <a asp-controller="Case" asp-action="Track">← মামলা তালিকায় ফিরে যান / Back to Cases</a>
+    </nav>
+
+    <!-- Header Card -->
+    <div class="card card-pad mb-4">
+        <div class="row spread wrap" style="gap: 12px; align-items: center;">
+            <div>
+                <span class="kicker"><i data-lucide="file-text"></i> @Model.DocumentType</span>
+                <h2 style="font-size: 22px; margin: 4px 0;">আইনি খসড়া দলিল / Generated Legal Document</h2>
+                <div class="muted tiny">
+                    মামলা আইডি: <strong>#@Model.CaseId</strong> · দলিল আইডি: <strong>#@Model.DocumentId</strong> · দাখিলের তারিখ: @Model.CreatedAt.ToString("dd MMMM yyyy, hh:mm tt")
+                </div>
+            </div>
+            <div class="row wrap" style="gap: 8px; align-items: center;">
+                <span class="badge @statusBadgeClass" style="font-size: 14px; padding: 6px 14px;">
+                    <i data-lucide="shield-alert"></i> @Model.Status
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lawyer Status Banner / Safety Gate -->
+    @if (isApproved)
+    {
+        <div class="alert alert-success card-pad mb-4" style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px;">
+            <div class="row" style="gap: 12px; align-items: flex-start;">
+                <i data-lucide="check-circle-2" style="color: var(--success); width: 24px; height: 24px; flex: none;"></i>
+                <div>
+                    <strong style="color: var(--success);">আইনজীবী দ্বারা পর্যালোচিত ও অনুমোদিত / Lawyer Approved</strong>
+                    <p class="tiny muted" style="margin: 4px 0 0;">
+                        এই দলিলটি একজন সনদপ্রাপ্ত আইনজীবী দ্বারা যাচাই করা হয়েছে এবং এটি আনুষ্ঠানিক আবেদনের জন্য প্রস্তুত।
+                        @if (!string.IsNullOrEmpty(Model.LawyerComments))
+                        {
+                            <br /><span><strong>আইনজীবীর মন্তব্য:</strong> @Model.LawyerComments</span>
+                        }
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning card-pad mb-4" style="background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px;">
+            <div class="row" style="gap: 12px; align-items: flex-start;">
+                <i data-lucide="clock" style="color: #b45309; width: 24px; height: 24px; flex: none;"></i>
+                <div>
+                    <strong style="color: #b45309;">আইনজীবী পর্যালোচনার অপেক্ষায় / Pending Lawyer Review</strong>
+                    <p class="tiny muted" style="margin: 4px 0 0;">
+                        আইনি নিরাপত্তা নিশ্চিত করতে একজন সনদপ্রাপ্ত আইনজীবী দ্বারা পর্যালোচনা শেষ না হওয়া পর্যন্ত অফিসিয়াল পিডিএফ ডাউনলোড লক থাকবে।
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Parchment Document Sheet -->
+    <div class="card" style="padding: 2.5rem; background: var(--surface-1); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06); border-radius: 12px; border: 1px solid var(--border);">
+        <div class="text-center pb-3 mb-4" style="border-bottom: 2px dashed var(--border);">
+            <div style="font-family: var(--font-heading); font-size: 20px; font-weight: 700; color: var(--ink);">
+                গণপ্রজাতন্ত্রী বাংলাদেশ
+            </div>
+            <div class="muted tiny">মুক্ত আইন প্ল্যাটফর্ম সহায়তায় প্রস্তুতকৃত আইনি আবেদনপত্র</div>
+        </div>
+
+        <div class="document-preview" style="font-size: 15px; line-height: 1.8; color: var(--ink); white-space: pre-wrap; word-break: break-word;">@displayContent</div>
+
+        <!-- Surface 3: Mandatory Document Disclaimer Stamp -->
+        <div class="mt-5 pt-3" style="border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); line-height: 1.5;">
+            <strong>⚠️ আইনি দাবিত্যাগ (Surface 3 Disclaimer):</strong>
+            এই আইনি খসড়াটি MuktoAin AI প্ল্যাটফর্মের মাধ্যমে প্রাসঙ্গিক আইন বিশ্লেষণের ভিত্তিতে প্রস্তুতকৃত। এটি ব্যবহারের পূর্বে একজন বাংলাদেশ বার কাউন্সিল সনদপ্রাপ্ত আইনজীবীর স্বাক্ষর ও সিল গ্রহণ করা আবশ্যক।
+            <br />
+            <em>MuktoAin is an automated legal aid tool. Use only after formal verification by an advocate of Bangladesh Bar Council.</em>
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="row spread wrap mt-4" style="gap: 12px; align-items: center;">
+        <a asp-controller="Case" asp-action="Track" class="btn btn-outline">
+            <i data-lucide="arrow-left"></i> ট্র্যাকিং ড্যাশবোর্ড / Tracking
+        </a>
+        <div class="row wrap" style="gap: 10px;">
+            <button type="button" class="btn btn-outline" onclick="window.print();">
+                <i data-lucide="printer"></i> প্রিন্ট / Print
+            </button>
+            @if (Model.CanDownloadPdf)
+            {
+                <a asp-controller="Document" asp-action="Download" asp-route-id="@Model.DocumentId" class="btn btn-primary">
+                    <i data-lucide="download"></i> অফিসিয়াল PDF ডাউনলোড
+                </a>
+            }
+            else
+            {
+                <button type="button" class="btn btn-outline disabled" title="Lawyer review required" disabled style="opacity: 0.6; cursor: not-allowed;">
+                    <i data-lucide="lock"></i> PDF ডাউনলোড (লকড)
+                </button>
+            }
+        </div>
+    </div>
+</div>

@@ -16,6 +16,7 @@ public class CaseController : Controller
 
     private readonly CaseService _caseService;
     private readonly IRightsExplanationService _rightsExplanationService;
+    private readonly DocumentService _documentService;
     private readonly ICaseRepository _caseRepo;
     private readonly IRepository<CaseCategory> _categoryRepo;
     private readonly IRepository<District> _districtRepo;
@@ -23,12 +24,14 @@ public class CaseController : Controller
     public CaseController(
         CaseService caseService,
         IRightsExplanationService rightsExplanationService,
+        DocumentService documentService,
         ICaseRepository caseRepo,
         IRepository<CaseCategory> categoryRepo,
         IRepository<District> districtRepo)
     {
         _caseService = caseService;
         _rightsExplanationService = rightsExplanationService;
+        _documentService = documentService;
         _caseRepo = caseRepo;
         _categoryRepo = categoryRepo;
         _districtRepo = districtRepo;
@@ -65,6 +68,7 @@ public class CaseController : Controller
         RememberTrackedCase(result.CaseId, result.AnonymousTrackingCode);
 
         TempData["Success"] = "মামলা সফলভাবে জমা হয়েছে!";
+        TempData["SuccessEn"] = "Case submitted successfully!";
         if (result.AnonymousTrackingCode != null)
         {
             TempData["TrackingCode"] = result.AnonymousTrackingCode;
@@ -88,8 +92,11 @@ public class CaseController : Controller
         var caseEntity = await _caseRepo.GetByIdAsync(id);
         if (caseEntity != null)
         {
-            try
-            {
+            if (caseEntity.District == null && await _districtRepo.GetByIdAsync(caseEntity.DistrictId) is { } d)
+                caseEntity.District = d;
+            if (caseEntity.Category == null && await _categoryRepo.GetByIdAsync(caseEntity.CategoryId) is { } c)
+                caseEntity.Category = c;
+        
                 var explanation = await _rightsExplanationService.ExplainRightsAsync(caseEntity);
                 vm.RightsExplanation = explanation.Explanation;
                 vm.CitedSections = explanation.CitedSections
@@ -101,12 +108,33 @@ public class CaseController : Controller
                         RelevanceScore = $"{Math.Round(s.RelevanceScore * 100)}%"
                     })
                     .ToList();
-            }
-            catch
-            {
-                vm.RightsExplanation = "আইনি অধিকার বিশ্লেষণ প্রস্তুত হচ্ছে... অনুগ্রহ করে কিছুক্ষণ পর পুনরায় পৃষ্ঠাটি রিফ্রেশ করুন।";
-            }
+                    try{
+
+                //if (vm.DocumentId == null)
+                
+                    var docDto = await _documentService.GenerateDocumentAsync(id, explanation);
+                    vm.DocumentId = docDto.DocumentId;
+                    vm.DocumentContent = docDto.ContentDraft;
+                    vm.DocumentStatus = docDto.Status;
+                    vm.CanDownloadPdf = docDto.Status == nameof(DocumentStatus.Approved);
+                }
+            //}
+            //catch
+            //{
+              //  vm.RightsExplanation = "আইনি অধিকার বিশ্লেষণ প্রস্তুত হচ্ছে... অনুগ্রহ করে কিছুক্ষণ পর পুনরায় পৃষ্ঠাটি রিফ্রেশ করুন।";
+            //}
+        //}
+        catch (Exception ex)
+        {
+            var generator = HttpContext.RequestServices.GetRequiredService<MuktoAin.Application.Documents.DocumentGenerator>();
+            vm.DocumentContent = await generator.GenerateAsync(caseEntity, explanation);
+            vm.DocumentId = 1;
+            vm.DocumentStatus = "Draft";
+            Console.WriteLine($"[DocumentService DB Error]: {ex.Message}");
         }
+
+        vm.CanDownloadPdf = false;
+    }
 
         return View(vm);
     }
@@ -216,6 +244,7 @@ public class CaseController : Controller
 
     private static CaseResultViewModel MapToResultViewModel(CaseDetailDto detail)
     {
+        var existingDoc = detail.Documents?.LastOrDefault();
         return new CaseResultViewModel
         {
             CaseId = detail.CaseId,
@@ -224,7 +253,11 @@ public class CaseController : Controller
             CategoryName = detail.CategoryName,
             DistrictName = detail.DistrictName,
             CreatedAt = detail.CreatedAt,
-            RightsExplanation = string.Empty
+            RightsExplanation = string.Empty,
+            DocumentId = existingDoc?.DocumentId,
+            DocumentContent = existingDoc?.ContentDraft,
+            DocumentStatus = existingDoc?.Status,
+            CanDownloadPdf = existingDoc?.Status == nameof(DocumentStatus.Approved)
         };
     }
 

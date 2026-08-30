@@ -1,0 +1,235 @@
+@model MuktoAin.Web.ViewModels.ProfileViewModel
+@{
+    ViewData["Title"] = "ব্যবহারকারী প্রোফাইল ও সেটিংস — User Profile";
+    var isLawyer = string.Equals(Model.Role, "Lawyer", StringComparison.OrdinalIgnoreCase);
+    var isAdmin = string.Equals(Model.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+    var isCitizen = !isLawyer && !isAdmin;
+
+    var initial = "U";
+    if (!string.IsNullOrWhiteSpace(Model.FullName))
+    {
+        initial = Model.FullName.Trim().Substring(0, 1).ToUpperInvariant();
+    }
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">হোম</a>
+        <span class="sep">/</span>
+        <span>অ্যাকাউন্ট প্রোফাইল</span>
+    </nav>
+
+    <!-- Profile Hero Card -->
+    <div class="card" style="margin-bottom: 24px; padding: 28px; background: linear-gradient(135deg, rgba(255,253,247,0.98), rgba(248,242,228,0.95)); border: 1.5px solid #92743a;">
+        <div style="display: flex; align-items: center; gap: 24px; flex-wrap: wrap;">
+            <div class="avatar" style="width: 76px; height: 76px; font-size: 30px; font-weight: 800; border: 2.5px solid var(--gold); box-shadow: 0 4px 14px rgba(146, 116, 56, 0.2);">
+                @initial
+            </div>
+            <div style="flex: 1; min-width: 240px;">
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px;">
+                    <h1 style="font-size: clamp(22px, 4vw, 30px); margin: 0; line-height: 1.2;">@Model.FullName</h1>
+                    @if (isAdmin)
+                    {
+                        <span class="badge badge-success" style="font-size: 13px; padding: 4px 10px;"><i data-lucide="shield" style="width: 14px; height: 14px; display: inline;"></i> সিস্টেম অ্যাডমিনিস্ট্রেটর</span>
+                    }
+                    else if (isLawyer)
+                    {
+                        <span class="badge badge-gold" style="font-size: 13px; padding: 4px 10px;"><i data-lucide="award" style="width: 14px; height: 14px; display: inline;"></i> বাংলাদেশ বার কাউন্সিল আইনজীবী</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-primary" style="font-size: 13px; padding: 4px 10px;"><i data-lucide="user-check" style="width: 14px; height: 14px; display: inline;"></i> নিবন্ধিত নাগরিক</span>
+                    }
+                </div>
+                <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; color: var(--ink-2); font-size: 14px;">
+                    <span><i data-lucide="mail" style="width: 15px; height: 15px; display: inline; vertical-align: text-bottom;"></i> @Model.Email</span>
+                    @if (!string.IsNullOrWhiteSpace(Model.PhoneNumber))
+                    {
+                        <span><i data-lucide="phone" style="width: 15px; height: 15px; display: inline; vertical-align: text-bottom;"></i> @Model.PhoneNumber</span>
+                    }
+                    <span><i data-lucide="calendar" style="width: 15px; height: 15px; display: inline; vertical-align: text-bottom;"></i> সদস্য পদ: @Model.CreatedAt.ToString("dd MMM yyyy")</span>
+                    <span><span class="badge badge-success" style="font-size: 11px;">স্ট্যাটাস: @(Model.AccountStatus == "Active" ? "সক্রিয় / Active" : Model.AccountStatus)</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Grid: Info Form + Security / Actions -->
+    <div class="grid grid-2" style="align-items: start; gap: 24px;">
+        
+        <!-- Left: Editable & Uneditable Profile Information -->
+        <div class="card" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                <h2 style="font-size: 19px; margin: 0;"><i data-lucide="user-cog" style="display: inline; vertical-align: middle; color: var(--gold);"></i> প্রোফাইল ও অ্যাকাউন্ট তথ্য</h2>
+                <span class="muted tiny">সবুজ ফিল্ডগুলো সম্পাদনাযোগ্য</span>
+            </div>
+
+            <form asp-controller="Account" asp-action="Profile" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert alert-error" style="margin-bottom: 16px;"></div>
+
+                <!-- Uneditable: Email -->
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label" style="display: flex; justify-content: space-between;">
+                        <span>লগইন ইমেইল (Login Email)</span>
+                        <span class="muted tiny" style="color: var(--primary);"><i data-lucide="lock" style="width: 12px; height: 12px; display: inline;"></i> পরিবর্তনযোগ্য নয়</span>
+                    </label>
+                    <input type="email" class="form-control" value="@Model.Email" readonly disabled style="background: rgba(0,0,0,0.04); cursor: not-allowed; font-family: monospace;" />
+                </div>
+
+                <!-- Uneditable: Role -->
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label class="form-label" style="display: flex; justify-content: space-between;">
+                        <span>অ্যাকাউন্ট ভূমিকা (Account Role)</span>
+                        <span class="muted tiny" style="color: var(--primary);"><i data-lucide="shield-check" style="width: 12px; height: 12px; display: inline;"></i> সিস্টেম নিয়ন্ত্রিত</span>
+                    </label>
+                    <input type="text" class="form-control" value="@(isAdmin ? "সিস্টেম অ্যাডমিনিস্ট্রেটর (Admin)" : isLawyer ? "আইনজীবী (Advocate)" : "সাধারণ নাগরিক (Citizen)")" readonly disabled style="background: rgba(0,0,0,0.04); cursor: not-allowed;" />
+                </div>
+
+                <!-- Lawyer-Specific Uneditable Credentials -->
+                @if (isLawyer)
+                {
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label" style="display: flex; justify-content: space-between;">
+                            <span>বার কাউন্সিল সনদ নম্বর (Bar Registration No)</span>
+                            <span class="muted tiny" style="color: var(--primary);"><i data-lucide="award" style="width: 12px; height: 12px; display: inline;"></i> যাচাইকৃত রেকর্ড</span>
+                        </label>
+                        <input type="text" class="form-control" value="@Model.BarRegistrationNumber" readonly disabled style="background: rgba(0,0,0,0.04); cursor: not-allowed; font-weight: 700; color: #4a3812;" />
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label">অ্যাডমিন ভেরিফিকেশন স্ট্যাটাস</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            @if (Model.VerificationStatus == "Verified" || Model.VerificationStatus == "Approved")
+                            {
+                                <span class="badge badge-success"><i data-lucide="check-circle" style="width: 14px; height: 14px; display: inline;"></i> যাচাইকরণ সম্পন্ন (Verified by Admin)</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-gold"><i data-lucide="clock" style="width: 14px; height: 14px; display: inline;"></i> পর্যালোচনার অপেক্ষায় (Pending Verification)</span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <hr class="divider" style="margin: 20px 0;" />
+
+                <!-- Editable: Full Name -->
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label asp-for="FullName" class="form-label">পূর্ণ নাম (Full Name) <span style="color: var(--primary);">*</span></label>
+                    <input asp-for="FullName" class="form-control" placeholder="আপনার পূর্ণ নাম লিখুন" required />
+                    <span asp-validation-for="FullName" class="text-danger" style="font-size: 13px;"></span>
+                </div>
+
+                <!-- Editable: Phone Number -->
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label asp-for="PhoneNumber" class="form-label">মোবাইল / ফোন নম্বর (Phone Number)</label>
+                    <input asp-for="PhoneNumber" class="form-control" placeholder="০১XXXXXXXXX" />
+                    <span asp-validation-for="PhoneNumber" class="text-danger" style="font-size: 13px;"></span>
+                </div>
+
+                <!-- Lawyer-Specific Editable Fields -->
+                @if (isLawyer)
+                {
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label asp-for="Specialization" class="form-label">বিশেষজ্ঞতার ক্ষেত্র (Legal Specialization)</label>
+                        <input asp-for="Specialization" class="form-control" placeholder="উদাঃ শ্রম আইন, ফৌজদারি, দেওয়ানি, ভোক্তা অধিকার" />
+                        <span class="muted tiny">উদাঃ শ্রম আইন (Labour Law), ফৌজদারি ও সাইবার নিরাপত্তা (Criminal & Cyber), ইত্যাদি</span>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label asp-for="ChamberAddress" class="form-label">চেম্বার / অফিসের ঠিকানা (Chamber Address)</label>
+                        <input asp-for="ChamberAddress" class="form-control" placeholder="উদাঃ রুম ২০৪, সুপ্রিম কোর্ট বার ভবন, ঢাকা" />
+                    </div>
+                }
+
+                <!-- Editable: Preferred Language -->
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label asp-for="PreferredLanguage" class="form-label">পছন্দের ভাষা (Preferred Interface Language)</label>
+                    <select asp-for="PreferredLanguage" class="form-control">
+                        <option value="bn">বাংলা (Bengali)</option>
+                        <option value="en">English (ইংরেজি)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i data-lucide="save"></i> প্রোফাইল তথ্য সংরক্ষণ করুন (Save Changes)
+                </button>
+            </form>
+        </div>
+
+        <!-- Right: Role Quick Stats & Security Settings -->
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+            
+            @if (!isAdmin)
+            {
+                <!-- Role Overview Card -->
+                <div class="card" style="padding: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                        <h2 style="font-size: 18px; margin: 0;"><i data-lucide="activity" style="display: inline; vertical-align: middle; color: var(--gold);"></i> কাজের বিবরণী ও দ্রুত লিঙ্ক</h2>
+                    </div>
+
+                    @if (isLawyer)
+                    {
+                        <p style="font-size: 14px; color: var(--ink-2); margin-bottom: 14px;">
+                            নাগরিকদের এআই প্রস্তুতকৃত আইনি ড্রাফটগুলো আপনার পর্যালোচনার মাধ্যমে চূড়ান্ত আইনি বৈধতা ও PDF ডাউনলোডযোগ্যতা পায়।
+                        </p>
+                        <div style="background: rgba(146, 116, 56, 0.08); padding: 14px; border-radius: var(--radius-btn); border: 1px solid var(--gold-soft); margin-bottom: 16px;">
+                            <div style="font-size: 13px; color: #4a3812; font-weight: 700;">স্বীকৃত আইনি দায়িত্ব (Human-in-the-Loop Safeguard)</div>
+                            <div style="font-size: 12.5px; color: var(--ink-2); margin-top: 4px;">আইনজীবী হিসেবে আপনার প্রতিটি অনুমোদন সরাসরি কোর্ট ও থানার ফরম্যাটে কার্যকর হয়।</div>
+                        </div>
+                        <a asp-controller="Lawyer" asp-action="Queue" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i data-lucide="file-check-2"></i> আইনজীবী রিভিউ কিউতে যান (Go to Queue)
+                        </a>
+                    }
+                    else
+                    {
+                        <p style="font-size: 14px; color: var(--ink-2); margin-bottom: 14px;">
+                            আপনার দায়েরকৃত আইনি সমস্যাসমূহ এবং আইনজীবী দ্বারা পর্যালোচিত ড্রাফটসমূহ সহজে ট্র্যাক করুন।
+                        </p>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <a asp-controller="Case" asp-action="Track" class="btn btn-outline" style="display: flex; align-items: center; justify-content: space-between;">
+                                <span><i data-lucide="folder-clock" style="display: inline; vertical-align: middle;"></i> আমার দায়েরকৃত মামলাসমূহ</span>
+                                <i data-lucide="chevron-right"></i>
+                            </a>
+                            <a asp-controller="Case" asp-action="Submit" class="btn btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <i data-lucide="plus-circle"></i> নতুন আইনি সমস্যা জমা দিন (Intake)
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- Password Change Card -->
+            <div class="card" style="padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                    <h2 style="font-size: 18px; margin: 0;"><i data-lucide="key-round" style="display: inline; vertical-align: middle; color: var(--gold);"></i> পাসওয়ার্ড ও নিরাপত্তা</h2>
+                </div>
+
+                <form asp-controller="Account" asp-action="ChangePassword" method="post">
+                    @Html.AntiForgeryToken()
+                    
+                    <div class="form-group" style="margin-bottom: 14px;">
+                        <label class="form-label">বর্তমান পাসওয়ার্ড (Current Password)</label>
+                        <input name="CurrentPassword" type="password" class="form-control" required placeholder="••••••••" />
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 14px;">
+                        <label class="form-label">নতুন পাসওয়ার্ড (New Password)</label>
+                        <input name="NewPassword" type="password" class="form-control" required placeholder="••••••••" />
+                        <span class="muted tiny">কমপক্ষে ৮ অক্ষর (বড় ও ছোট হাতের অক্ষর, সংখ্যা ও স্পেশাল চিহ্ন)</span>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 18px;">
+                        <label class="form-label">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
+                        <input name="ConfirmNewPassword" type="password" class="form-control" required placeholder="••••••••" />
+                    </div>
+
+                    <button type="submit" class="btn btn-outline" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i data-lucide="shield-check"></i> পাসওয়ার্ড আপডেট করুন
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>

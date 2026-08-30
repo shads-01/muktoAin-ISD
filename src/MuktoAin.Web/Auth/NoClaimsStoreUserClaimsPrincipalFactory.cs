@@ -37,6 +37,11 @@ public class NoClaimsStoreUserClaimsPrincipalFactory : UserClaimsPrincipalFactor
         identity.AddClaim(new Claim(Options.ClaimsIdentity.UserIdClaimType, userId));
         identity.AddClaim(new Claim(Options.ClaimsIdentity.UserNameClaimType, userName ?? string.Empty));
 
+        if (!string.IsNullOrWhiteSpace(user.FullName))
+        {
+            identity.AddClaim(new Claim("FullName", user.FullName));
+        }
+
         if (UserManager.SupportsUserEmail)
         {
             var email = await UserManager.GetEmailAsync(user);
