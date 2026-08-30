@@ -42,7 +42,7 @@ public class RegisterViewModel
     public string? BarRegistrationNumber { get; set; }
 
     [Display(Name = "বিশেষজ্ঞতা / Specialization (Lawyers only)")]
-public string? Specialization { get; set; }
+    public string? Specialization { get; set; }
 
     [Display(Name = "পছন্দের ভাষা / Preferred Language")]
     public string PreferredLanguage { get; set; } = "bn";

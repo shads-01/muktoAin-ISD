@@ -64,6 +64,30 @@ public class AdminController : Controller
         });
     }
 
+    /// <summary>
+    /// Live endpoint for tracking Qdrant embedding and upload progress.
+    /// </summary>
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> EmbeddingProgress()
+    {
+        var totalChunks = await _dbContext.ActSectionChunks.CountAsync();
+        var embeddedChunks = await _dbContext.ActSectionChunks.CountAsync(c => c.VectorId != null);
+        var percent = totalChunks > 0 ? (double)embeddedChunks / totalChunks * 100.0 : 0;
+
+        return Json(new
+        {
+            totalChunks,
+            embeddedChunks,
+            remainingChunks = totalChunks - embeddedChunks,
+            percentage = Math.Round(percent, 2),
+            isRunning = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.IsRunning,
+            lastStatus = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.LastStatus,
+            totalProcessed = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.TotalProcessed,
+            totalSkipped = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.TotalSkipped
+        });
+    }
+
     private async Task<AdminDashboardViewModel> BuildAdminDashboardViewModelAsync()
     {
         var sample = MockData.SampleAnalytics;

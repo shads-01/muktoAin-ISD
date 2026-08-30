@@ -54,12 +54,16 @@ public class CaseController : Controller
             return View(vm);
         }
 
+        var lang = !string.IsNullOrWhiteSpace(vm.Language) && vm.Language != "bn"
+            ? vm.Language
+            : (Request.Cookies["mkt-lang"] ?? vm.Language ?? "bn");
+
         var dto = new CaseSubmissionDto(
             vm.CategoryId,
             vm.DistrictId,
             vm.Title,
             vm.Description,
-            vm.Language,
+            lang,
             vm.IsAnonymous);
 
         var currentUserId = GetCurrentUserId();
@@ -74,7 +78,7 @@ public class CaseController : Controller
             TempData["TrackingCode"] = result.AnonymousTrackingCode;
         }
 
-        return RedirectToAction(nameof(Result), new { id = result.CaseId });
+        return RedirectToAction(nameof(Result), new { id = result.CaseId, code = result.AnonymousTrackingCode });
     }
 
     [HttpGet]
@@ -96,8 +100,12 @@ public class CaseController : Controller
                 caseEntity.District = d;
             if (caseEntity.Category == null && await _categoryRepo.GetByIdAsync(caseEntity.CategoryId) is { } c)
                 caseEntity.Category = c;
+
+            // Use decrypted fields from detail so RAG retrieval and LLM prompt receive human-readable text
+            caseEntity.Title = detail.Title;
+            caseEntity.Description = detail.Description;
         
-                var explanation = await _rightsExplanationService.ExplainRightsAsync(caseEntity);
+            var explanation = await _rightsExplanationService.ExplainRightsAsync(caseEntity);
                 vm.RightsExplanation = explanation.Explanation;
                 vm.CitedSections = explanation.CitedSections
                     .Select(s => new CitedSectionViewModel

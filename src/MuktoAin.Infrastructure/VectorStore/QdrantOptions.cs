@@ -15,5 +15,5 @@ public class QdrantOptions
     // gemini-embedding-001 output dimension. Confirm against the live GeminiEmbeddingService
     // (S-1.4) before the real EmbeddingBatchJob run -- kept here as config, not a hardcoded
     // const, so a wrong guess is a one-line appsettings fix, not a code change.
-    public uint VectorSize { get; set; } = 768;
+    public uint VectorSize { get; set; } = 3072;
 }

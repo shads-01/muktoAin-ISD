@@ -411,6 +411,10 @@
       });
     });
 
+    document.querySelectorAll("input[name='Language']").forEach(function (input) {
+      input.value = currentLang;
+    });
+
     var dict = translations[currentLang];
     if (!dict) return;
 

@@ -195,6 +195,28 @@ public class CaseServiceTests
     }
 
     [Fact]
+    public async Task GetCaseDetailAsync_CitizenWithValidTrackingCode_CanReadAnonymousCase()
+    {
+        var anonymous = new Case
+        {
+            CaseId = 11,
+            IsAnonymous = true,
+            UserId = null,
+            AnonymousTrackingCode = "secret",
+            Status = CaseStatus.Submitted,
+            CategoryId = 1,
+            DistrictId = 1
+        };
+        SetupLookups(anonymous);
+        _caseRepo.Setup(r => r.GetWithDocumentsAsync(11)).ReturnsAsync(anonymous);
+
+        var result = await _service.GetCaseDetailAsync(11, 42, UserRole.Citizen, "secret");
+
+        Assert.NotNull(result);
+        Assert.Equal("Labour", result!.CategoryName);
+    }
+
+    [Fact]
     public async Task GetCaseDetailAsync_LawyerCanReadAnyCase()
     {
         var anonymous = new Case

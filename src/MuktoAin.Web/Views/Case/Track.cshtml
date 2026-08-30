@@ -60,7 +60,7 @@
                                     <span class="badge badge-@c.Status.ToLower()">@c.Status</span>
                                 </td>
                                 <td style="text-align: right;">
-                                    <a class="btn btn-outline btn-sm" asp-controller="Case" asp-action="Result" asp-route-id="@c.CaseId">
+                                    <a class="btn btn-outline btn-sm" asp-controller="Case" asp-action="Result" asp-route-id="@c.CaseId" asp-route-code="@(string.IsNullOrEmpty(c.TrackingCode) ? null : c.TrackingCode)">
                                         ফলাফল দেখুন →
                                     </a>
                                 </td>
