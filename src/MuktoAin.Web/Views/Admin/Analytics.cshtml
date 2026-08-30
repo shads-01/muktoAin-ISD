@@ -1,0 +1,175 @@
+@model MuktoAin.Web.ViewModels.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "সিস্টেম অ্যানালিটিক্স ও রিপোর্ট — Admin Analytics";
+    ViewData["IsAdminPage"] = true;
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index" data-bn="হোম" data-en="Home">Home</a>
+        <span class="sep">/</span>
+        <a asp-controller="Admin" asp-action="Dashboard" data-bn="অ্যাডমিন কনসোল" data-en="Admin Console">Admin Console</a>
+        <span class="sep">/</span>
+        <span data-bn="অ্যানালিটিক্স ও কেপিআই" data-en="Analytics & KPIs">Analytics & KPIs</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker" data-bn="FR-16 · Anonymized Analytics & Observability" data-en="FR-16 · Anonymized Analytics & Observability"><i data-lucide="bar-chart-3" aria-hidden="true"></i> FR-16 · Anonymized Analytics & Observability</span>
+        <h1 class="page-title" data-bn="সিস্টেম অ্যানালিটিক্স ও কার্যক্ষমতা রিপোর্ট" data-en="System Analytics & Impact Report">সিস্টেম অ্যানালিটিক্স ও কার্যক্ষমতা রিপোর্ট</h1>
+        <p class="page-sub" data-bn="প্ল্যাটফর্ম ব্যবহার, আইনি বিভাগের ভৌগোলিক বণ্টন, এআই প্রসেসিং লেটেন্সি ও আইনজীবী রিভিউ টার্নঅ্যারাউন্ড মেট্রিক্স।" data-en="Platform utilization, geographic legal demand, AI processing latency, and lawyer review turnaround metrics.">প্ল্যাটফর্ম ব্যবহার, আইনি বিভাগের ভৌগোলিক বণ্টন, এআই প্রসেসিং লেটেন্সি ও আইনজীবী রিভিউ টার্নঅ্যারাউন্ড মেট্রিক্স।</p>
+    </div>
+
+    <!-- KPI Metric Summary Cards -->
+    <div class="grid grid-4" style="margin-bottom: 24px;">
+        <div class="card kpi">
+            <span class="k-label" data-bn="সর্বমোট সমাধানকৃত মামলা" data-en="Total Resolved Cases"><i data-lucide="folder-check" aria-hidden="true"></i>সর্বমোট সমাধানকৃত মামলা</span>
+            <span class="k-num" data-bn="১,২৮৪" data-en="1,284">১,২৮৪</span>
+            <span class="k-sub" data-bn="+১৪ এই সপ্তাহে নতুন" data-en="+14 new cases this week">+১৪ এই সপ্তাহে নতুন</span>
+        </div>
+        <div class="card kpi">
+            <span class="k-label" data-bn="গড় আইনজীবী রিভিউ সময়" data-en="Avg Lawyer Review Time"><i data-lucide="clock" aria-hidden="true"></i>গড় আইনজীবী রিভিউ সময়</span>
+            <span class="k-num" data-bn="৩.৪ ঘণ্টা" data-en="3.4 Hours">৩.৪ ঘণ্টা</span>
+            <span class="k-sub" data-bn="টার্গেট: < ৬ ঘণ্টা" data-en="Target: < 6 hours">টার্গেট: &lt; ৬ ঘণ্টা</span>
+        </div>
+        <div class="card kpi">
+            <span class="k-label" data-bn="AI কল ভলিউম (আজ)" data-en="AI Calls Today"><i data-lucide="cpu" aria-hidden="true"></i>AI কল ভলিউম (আজ)</span>
+            <span class="k-num" data-bn="৩৪২" data-en="342">৩৪২</span>
+            <span class="k-sub" data-bn="ব্যর্থতার হার: ২.১%" data-en="Failure rate: 2.1%">ব্যর্থতার হার: ২.১%</span>
+        </div>
+        <div class="card kpi">
+            <span class="k-label" data-bn="গড় RAG রেসপন্স লেটেন্সি" data-en="Avg RAG Response Latency"><i data-lucide="zap" aria-hidden="true"></i>গড় RAG রেসপন্স লেটেন্সি</span>
+            <span class="k-num" data-bn="১,৮২০ ms" data-en="1,820 ms">১,৮২০ ms</span>
+            <span class="k-sub" data-bn="গুগল জেমিনাই + কিউড্রান্ট" data-en="Google Gemini + Qdrant">গুগল জেমিনাই + কিউড্রান্ট</span>
+        </div>
+    </div>
+
+    <!-- Charts Row: Distribution & Funnel -->
+    <div class="grid grid-2" style="margin-bottom: 24px;">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="font-size: 17px; margin: 0;" data-bn="আইনি বিষয়ভিত্তিক মামলা বিভাজন (Case Share)" data-en="Case Distribution by Legal Category (Case Share)">আইনি বিষয়ভিত্তিক মামলা বিভাজন (Case Share)</h3>
+                <span class="badge badge-info" data-bn="৪টি মূল ক্যাটাগরি" data-en="4 Core Categories">৪টি মূল ক্যাটাগরি</span>
+            </div>
+            <div class="barchart">
+                @foreach (var cat in Model.CategoryStats)
+                {
+                    var enCatName = cat.Name.Contains("শ্রম") ? "Labour Rights" :
+                                    cat.Name.Contains("ডায়েরি") ? "General Diary (GD)" :
+                                    cat.Name.Contains("তথ্য") ? "Right to Information (RTI)" :
+                                    cat.Name.Contains("ভোক্তা") ? "Consumer Protection" : cat.Name;
+                    <div class="bar-row">
+                        <span style="font-weight: 500;" data-bn="@cat.Name" data-en="@enCatName">@cat.Name</span>
+                        <div class="bar-track">
+                            <div class="bar-fill @cat.ColorClass" style="--w:@cat.Percentage%"></div>
+                        </div>
+                        <b>@cat.Percentage%</b>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="font-size: 17px; margin: 0;" data-bn="নাগরিক সেবা ফানেল মেট্রিক্স (Conversion Funnel)" data-en="Citizen Service Funnel (Conversion Funnel)">নাগরিক সেবা ফানেল মেট্রিক্স (Conversion Funnel)</h3>
+                <span class="badge badge-gold" data-bn="সরাসরি ট্র্যাকিং" data-en="Live Tracking">সরাসরি ট্র্যাকিং</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+                        <span data-bn="১. আইনি সমস্যা ইনটেক ও অধিকার বিশ্লেষণ" data-en="1. Case Intake & Rights Analysis">১. আইনি সমস্যা ইনটেক ও অধিকার বিশ্লেষণ</span>
+                        <strong data-bn="১০০% (১,২৮৪টি)" data-en="100% (1,284)">১০০% (১,২৮৪টি)</strong>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill primary" style="--w:100%"></div></div>
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+                        <span data-bn="২. স্বয়ংক্রিয় আইনি ড্রাফট প্রস্তুত" data-en="2. Automated Legal Draft Prepared">২. স্বয়ংক্রিয় আইনি ড্রাফট প্রস্তুত</span>
+                        <strong data-bn="৯৪.২% (১,২১০টি)" data-en="94.2% (1,210)">৯৪.২% (১,২১০টি)</strong>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill gold" style="--w:94.2%"></div></div>
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+                        <span data-bn="৩. আইনজীবী দ্বারা ভেরিফাইড ও অনুমোদিত" data-en="3. Advocate Verified & Approved">৩. আইনজীবী দ্বারা ভেরিফাইড ও অনুমোদিত</span>
+                        <strong data-bn="৮৯.৫% (১,১৪৯টি)" data-en="89.5% (1,149)">৮৯.৫% (১,১৪৯টি)</strong>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill green" style="--w:89.5%"></div></div>
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+                        <span data-bn="৪. নাগরিক কর্তৃক চূড়ান্ত PDF ডাউনলোড" data-en="4. Final PDF Downloaded by Citizen">৪. নাগরিক কর্তৃক চূড়ান্ত PDF ডাউনলোড</span>
+                        <strong data-bn="৮২.১% (১,০৫৪টি)" data-en="82.1% (1,054)">৮২.১% (১,০৫৪টি)</strong>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill info" style="--w:82.1%"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Geographic Intake & Observability Row -->
+    <div class="grid grid-2" style="margin-bottom: 24px;">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="font-size: 17px; margin: 0;" data-bn="শীর্ষ জেলাভিত্তিক মামলা বণ্টন (Top Districts)" data-en="Top District Demand Distribution (Top Districts)">শীর্ষ জেলাভিত্তিক মামলা বণ্টন (Top Districts)</h3>
+                <span class="badge badge-subtle" data-bn="৬৪ জেলা কভারেজ" data-en="64 Districts Coverage">৬৪ জেলা কভারেজ</span>
+            </div>
+            <div class="barchart">
+                @foreach (var dist in Model.DistrictStats)
+                {
+                    <div class="bar-row">
+                        <span style="font-weight: 500;">@dist.Name</span>
+                        <div class="bar-track">
+                            <div class="bar-fill gold" style="--w:@dist.Percentage%"></div>
+                        </div>
+                        <b data-bn="@dist.Count মামলা" data-en="@dist.Count Cases">@dist.Count মামলা</b>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="font-size: 17px; margin: 0;" data-bn="AI সিস্টেম হেলথ ও কোটা ব্যবহার (Observability)" data-en="AI System Health & Quota Utilization (Observability)">AI সিস্টেম হেলথ ও কোটা ব্যবহার (Observability)</h3>
+                <span class="badge badge-success" data-bn="সক্রিয় (Healthy)" data-en="Operational (Healthy)">সক্রিয় (Healthy)</span>
+            </div>
+            <div class="table-wrap">
+                <table class="min-w-table" style="width:100%; font-size: 13px;">
+                    <thead>
+                        <tr>
+                            <th data-bn="সার্ভিস কম্পোনেন্ট" data-en="Service Component">সার্ভিস কম্পোনেন্ট</th>
+                            <th data-bn="মডেল / ইঞ্জিন" data-en="Model / Engine">মডেল / ইঞ্জিন</th>
+                            <th data-bn="স্ট্যাটাস" data-en="Status">স্ট্যাটাস</th>
+                            <th data-bn="গড় লেটেন্সি" data-en="Avg Latency">গড় লেটেন্সি</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong data-bn="আইনি অধিকার বিশ্লেষণ (FR-4)" data-en="Legal Rights Analysis (FR-4)">আইনি অধিকার বিশ্লেষণ (FR-4)</strong></td>
+                            <td><code>gemini-2.5-flash</code></td>
+                            <td><span class="badge badge-success" data-bn="অনলাইন" data-en="Online">অনলাইন</span></td>
+                            <td data-bn="১,৪৫০ ms" data-en="1,450 ms">১,৪৫০ ms</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-bn="দলিল ড্রাফটিং ইঞ্জিন (FR-5)" data-en="Document Drafting Engine (FR-5)">দলিল ড্রাফটিং ইঞ্জিন (FR-5)</strong></td>
+                            <td><code>gemini-2.5-flash</code></td>
+                            <td><span class="badge badge-success" data-bn="অনলাইন" data-en="Online">অনলাইন</span></td>
+                            <td data-bn="২,১০০ ms" data-en="2,100 ms">২,১০০ ms</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-bn="ভেক্টর এমবেডিং (FR-3)" data-en="Vector Embeddings (FR-3)">ভেক্টর এমবেডিং (FR-3)</strong></td>
+                            <td><code>text-embedding-004</code></td>
+                            <td><span class="badge badge-success" data-bn="অনলাইন" data-en="Online">অনলাইন</span></td>
+                            <td data-bn="৩২০ ms" data-en="320 ms">৩২০ ms</td>
+                        </tr>
+                        <tr>
+                            <td><strong data-bn="ফুল-টেক্সট সার্চ ফলব্যাক (FR-7)" data-en="Full-Text Search Fallback (FR-7)">ফুল-টেক্সট সার্চ ফলব্যাক (FR-7)</strong></td>
+                            <td>MSSQL FTS Index</td>
+                            <td><span class="badge badge-subtle" data-bn="স্ট্যান্ডবাই" data-en="Standby">স্ট্যান্ডবাই</span></td>
+                            <td data-bn="৪৫ ms" data-en="45 ms">৪৫ ms</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>

@@ -20,7 +20,11 @@ using MuktoAin.Web.Auth;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+var mvcBuilder = builder.Services.AddControllersWithViews();
+if (builder.Environment.IsDevelopment())
+{
+    mvcBuilder.AddRazorRuntimeCompilation();
+}
 
 builder.Services.AddDistributedMemoryCache();
 
@@ -68,7 +72,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.Name = "MuktoAin.Auth";
     options.LoginPath = "/Account/Login";
-    options.AccessDeniedPath = "/Home/Forbidden";
+    options.AccessDeniedPath = "/Home/AccessDenied";
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
 });
@@ -248,6 +252,11 @@ using (var scope = app.Services.CreateScope())
     {
         var encryptionService = scope.ServiceProvider.GetRequiredService<IEncryptionService>();
         await SeedDemoData.SeedAsync(context, userManager, encryptionService, logger);
+
+        await SeedDemoUsers.SeedAsync(
+            userManager,
+            scope.ServiceProvider.GetRequiredService<IRepository<LawyerProfile>>(),
+            logger);
     }
 
     var vectorStore = scope.ServiceProvider.GetRequiredService<QdrantVectorStore>();

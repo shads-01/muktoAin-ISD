@@ -51,7 +51,7 @@ public class HomeController : Controller
         return View("ServerError");
     }
 
-    [HttpGet]
+    [Route("/Home/Error")]
     public IActionResult Error(int? statusCode = null)
     {
         if (statusCode == 403) return RedirectToAction("AccessDenied");

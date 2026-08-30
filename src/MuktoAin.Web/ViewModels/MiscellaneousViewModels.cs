@@ -63,9 +63,33 @@ public class AdminDashboardViewModel
     public int VerificationsWaiting { get; set; }
     public int AiCallsToday { get; set; }
     public double AiFailureRate { get; set; }
+    
+    // System Infrastructure & Capacity
+    public int TotalUsersCount { get; set; } = 418;
+    public int TotalLawyersCount { get; set; } = 34;
+    public int TotalActsCount { get; set; } = 1484;
+    public bool IsDatabaseHealthy { get; set; } = true;
+    public bool IsVectorDbHealthy { get; set; } = true;
+    public bool IsAiServiceHealthy { get; set; } = true;
+    public string OverallHealthBadgeText { get; set; } = "সকল সার্ভিস সচল (Operational)";
+    public string OverallHealthBadgeClass { get; set; } = "badge-success";
+    public string DatabaseStatus { get; set; } = "Connected (Microsoft SQL Server)";
+    public string VectorDbStatus { get; set; } = "Operational (Qdrant Vector Store · 1,484 Acts)";
+    public string AiServiceStatus { get; set; } = "Healthy (Gemini 2.5 Flash API · Circuit Breaker Closed)";
+
     public List<CategoryStatViewModel> CategoryStats { get; set; } = new();
     public List<DistrictStatViewModel> DistrictStats { get; set; } = new();
     public List<LawyerApplicationViewModel> VerificationQueue { get; set; } = new();
+    public List<SystemAuditLogItemViewModel> AuditLogs { get; set; } = new();
+}
+
+public class SystemAuditLogItemViewModel
+{
+    public string Timestamp { get; set; } = string.Empty;
+    public string Action { get; set; } = string.Empty;
+    public string Actor { get; set; } = string.Empty;
+    public string Status { get; set; } = "Success"; // Success, Warning, Danger, Info
+    public string Details { get; set; } = string.Empty;
 }
 
 public class CategoryStatViewModel
@@ -89,4 +113,18 @@ public class LawyerApplicationViewModel
     public string BarRegNo { get; set; } = string.Empty;
     public string AppliedDate { get; set; } = string.Empty;
     public string Status { get; set; } = "Pending";
+}
+
+public class DocumentPreviewViewModel
+{
+    public int DocumentId { get; set; }
+    public int CaseId { get; set; }
+    public string CaseTitle { get; set; } = string.Empty;
+    public string DocumentType { get; set; } = string.Empty;
+    public string ContentDraft { get; set; } = string.Empty;
+    public string? ContentFinal { get; set; }
+    public string Status { get; set; } = "Draft"; // Draft, UnderReview, Approved, EditedApproved, Rejected
+    public bool CanDownloadPdf { get; set; }
+    public string? LawyerComments { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

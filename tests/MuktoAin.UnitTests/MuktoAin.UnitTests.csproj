@@ -20,6 +20,7 @@
     <ProjectReference Include="..\..\src\MuktoAin.Application\MuktoAin.Application.csproj" />
     <ProjectReference Include="..\..\src\MuktoAin.Domain\MuktoAin.Domain.csproj" />
     <ProjectReference Include="..\..\src\MuktoAin.Infrastructure\MuktoAin.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\MuktoAin.Web\MuktoAin.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

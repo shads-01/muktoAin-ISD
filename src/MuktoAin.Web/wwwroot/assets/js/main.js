@@ -47,15 +47,19 @@
     bn: {
       "skip-link": "সরাসরি কন্টেন্টে যান / Skip to content",
       "nav-legal-aid": "আইনি সেবা",
+      "nav-submit": "সমস্যা জমা দিন",
       "nav-tracking": "মামলা ট্র্যাকিং",
       "nav-search": "আইন খুঁজুন",
+      "nav-corpus": "আইন ও করপাস",
       "nav-categories": "বিভাগসমূহ",
       "nav-about": "পরিচিতি",
       "nav-signin": "সাইন ইন",
       "nav-register": "নিবন্ধন",
       "nav-mycases": "আমার মামলাসমূহ",
-      "nav-lawyerqueue": "আইনজীবী রিভিউ কিউ",
-      "nav-admindash": "অ্যাডমিন ড্যাশবোর্ড",
+      "nav-lawyerqueue": "রিভিউ কিউ",
+      "nav-admindash": "ড্যাশবোর্ড",
+      "nav-analytics": "অ্যানালিটিক্স",
+      "nav-profile": "আমার প্রোফাইল ও সেটিংস",
       "nav-logout": "লগআউট",
       "disclaimer-tag": "দাবিত্যাগ:",
       "disclaimer-text": "মুক্ত আইন সাধারণ আইনি তথ্যসেবা দেয় — এটি আনুষ্ঠানিক আইনি পরামর্শ নয়। প্রতিটি দলিল ব্যবহারের পূর্বে সনদপ্রাপ্ত আইনজীবী দ্বারা পর্যালোচনা আবশ্যক।",
@@ -218,16 +222,20 @@
       // Common
       "skip-link": "Skip to content",
       "nav-legal-aid": "Legal Aid",
+      "nav-submit": "Submit Issue",
       "nav-tracking": "Case Tracking",
       "nav-search": "Search Laws",
+      "nav-corpus": "Corpus & Acts",
       "nav-categories": "Categories",
       "nav-about": "About",
       "nav-signin": "Sign In",
       "nav-register": "Register",
       "nav-mycases": "My Cases",
-      "nav-lawyerqueue": "Lawyer Queue",
-      "nav-admindash": "Admin Dashboard",
-      "nav-logout": "Logout",
+      "nav-lawyerqueue": "Review Queue",
+      "nav-admindash": "Dashboard",
+      "nav-analytics": "Analytics",
+      "nav-profile": "Profile & Settings",
+      "nav-logout": "Sign Out",
       "disclaimer-tag": "Disclaimer:",
       "disclaimer-text": "MuktoAin provides general legal information and document drafting assistance. This is NOT formal legal advice. Every document must be reviewed by a verified lawyer before use.",
       "footer-tagline": "Free AI-augmented legal aid platform for citizens of Bangladesh — every document reviewed by verified advocates.",
@@ -416,11 +424,31 @@
       disclaimerEl.innerHTML = "<b>" + dict["disclaimer-tag"] + "</b> " + dict["disclaimer-text"];
     }
 
+    // 2b. Universal declarative translation attribute handler
+    document.querySelectorAll("[data-bn][data-en]").forEach(function (el) {
+      var text = currentLang === "en" ? el.dataset.en : el.dataset.bn;
+      if (el.children.length === 0) {
+        el.textContent = text;
+      } else {
+        // Preserves child icons (e.g. lucide icons) if present
+        var iconEl = el.querySelector("i, svg");
+        if (iconEl) {
+          el.innerHTML = iconEl.outerHTML + " " + text;
+        } else {
+          el.textContent = text;
+        }
+      }
+    });
+
     // 3. Navbar navigation links (Preserving logo brand!)
     var navMap = [
       { sel: '.nav-links a[href="/"], .nav-links a[href=""]', text: dict["nav-legal-aid"], icon: "message-square" },
+      { sel: '.nav-links a[href*="/Case/Submit"]', text: dict["nav-submit"], icon: "edit-3" },
       { sel: '.nav-links a[href*="/Case/Track"]', text: dict["nav-tracking"], icon: "folder-clock" },
-      { sel: '.nav-links a[href*="/Search"]', text: dict["nav-search"], icon: "search" },
+      { sel: '.nav-links a[href*="/Admin/Dashboard"], .nav-links a[href="/Admin"]', text: dict["nav-admindash"], icon: "shield" },
+      { sel: '.nav-links a[href*="/Admin/Analytics"]', text: dict["nav-analytics"], icon: "bar-chart-3" },
+      { sel: '.nav-links a[href*="/Lawyer/Queue"]', text: dict["nav-lawyerqueue"], icon: "file-check-2" },
+      { sel: '.nav-links a[href*="/Search"]', text: dict["nav-corpus"] || dict["nav-search"], icon: "search" },
       { sel: '.nav-links a[href*="/Category"]', text: dict["nav-categories"], icon: "layout-grid" },
       { sel: '.nav-links a[href*="/Home/About"]', text: dict["nav-about"], icon: "info" },
       { sel: '.nav-desktop-auth a[href*="/Account/Login"]', text: dict["nav-signin"] },
@@ -438,10 +466,8 @@
 
     // 4. User menu popover
     var userPopMap = [
-      { sel: '#user-pop a[href*="/Case/Track"]', text: dict["nav-mycases"], icon: "folder" },
-      { sel: '#user-pop a[href*="/Lawyer/Queue"]', text: dict["nav-lawyerqueue"], icon: "file-check-2" },
-      { sel: '#user-pop a[href*="/Admin/Dashboard"], #user-pop a[href*="/Admin"]', text: dict["nav-admindash"], icon: "shield" },
-      { sel: '#user-pop a[href*="/Account/Login"]', text: dict["nav-logout"], icon: "log-out" }
+      { sel: '#user-pop a[href*="/Account/Profile"]', text: dict["nav-profile"], icon: "user" },
+      { sel: '#user-pop .user-logout-btn', text: dict["nav-logout"], icon: "log-out" }
     ];
     userPopMap.forEach(function (item) {
       document.querySelectorAll(item.sel).forEach(function (el) {
@@ -451,16 +477,18 @@
 
     // 5. Mobile drawer links
     var drawerMap = [
-      { sel: 'aside.drawer nav a[href="/"]', text: dict["nav-legal-aid"], icon: "message-square" },
-      { sel: 'aside.drawer nav a[href*="/Case/Submit"]', text: currentLang === "en" ? "Submit Issue (Intake)" : "সমস্যা জমা দিন (Intake)", icon: "edit-3" },
-      { sel: 'aside.drawer nav a[href*="/Case/Track"]', text: dict["nav-tracking"], icon: "folder-clock" },
-      { sel: 'aside.drawer nav a[href*="/Search"]', text: dict["nav-search"], icon: "search" },
-      { sel: 'aside.drawer nav a[href*="/Category"]', text: dict["nav-categories"], icon: "layout-grid" },
-      { sel: 'aside.drawer nav a[href*="/Lawyer/Queue"]', text: dict["nav-lawyerqueue"], icon: "file-check-2" },
-      { sel: 'aside.drawer nav a[href*="/Admin"]', text: dict["nav-admindash"], icon: "shield" },
-      { sel: 'aside.drawer nav a[href*="/Home/About"]', text: dict["nav-about"], icon: "info" },
-      { sel: 'aside.drawer nav a[href*="/Account/Login"]', text: dict["nav-signin"], icon: "log-in" },
-      { sel: 'aside.drawer nav a[href*="/Account/Register"]', text: dict["nav-register"], icon: "user-plus" }
+      { sel: 'aside.drawer nav a[href="/"]', text: currentLang === "en" ? "Legal Aid & Chat" : "আইনি সেবা ও চ্যাট", icon: "message-square" },
+      { sel: 'aside.drawer nav a[href*="/Case/Submit"]', text: currentLang === "en" ? "Submit Problem (Intake)" : "সমস্যা জমা দিন (Intake)", icon: "edit-3" },
+      { sel: 'aside.drawer nav a[href*="/Case/Track"]', text: currentLang === "en" ? "Case Tracking" : "মামলা ট্র্যাকিং", icon: "folder-clock" },
+      { sel: 'aside.drawer nav a[href*="/Admin/Dashboard"], aside.drawer nav a[href="/Admin"]', text: currentLang === "en" ? "Admin Dashboard" : "অ্যাডমিন ড্যাশবোর্ড", icon: "shield" },
+      { sel: 'aside.drawer nav a[href*="/Admin/Analytics"]', text: currentLang === "en" ? "Analytics & Reports" : "অ্যানালিটিক্স ও রিপোর্ট", icon: "bar-chart-3" },
+      { sel: 'aside.drawer nav a[href*="/Lawyer/Queue"]', text: currentLang === "en" ? "Lawyer Review Queue" : "আইনজীবী রিভিউ কিউ", icon: "file-check-2" },
+      { sel: 'aside.drawer nav a[href*="/Search"]', text: currentLang === "en" ? "Statutes & Corpus" : "আইন ও করপাস", icon: "search" },
+      { sel: 'aside.drawer nav a[href*="/Category"]', text: currentLang === "en" ? "Legal Categories" : "আইনি বিভাগসমূহ", icon: "layout-grid" },
+      { sel: 'aside.drawer nav a[href*="/Home/About"]', text: currentLang === "en" ? "About & Disclaimer" : "পরিচিতি ও দাবিত্যাগ", icon: "info" },
+      { sel: 'aside.drawer nav a[href*="/Account/Login"]', text: currentLang === "en" ? "Sign In" : "সাইন ইন", icon: "log-in" },
+      { sel: 'aside.drawer nav a[href*="/Account/Register"]', text: currentLang === "en" ? "Register New Account" : "নতুন একাউন্ট নিবন্ধন", icon: "user-plus" },
+      { sel: 'aside.drawer nav a[href*="/Account/Profile"]', text: currentLang === "en" ? "My Profile & Settings" : "আমার প্রোফাইল ও সেটিংস", icon: "user" }
     ];
     drawerMap.forEach(function (item) {
       document.querySelectorAll(item.sel).forEach(function (el) {
@@ -480,12 +508,15 @@
         else if (t === "মামলাসমূহ" || t === "মামলা") b.textContent = "Cases";
         else if (t === "নতুন দাখিল") b.textContent = "New Submission";
         else if (t === "মামলা ট্র্যাকিং") b.textContent = "Case Tracking";
-        else if (t === "আইন অনুসন্ধান" || t === "আইন খুঁজুন") b.textContent = "Search Statutes";
+        else if (t === "আইন অনুসন্ধান" || t === "আইন খুঁজুন" || t === "আইন ও করপাস") b.textContent = "Search Statutes";
         else if (t === "আইনি বিভাগসমূহ" || t === "বিভাগসমূহ") b.textContent = "Categories";
         else if (t === "পরিচিতি ও দাবিত্যাগ" || t === "পরিচিতি") b.textContent = "About & Disclaimer";
         else if (t === "সাইন ইন") b.textContent = "Sign In";
         else if (t === "নিবন্ধন") b.textContent = "Register";
         else if (t === "আইনজীবী কিউ") b.textContent = "Lawyer Queue";
+        else if (t.indexOf("অ্যাডমিন") !== -1 || t.indexOf("মিশন কন্ট্রোল") !== -1) b.textContent = "Admin Console";
+        else if (t.indexOf("অ্যানালিটিক্স") !== -1) b.textContent = "Analytics";
+        else if (t.indexOf("প্রোফাইল") !== -1) b.textContent = "Account Profile";
       } else {
         if (t === "Home") b.textContent = "হোম";
         else if (t === "Cases") b.textContent = "মামলাসমূহ";
@@ -497,6 +528,9 @@
         else if (t === "Sign In") b.textContent = "সাইন ইন";
         else if (t === "Register") b.textContent = "নিবন্ধন";
         else if (t === "Lawyer Queue") b.textContent = "আইনজীবী কিউ";
+        else if (t === "Admin Console") b.textContent = "অ্যাডমিন কনসোল";
+        else if (t === "Analytics") b.textContent = "অ্যানালিটিক্স";
+        else if (t === "Account Profile") b.textContent = "অ্যাকাউন্ট প্রোফাইল";
       }
     });
 
@@ -948,6 +982,197 @@
       document.querySelectorAll("table tbody a.btn-primary").forEach(function(btn) {
         btn.textContent = currentLang === "en" ? "Review Draft →" : "পর্যালোচনা করুন →";
       });
+
+    } else if (path.indexOf("/admin/dashboard") !== -1 || path === "/admin" || path === "/admin/") {
+      // Admin Dashboard / Mission Control
+      var kicker = document.querySelector(".page-head .kicker");
+      if (kicker) kicker.innerHTML = '<i data-lucide="shield-check"></i> ' + (currentLang === "en" ? "FR-15 · Mission Control & Operations" : "FR-15 · মিশন কন্ট্রোল ও সিস্টেম অপারেশনস");
+      var title = document.querySelector(".page-head .page-title");
+      if (title) title.textContent = currentLang === "en" ? "Admin Control Hub" : "অ্যাডমিন কন্ট্রোল হাব";
+      var sub = document.querySelector(".page-head .page-sub");
+      if (sub) sub.textContent = currentLang === "en" ? "Platform infrastructure status, advocate verification triage, and system action console." : "প্ল্যাটফর্ম ইনফ্রাস্ট্রাকচার স্ট্যাটাস, আইনজীবী সনদ যাচাই ট্রায়াজ এবং সিস্টেম অ্যাকশন কনসোল।";
+
+      var pulseHead = document.querySelector(".card strong i[data-lucide='server']");
+      if (pulseHead && pulseHead.parentElement) {
+        pulseHead.parentElement.innerHTML = '<i data-lucide="server" style="width:16px;height:16px;color:var(--gold);"></i> ' + (currentLang === "en" ? "Live Infrastructure & Service Pulse (System Health)" : "লাইভ ইনফ্রাস্ট্রাকচার ও সার্ভিস পালস (System Health)");
+      }
+      var pulseBadge = document.querySelector(".card span.badge-success");
+      if (pulseBadge && (pulseBadge.textContent.indexOf("সচল") !== -1 || pulseBadge.textContent.indexOf("Operational") !== -1)) {
+        pulseBadge.textContent = currentLang === "en" ? "All Services Operational" : "সকল সার্ভিস সচল (Operational)";
+      }
+
+      var kpis = document.querySelectorAll(".grid-4 .kpi");
+      if (kpis.length >= 4) {
+        var k1 = kpis[0].querySelector(".k-label");
+        var k1_sub = kpis[0].querySelector(".k-sub");
+        if (k1) k1.innerHTML = '<i data-lucide="user-check"></i> ' + (currentLang === "en" ? "Verifications Waiting" : "সনদ যাচাই অপেক্ষমান");
+        if (k1_sub) k1_sub.textContent = currentLang === "en" ? "Bar Council Advocate Applications" : "বাংলাদেশ বার কাউন্সিল আইনজীবী আবেদন";
+
+        var k2 = kpis[1].querySelector(".k-label");
+        var k2_sub = kpis[1].querySelector(".k-sub");
+        if (k2) k2.innerHTML = '<i data-lucide="clock"></i> ' + (currentLang === "en" ? "Review Queue Backlog" : "রিভিউ কিউ ব্যাকলগ");
+        if (k2_sub) k2_sub.textContent = currentLang === "en" ? "Cases pending lawyer approval" : "আইনজীবী পর্যালোচনার অপেক্ষায়";
+
+        var k3 = kpis[2].querySelector(".k-label");
+        var k3_sub = kpis[2].querySelector(".k-sub");
+        if (k3) k3.innerHTML = '<i data-lucide="book-marked"></i> ' + (currentLang === "en" ? "Statutes & Act Corpus" : "আইন ও স্ট্যাটিউট করপাস");
+        if (k3_sub) k3_sub.textContent = currentLang === "en" ? "Fully digitalized legal repository" : "সম্পূর্ণ ডিজিটালাইজড আইন ভাণ্ডার";
+
+        var k4 = kpis[3].querySelector(".k-label");
+        var k4_sub = kpis[3].querySelector(".k-sub");
+        if (k4) k4.innerHTML = '<i data-lucide="users"></i> ' + (currentLang === "en" ? "Total Platform Users" : "মোট প্ল্যাটফর্ম ব্যবহারকারী");
+        if (k4_sub) k4_sub.textContent = currentLang === "en" ? "Citizen and advocate accounts" : "নাগরিক ও আইনজীবী একাউন্ট";
+      }
+
+      var triageTitle = document.querySelector(".card h2 i[data-lucide='award']");
+      if (triageTitle && triageTitle.parentElement) {
+        triageTitle.parentElement.innerHTML = '<i data-lucide="award" style="display:inline;vertical-align:middle;color:var(--gold);"></i> ' + (currentLang === "en" ? "Advocate Bar Verification Triage (FR-17)" : "আইনজীবী সনদ যাচাই ট্রায়াজ (FR-17)");
+      }
+
+      var triageThs = document.querySelectorAll("table thead th");
+      if (triageThs.length >= 4) {
+        triageThs[0].textContent = currentLang === "en" ? "Applicant Name" : "আবেদনকারীর নাম";
+        triageThs[1].textContent = currentLang === "en" ? "Bar Reg No" : "বার রেজিস্ট্রেশন নং";
+        triageThs[2].textContent = currentLang === "en" ? "Date" : "তারিখ";
+        triageThs[3].textContent = currentLang === "en" ? "Decision" : "সিদ্ধান্ত";
+      }
+
+      var auditHead = document.querySelector(".card h2 i[data-lucide='history']");
+      if (auditHead && auditHead.parentElement) {
+        auditHead.parentElement.innerHTML = '<i data-lucide="history" style="display:inline;vertical-align:middle;color:var(--gold);"></i> ' + (currentLang === "en" ? "Recent System Audit & Security Logs" : "সাম্প্রতিক সিস্টেম অডিট ও সিকিউরিটি লগ");
+      }
+
+      // Real-time Live Infrastructure Pulse Monitor
+      function updateLiveHealthPulse() {
+        if (!document.getElementById("db-status-dot")) {
+          if (window._adminHealthPollInterval) {
+            clearInterval(window._adminHealthPollInterval);
+            window._adminHealthPollInterval = null;
+          }
+          return;
+        }
+
+        var updatedSpan = document.getElementById("pulse-last-updated");
+        fetch("/Admin/HealthStatus", { headers: { "Accept": "application/json" } })
+          .then(function(r) {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.json();
+          })
+          .then(function(data) {
+            if (!data) return;
+            var dbDot = document.getElementById("db-status-dot");
+            var dbText = document.getElementById("db-status-text");
+            if (dbDot && dbText) {
+              dbDot.style.background = data.isDatabaseHealthy ? "#16a34a" : "#dc2626";
+              dbDot.style.boxShadow = data.isDatabaseHealthy ? "0 0 8px #16a34a" : "0 0 8px #dc2626";
+              dbText.textContent = data.databaseStatus;
+              dbText.style.color = data.isDatabaseHealthy ? "" : "#dc2626";
+              dbText.style.fontWeight = data.isDatabaseHealthy ? "" : "600";
+            }
+
+            var qdrantDot = document.getElementById("qdrant-status-dot");
+            var qdrantText = document.getElementById("qdrant-status-text");
+            if (qdrantDot && qdrantText) {
+              qdrantDot.style.background = data.isVectorDbHealthy ? "#16a34a" : "#d97706";
+              qdrantDot.style.boxShadow = data.isVectorDbHealthy ? "0 0 8px #16a34a" : "0 0 8px #d97706";
+              qdrantText.textContent = data.vectorDbStatus;
+              qdrantText.style.color = data.isVectorDbHealthy ? "" : "#b45309";
+              qdrantText.style.fontWeight = data.isVectorDbHealthy ? "" : "600";
+            }
+
+            var geminiDot = document.getElementById("gemini-status-dot");
+            var geminiText = document.getElementById("gemini-status-text");
+            if (geminiDot && geminiText) {
+              geminiDot.style.background = data.isAiServiceHealthy ? "#16a34a" : "#dc2626";
+              geminiDot.style.boxShadow = data.isAiServiceHealthy ? "0 0 8px #16a34a" : "0 0 8px #dc2626";
+              geminiText.textContent = data.aiServiceStatus;
+              geminiText.style.color = data.isAiServiceHealthy ? "" : "#dc2626";
+              geminiText.style.fontWeight = data.isAiServiceHealthy ? "" : "600";
+            }
+
+            var pulseBadge = document.getElementById("pulse-badge");
+            if (pulseBadge) {
+              pulseBadge.className = "badge " + data.overallHealthBadgeClass;
+              pulseBadge.textContent = currentLang === "en" 
+                ? (data.isDatabaseHealthy && data.isVectorDbHealthy && data.isAiServiceHealthy ? "All Services Operational" : "Degraded · Fallback Active")
+                : data.overallHealthBadgeText;
+            }
+
+            if (updatedSpan) {
+              updatedSpan.textContent = (currentLang === "en" ? "Live: " : "লাইভ: ") + data.lastChecked;
+            }
+          })
+          .catch(function(err) {
+            // Silently catch in background poll
+          });
+      }
+
+      var refreshBtn = document.getElementById("pulse-refresh-btn");
+      if (refreshBtn && !refreshBtn.dataset.wired) {
+        refreshBtn.dataset.wired = "true";
+        refreshBtn.addEventListener("click", function() {
+          updateLiveHealthPulse();
+        });
+      }
+
+      // Automatically poll health status every 5 seconds only while on the Admin Dashboard
+      if (!window._adminHealthPollInterval && document.getElementById("db-status-dot")) {
+        window._adminHealthPollInterval = setInterval(updateLiveHealthPulse, 5000);
+      }
+
+    } else if (path.indexOf("/admin/analytics") !== -1) {
+      // Admin Analytics Page
+      var kicker = document.querySelector(".page-head .kicker");
+      if (kicker) kicker.innerHTML = '<i data-lucide="bar-chart-3"></i> ' + (currentLang === "en" ? "FR-16 · Anonymized Analytics & Observability" : "FR-16 · Anonymized Analytics & Observability");
+      var title = document.querySelector(".page-head .page-title");
+      if (title) title.textContent = currentLang === "en" ? "System Analytics & Impact Report" : "সিস্টেম অ্যানালিটিক্স ও কার্যক্ষমতা রিপোর্ট";
+      var sub = document.querySelector(".page-head .page-sub");
+      if (sub) sub.textContent = currentLang === "en" ? "Platform utilization, geographic legal demand, AI processing latency, and lawyer review turnaround metrics." : "প্ল্যাটফর্ম ব্যবহার, আইনি বিভাগের ভৌগোলিক বণ্টন, এআই প্রসেসিং লেটেন্সি ও আইনজীবী রিভিউ টার্নঅ্যারাউন্ড মেট্রিক্স।";
+
+      var kpis = document.querySelectorAll(".grid-4 .kpi");
+      if (kpis.length >= 4) {
+        var k1 = kpis[0].querySelector(".k-label");
+        var k1_sub = kpis[0].querySelector(".k-sub");
+        if (k1) k1.innerHTML = '<i data-lucide="folder-check"></i> ' + (currentLang === "en" ? "Total Resolved Cases" : "সর্বমোট সমাধানকৃত মামলা");
+        if (k1_sub) k1_sub.textContent = currentLang === "en" ? "New cases this week" : "এই সপ্তাহে নতুন";
+
+        var k2 = kpis[1].querySelector(".k-label");
+        var k2_num = kpis[1].querySelector(".k-num");
+        var k2_sub = kpis[1].querySelector(".k-sub");
+        if (k2) k2.innerHTML = '<i data-lucide="clock"></i> ' + (currentLang === "en" ? "Avg Lawyer Review Time" : "গড় আইনজীবী রিভিউ সময়");
+        if (k2_num) k2_num.textContent = currentLang === "en" ? "3.4 Hours" : "৩.৪ ঘণ্টা";
+        if (k2_sub) k2_sub.textContent = currentLang === "en" ? "Target: < 6 hours" : "টার্গেট: < ৬ ঘণ্টা";
+
+        var k3 = kpis[2].querySelector(".k-label");
+        var k3_sub = kpis[2].querySelector(".k-sub");
+        if (k3) k3.innerHTML = '<i data-lucide="cpu"></i> ' + (currentLang === "en" ? "AI Calls Today" : "AI কল ভলিউম (আজ)");
+        if (k3_sub) k3_sub.textContent = currentLang === "en" ? "Failure rate: 2.1%" : "ব্যর্থতার হার: ২.১%";
+
+        var k4 = kpis[3].querySelector(".k-label");
+        var k4_sub = kpis[3].querySelector(".k-sub");
+        if (k4) k4.innerHTML = '<i data-lucide="zap"></i> ' + (currentLang === "en" ? "Avg RAG Response Latency" : "গড় RAG রেসপন্স লেটেন্সি");
+        if (k4_sub) k4_sub.textContent = currentLang === "en" ? "Google Gemini + Qdrant" : "Google Gemini + Qdrant";
+      }
+
+      var chartH1 = document.querySelector(".card h3");
+      if (chartH1 && (chartH1.textContent.indexOf("মামলা বিভাজন") !== -1 || chartH1.textContent.indexOf("Case Share") !== -1)) {
+        chartH1.textContent = currentLang === "en" ? "Case Distribution by Legal Category (Case Share)" : "আইনি বিষয়ভিত্তিক মামলা বিভাজন (Case Share)";
+      }
+
+    } else if (path.indexOf("/account/profile") !== -1) {
+      // User Profile Page
+      var crumbProfile = document.querySelector(".breadcrumbs span:last-child");
+      if (crumbProfile) crumbProfile.textContent = currentLang === "en" ? "Account Profile" : "অ্যাকাউন্ট প্রোফাইল";
+
+      var formTitle = document.querySelector(".card h2 i[data-lucide='user-cog']");
+      if (formTitle && formTitle.parentElement) {
+        formTitle.parentElement.innerHTML = '<i data-lucide="user-cog" style="display:inline;vertical-align:middle;color:var(--gold);"></i> ' + (currentLang === "en" ? "Profile & Account Details" : "প্রোফাইল ও অ্যাকাউন্ট তথ্য");
+      }
+
+      var passTitle = document.querySelector(".card h2 i[data-lucide='key-round']");
+      if (passTitle && passTitle.parentElement) {
+        passTitle.parentElement.innerHTML = '<i data-lucide="key-round" style="display:inline;vertical-align:middle;color:var(--gold);"></i> ' + (currentLang === "en" ? "Security & Password" : "পাসওয়ার্ড ও নিরাপত্তা");
+      }
 
     } else if (path.indexOf("/account/login") !== -1) {
       // Login Page
