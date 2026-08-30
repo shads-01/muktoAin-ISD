@@ -69,6 +69,36 @@
         </div>
     </div>
 
+    <!-- Real-time Qdrant Embedding Progress Bar Card -->
+    <div class="card" style="padding: 20px 24px; margin-bottom: 24px; background: var(--surface-2); border: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i data-lucide="database" style="color: var(--primary); width: 22px; height: 22px;"></i>
+                <div>
+                    <h3 style="margin: 0; font-size: 16px;">
+                        <span data-bn="Qdrant ভেক্টর ইনডেক্সিং অগ্রগতি" data-en="Qdrant Vector Indexing Progress">Qdrant ভেক্টর ইনডেক্সিং অগ্রগতি</span>
+                    </h3>
+                    <span id="embed-status-msg" class="muted tiny" style="display: block;">লোড হচ্ছে...</span>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <span id="embed-count-badge" class="badge badge-primary" style="font-size: 13px; font-weight: 700;">0 / 42,858 (0%)</span>
+                <span id="embed-state-badge" class="badge badge-gold" style="margin-left: 6px; font-size: 12px;">Idle</span>
+            </div>
+        </div>
+
+        <div style="width: 100%; height: 16px; background: var(--surface-3, #e2d9cb); border-radius: 8px; overflow: hidden; position: relative; margin: 8px 0;">
+            <div id="embed-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #16a34a, #22c55e); transition: width 0.4s ease; border-radius: 8px;"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12px; color: var(--ink-2); flex-wrap: wrap; gap: 8px;">
+            <span><span data-bn="মোট সেকশন চাঙ্ক:" data-en="Total Chunks:">মোট সেকশন চাঙ্ক:</span> <b id="embed-total-txt">42,858</b></span>
+            <span><span data-bn="ইনডেক্স সম্পন্ন:" data-en="Embedded:">ইনডেক্স সম্পন্ন:</span> <b id="embed-done-txt" style="color: #16a34a;">0</b></span>
+            <span><span data-bn="অবশিষ্ট:" data-en="Remaining:">অবশিষ্ট:</span> <b id="embed-rem-txt" style="color: #b45309;">42,858</b></span>
+            <span><span data-bn="লাইভ রেট:" data-en="Live Polling:">লাইভ রেট:</span> <b id="embed-live-rate">প্রতি ৩ সেকেন্ডে আপডেট</b></span>
+        </div>
+    </div>
+
     <!-- 2. Operational KPI Cards -->
     <div class="grid grid-4" style="margin-bottom: 24px;">
         <div class="card kpi">
@@ -248,3 +278,53 @@
         </div>
     </div>
 </main>
+
+@section Scripts {
+<script>
+    (function () {
+        async function updateEmbeddingProgress() {
+            try {
+                const res = await fetch('/Admin/EmbeddingProgress');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                const bar = document.getElementById('embed-progress-bar');
+                const countBadge = document.getElementById('embed-count-badge');
+                const stateBadge = document.getElementById('embed-state-badge');
+                const msg = document.getElementById('embed-status-msg');
+                const totalTxt = document.getElementById('embed-total-txt');
+                const doneTxt = document.getElementById('embed-done-txt');
+                const remTxt = document.getElementById('embed-rem-txt');
+
+                if (bar) bar.style.width = data.percentage + '%';
+                if (countBadge) countBadge.textContent = `${data.embeddedChunks.toLocaleString()} / ${data.totalChunks.toLocaleString()} (${data.percentage}%)`;
+                if (totalTxt) totalTxt.textContent = data.totalChunks.toLocaleString();
+                if (doneTxt) doneTxt.textContent = data.embeddedChunks.toLocaleString();
+                if (remTxt) remTxt.textContent = data.remainingChunks.toLocaleString();
+
+                if (stateBadge) {
+                    if (data.isRunning) {
+                        stateBadge.className = 'badge badge-success';
+                        stateBadge.textContent = 'Running (Syncing)';
+                    } else if (data.embeddedChunks === data.totalChunks && data.totalChunks > 0) {
+                        stateBadge.className = 'badge badge-success';
+                        stateBadge.textContent = 'Completed (100%)';
+                    } else {
+                        stateBadge.className = 'badge badge-gold';
+                        stateBadge.textContent = 'Idle';
+                    }
+                }
+
+                if (msg) {
+                    msg.textContent = data.lastStatus || (data.isRunning ? 'Embedding in progress...' : 'Ready');
+                }
+            } catch (e) {
+                console.error('Failed to update embedding progress:', e);
+            }
+        }
+
+        updateEmbeddingProgress();
+        setInterval(updateEmbeddingProgress, 2500);
+    })();
+</script>
+}

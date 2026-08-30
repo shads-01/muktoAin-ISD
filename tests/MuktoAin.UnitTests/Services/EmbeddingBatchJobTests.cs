@@ -59,7 +59,8 @@ public class EmbeddingBatchJobTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Embedding:RunOnStartup"] = "true"
+                ["Embedding:RunOnStartup"] = "true",
+                ["Embedding:StartupDelayMs"] = "0"
             })
             .Build();
 
@@ -88,6 +89,7 @@ public class EmbeddingBatchJobTests
             config);
 
         await job.StartAsync(CancellationToken.None);
+        if (job.ExecuteTask != null) await job.ExecuteTask;
 
         _embeddingServiceMock.Verify(e => e.GetEmbeddingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         _vectorStoreMock.Verify(v => v.UpsertAsync(
@@ -110,7 +112,8 @@ public class EmbeddingBatchJobTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Embedding:RunOnStartup"] = "true"
+                ["Embedding:RunOnStartup"] = "true",
+                ["Embedding:StartupDelayMs"] = "0"
             })
             .Build();
 
@@ -141,6 +144,7 @@ public class EmbeddingBatchJobTests
             config);
 
         await job.StartAsync(CancellationToken.None);
+        if (job.ExecuteTask != null) await job.ExecuteTask;
 
         _vectorStoreMock.Verify(v => v.UpsertAsync(It.IsAny<string>(), It.IsAny<float[]>(), It.Is<Dictionary<string, string>>(p => p["ChunkId"] == "2")), Times.Once);
         _chunkRepoMock.Verify(r => r.UpdateEmbeddingInfoAsync(2, It.IsAny<string>(), It.IsAny<string>()), Times.Once);
