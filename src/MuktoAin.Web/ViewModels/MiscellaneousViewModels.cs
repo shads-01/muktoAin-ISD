@@ -68,6 +68,11 @@ public class AdminDashboardViewModel
     public int TotalUsersCount { get; set; } = 418;
     public int TotalLawyersCount { get; set; } = 34;
     public int TotalActsCount { get; set; } = 1484;
+    public bool IsDatabaseHealthy { get; set; } = true;
+    public bool IsVectorDbHealthy { get; set; } = true;
+    public bool IsAiServiceHealthy { get; set; } = true;
+    public string OverallHealthBadgeText { get; set; } = "সকল সার্ভিস সচল (Operational)";
+    public string OverallHealthBadgeClass { get; set; } = "badge-success";
     public string DatabaseStatus { get; set; } = "Connected (Microsoft SQL Server)";
     public string VectorDbStatus { get; set; } = "Operational (Qdrant Vector Store · 1,484 Acts)";
     public string AiServiceStatus { get; set; } = "Healthy (Gemini 2.5 Flash API · Circuit Breaker Closed)";

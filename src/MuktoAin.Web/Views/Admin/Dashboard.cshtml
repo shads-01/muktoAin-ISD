@@ -36,28 +36,28 @@
             <strong style="font-size: 14px; display: flex; align-items: center; gap: 8px; color: #4a3812;">
                 <i data-lucide="server" style="width: 16px; height: 16px; color: var(--gold);"></i> <span data-bn="লাইভ ইনফ্রাস্ট্রাকচার ও সার্ভিস পালস (System Health)" data-en="Live Infrastructure & Service Pulse (System Health)">লাইভ ইনফ্রাস্ট্রাকচার ও সার্ভিস পালস (System Health)</span>
             </strong>
-            <span class="badge badge-success" style="font-size: 12px; font-weight: 700;" data-bn="সকল সার্ভিস সচল (Operational)" data-en="All Services Operational">সকল সার্ভিস সচল (Operational)</span>
+            <span class="badge @Model.OverallHealthBadgeClass" style="font-size: 12px; font-weight: 700;">@Model.OverallHealthBadgeText</span>
         </div>
         <div class="grid grid-3" style="gap: 16px;">
             <div style="display: flex; align-items: center; gap: 12px; font-size: 13.5px;">
-                <span style="width: 10px; height: 10px; border-radius: 50%; background: #16a34a; display: inline-block; box-shadow: 0 0 8px #16a34a;"></span>
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: @(Model.IsDatabaseHealthy ? "#16a34a" : "#dc2626"); display: inline-block; box-shadow: 0 0 8px @(Model.IsDatabaseHealthy ? "#16a34a" : "#dc2626");"></span>
                 <div>
                     <strong style="display: block;" data-bn="MSSQL ডেটাবেস" data-en="MSSQL Relational DB">MSSQL ডেটাবেস</strong>
-                    <span class="muted tiny">@Model.DatabaseStatus</span>
+                    <span class="muted tiny" style="@(Model.IsDatabaseHealthy ? "" : "color:#dc2626;font-weight:600;")">@Model.DatabaseStatus</span>
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 12px; font-size: 13.5px;">
-                <span style="width: 10px; height: 10px; border-radius: 50%; background: #16a34a; display: inline-block; box-shadow: 0 0 8px #16a34a;"></span>
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: @(Model.IsVectorDbHealthy ? "#16a34a" : "#d97706"); display: inline-block; box-shadow: 0 0 8px @(Model.IsVectorDbHealthy ? "#16a34a" : "#d97706");"></span>
                 <div>
                     <strong style="display: block;" data-bn="Qdrant ভেক্টর স্টোর (RAG)" data-en="Qdrant Vector Store (RAG)">Qdrant ভেক্টর স্টোর (RAG)</strong>
-                    <span class="muted tiny">@Model.VectorDbStatus</span>
+                    <span class="muted tiny" style="@(Model.IsVectorDbHealthy ? "" : "color:#b45309;font-weight:600;")">@Model.VectorDbStatus</span>
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 12px; font-size: 13.5px;">
-                <span style="width: 10px; height: 10px; border-radius: 50%; background: #16a34a; display: inline-block; box-shadow: 0 0 8px #16a34a;"></span>
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: @(Model.IsAiServiceHealthy ? "#16a34a" : "#dc2626"); display: inline-block; box-shadow: 0 0 8px @(Model.IsAiServiceHealthy ? "#16a34a" : "#dc2626");"></span>
                 <div>
                     <strong style="display: block;" data-bn="Gemini 2.5 Flash API" data-en="Gemini 2.5 Flash API">Gemini 2.5 Flash API</strong>
-                    <span class="muted tiny">@Model.AiServiceStatus</span>
+                    <span class="muted tiny" style="@(Model.IsAiServiceHealthy ? "" : "color:#dc2626;font-weight:600;")">@Model.AiServiceStatus</span>
                 </div>
             </div>
         </div>
