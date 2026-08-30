@@ -1,5 +1,9 @@
 @{
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var isAdmin = User.IsInRole("Admin");
+    var isLawyer = User.IsInRole("Lawyer");
+    var isCitizen = isAuthenticated && !isAdmin && !isLawyer;
+
     var userDisplayName = User.FindFirst("FullName")?.Value;
     if (string.IsNullOrWhiteSpace(userDisplayName))
     {
@@ -44,12 +48,33 @@
                 <span class="brand-name">মুক্ত আইন<small>MuktoAin</small></span>
             </a>
             
+            <!-- Dynamic Role-Based Top Navigation Links -->
             <nav class="nav-links" aria-label="প্রধান মেনু">
-                <a asp-controller="Home" asp-action="Index"><i data-lucide="message-square"></i>আইনি সেবা</a>
-                <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i>মামলা ট্র্যাকিং</a>
-                <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i>আইন খুঁজুন</a>
-                <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i>বিভাগসমূহ</a>
-                <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i>পরিচিতি</a>
+                @if (isAdmin)
+                {
+                    <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i>ড্যাশবোর্ড</a>
+                    <a asp-controller="Admin" asp-action="Analytics"><i data-lucide="bar-chart-3"></i>অ্যানালিটিক্স</a>
+                    <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>রিভিউ কিউ</a>
+                    <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i>আইন ও করপাস</a>
+                    <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i>সকল মামলা</a>
+                }
+                else if (isLawyer)
+                {
+                    <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>রিভিউ কিউ</a>
+                    <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i>আইন অনুসন্ধান</a>
+                    <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i>বিভাগসমূহ</a>
+                    <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i>মামলা ট্র্যাকিং</a>
+                    <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i>পরিচিতি</a>
+                }
+                else
+                {
+                    <a asp-controller="Home" asp-action="Index"><i data-lucide="message-square"></i>আইনি সেবা</a>
+                    <a asp-controller="Case" asp-action="Submit"><i data-lucide="edit-3"></i>সমস্যা জমা দিন</a>
+                    <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i>মামলা ট্র্যাকিং</a>
+                    <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i>আইন খুঁজুন</a>
+                    <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i>বিভাগসমূহ</a>
+                    <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i>পরিচিতি</a>
+                }
             </nav>
             
             <div class="nav-actions">
@@ -72,17 +97,28 @@
                         <div class="menu-pop" id="user-pop">
                             <div style="padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px;">
                                 <strong style="display:block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@userDisplayName</strong>
-                                <span class="muted tiny">@(User.IsInRole("Admin") ? "অ্যাডমিন / Administrator" : User.IsInRole("Lawyer") ? "আইনজীবী / Advocate" : "নাগরিক / Citizen")</span>
+                                <span class="muted tiny">@(isAdmin ? "অ্যাডমিন / Administrator" : isLawyer ? "আইনজীবী / Advocate" : "নাগরিক / Citizen")</span>
                             </div>
-                            <a asp-controller="Case" asp-action="Track"><i data-lucide="folder"></i>আমার মামলাসমূহ</a>
-                            @if (User.IsInRole("Admin") || User.IsInRole("Lawyer"))
-                            {
-                                <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>আইনজীবী রিভিউ কিউ</a>
-                            }
-                            @if (User.IsInRole("Admin"))
+                            
+                            @if (isAdmin)
                             {
                                 <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i>অ্যাডমিন ড্যাশবোর্ড</a>
+                                <a asp-controller="Admin" asp-action="Analytics"><i data-lucide="bar-chart-3"></i>সিস্টেম অ্যানালিটিক্স</a>
+                                <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>আইনজীবী রিভিউ কিউ</a>
+                                <a asp-controller="Case" asp-action="Track"><i data-lucide="folder"></i>সকল মামলাসমূহ</a>
                             }
+                            else if (isLawyer)
+                            {
+                                <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>আইনজীবী রিভিউ কিউ</a>
+                                <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i>আইন অনুসন্ধান</a>
+                                <a asp-controller="Case" asp-action="Track"><i data-lucide="folder"></i>মামলা ট্র্যাকিং</a>
+                            }
+                            else
+                            {
+                                <a asp-controller="Case" asp-action="Track"><i data-lucide="folder"></i>আমার মামলাসমূহ</a>
+                                <a asp-controller="Case" asp-action="Submit"><i data-lucide="edit-3"></i>নতুন সমস্যা জমা দিন</a>
+                            }
+                            
                             <hr class="divider" style="margin:4px 0" />
                             <form asp-controller="Account" asp-action="Logout" method="post" class="user-logout-form">
                                 <button type="submit" class="user-logout-btn"><i data-lucide="log-out"></i>লগআউট</button>
@@ -124,20 +160,34 @@
             </button>
         </div>
         <nav>
-            <a asp-controller="Home" asp-action="Index"><i data-lucide="message-square"></i> আইনি সেবা ও চ্যাট</a>
-            <a asp-controller="Case" asp-action="Submit"><i data-lucide="edit-3"></i> সমস্যা জমা দিন (Intake)</a>
-            <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i> মামলা ট্র্যাকিং</a>
-            <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i> আইন খুঁজুন</a>
-            <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i> আইনি বিভাগসমূহ</a>
-            @if (User.IsInRole("Admin") || User.IsInRole("Lawyer"))
+            @if (isAdmin)
             {
-                <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i> আইনজীবী কিউ</a>
+                <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i> অ্যাডমিন ড্যাশবোর্ড</a>
+                <a asp-controller="Admin" asp-action="Analytics"><i data-lucide="bar-chart-3"></i> অ্যানালিটিক্স ও রিপোর্ট</a>
+                <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i> আইনজীবী রিভিউ কিউ</a>
+                <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i> আইন ও করপাস</a>
+                <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i> আইনি বিভাগসমূহ</a>
+                <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i> সকল মামলা রেকর্ড</a>
+                <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i> পরিচিতি ও দাবিত্যাগ</a>
             }
-            @if (User.IsInRole("Admin"))
+            else if (isLawyer)
             {
-                <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i> অ্যাডমিন কনসোল</a>
+                <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i> আইনজীবী রিভিউ কিউ</a>
+                <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i> আইন অনুসন্ধান ও রেফারেন্স</a>
+                <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i> আইনি বিষয় ও বিভাগ</a>
+                <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i> মামলা ট্র্যাকিং</a>
+                <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i> পরিচিতি ও দাবিত্যাগ</a>
             }
-            <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i> পরিচিতি ও দাবিত্যাগ</a>
+            else
+            {
+                <a asp-controller="Home" asp-action="Index"><i data-lucide="message-square"></i> আইনি সেবা ও চ্যাট</a>
+                <a asp-controller="Case" asp-action="Submit"><i data-lucide="edit-3"></i> সমস্যা জমা দিন (Intake)</a>
+                <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i> মামলা ট্র্যাকিং</a>
+                <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i> আইন খুঁজুন</a>
+                <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i> আইনি বিভাগসমূহ</a>
+                <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i> পরিচিতি ও দাবিত্যাগ</a>
+            }
+            
             <hr class="divider" style="margin:8px 0" />
             @if (!isAuthenticated)
             {
