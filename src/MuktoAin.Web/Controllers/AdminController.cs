@@ -84,30 +84,47 @@ public class AdminController : Controller
             AuditLogs = new List<SystemAuditLogItemViewModel>(sample.AuditLogs)
         };
 
-        // 1. Live MSSQL Relational Database Health Check
-        try
+        // 1. Live MSSQL Relational Database Health Check (from live IConfiguration)
+        var rawConnStr = _configuration.GetConnectionString("DefaultConnection");
+        if (string.IsNullOrWhiteSpace(rawConnStr))
         {
-            var canConnect = await _dbContext.Database.CanConnectAsync();
-            if (canConnect)
+            model.IsDatabaseHealthy = false;
+            model.DatabaseStatus = "Unconfigured / Missing ConnectionString in appsettings";
+        }
+        else
+        {
+            try
             {
-                var userCount = await _dbContext.Users.CountAsync();
-                var actCount = await _dbContext.Acts.CountAsync();
+                var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(rawConnStr)
+                {
+                    ConnectTimeout = 2 // Fast 2s timeout for real-time health checks
+                };
+
+                using var conn = new Microsoft.Data.SqlClient.SqlConnection(builder.ConnectionString);
+                await conn.OpenAsync();
+
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT (SELECT COUNT(*) FROM [dbo].[USER]), (SELECT COUNT(*) FROM [dbo].[ACT]);";
+                using var reader = await cmd.ExecuteReaderAsync();
+                int userCount = 0;
+                int actCount = 0;
+                if (await reader.ReadAsync())
+                {
+                    userCount = reader.GetInt32(0);
+                    actCount = reader.GetInt32(1);
+                }
+
                 model.IsDatabaseHealthy = true;
                 model.DatabaseStatus = $"Connected (SQL Server · {userCount} Users, {actCount} Acts)";
                 if (userCount > 0) model.TotalUsersCount = userCount;
                 if (actCount > 0) model.TotalActsCount = actCount;
             }
-            else
+            catch (Exception ex)
             {
                 model.IsDatabaseHealthy = false;
-                model.DatabaseStatus = "Disconnected (Cannot reach SQL Server database)";
+                model.DatabaseStatus = $"Disconnected / Error ({ex.GetType().Name})";
+                _logger.LogInformation("Database health check failed: {Message}", ex.Message);
             }
-        }
-        catch (Exception ex)
-        {
-            model.IsDatabaseHealthy = false;
-            model.DatabaseStatus = $"Database Error: {ex.Message}";
-            _logger.LogWarning(ex, "Live Database health check failed in AdminController");
         }
 
         // 2. Live Qdrant Vector Store (RAG) Health Check (Direct from live IConfiguration)
