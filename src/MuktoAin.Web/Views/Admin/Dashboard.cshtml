@@ -6,25 +6,25 @@
 
 <main class="container" id="main">
     <nav class="breadcrumbs" aria-label="Breadcrumb">
-        <a asp-controller="Home" asp-action="Index">হোম</a>
+        <a asp-controller="Home" asp-action="Index" data-bn="হোম" data-en="Home">Home</a>
         <span class="sep">/</span>
-        <span>অ্যাডমিন কনসোল · মিশন কন্ট্রোল</span>
+        <span data-bn="অ্যাডমিন কনসোল · মিশন কন্ট্রোল" data-en="Admin Console · Mission Control">অ্যাডমিন কনসোল · মিশন কন্ট্রোল</span>
     </nav>
 
     <!-- Page Header with Operations Kicker -->
     <div class="page-head" style="margin-bottom: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
             <div>
-                <span class="kicker"><i data-lucide="shield-check" aria-hidden="true"></i> FR-15 · মিশন কন্ট্রোল ও সিস্টেম অপারেশনস</span>
-                <h1 class="page-title" style="font-size: clamp(24px, 4vw, 32px);">অ্যাডমিন কন্ট্রোল হাব</h1>
-                <p class="page-sub">প্ল্যাটফর্ম ইনফ্রাস্ট্রাকচার স্ট্যাটাস, আইনজীবী সনদ যাচাই ট্রায়াজ এবং সিস্টেম অ্যাকশন কনসোল।</p>
+                <span class="kicker" data-bn="FR-15 · মিশন কন্ট্রোল ও সিস্টেম অপারেশনস" data-en="FR-15 · Mission Control & Operations"><i data-lucide="shield-check" aria-hidden="true"></i> FR-15 · মিশন কন্ট্রোল ও সিস্টেম অপারেশনস</span>
+                <h1 class="page-title" style="font-size: clamp(24px, 4vw, 32px);" data-bn="অ্যাডমিন কন্ট্রোল হাব" data-en="Admin Control Hub">অ্যাডমিন কন্ট্রোল হাব</h1>
+                <p class="page-sub" data-bn="প্ল্যাটফর্ম ইনফ্রাস্ট্রাকচার স্ট্যাটাস, আইনজীবী সনদ যাচাই ট্রায়াজ এবং সিস্টেম অ্যাকশন কনসোল।" data-en="Platform infrastructure status, advocate verification triage, and system action console.">প্ল্যাটফর্ম ইনফ্রাস্ট্রাকচার স্ট্যাটাস, আইনজীবী সনদ যাচাই ট্রায়াজ এবং সিস্টেম অ্যাকশন কনসোল।</p>
             </div>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <a asp-controller="Admin" asp-action="Analytics" class="btn btn-outline btn-sm">
-                    <i data-lucide="bar-chart-3"></i> বিস্তারিত অ্যানালিটিক্স ও রিপোর্ট
+                    <i data-lucide="bar-chart-3"></i> <span data-bn="বিস্তারিত অ্যানালিটিক্স ও রিপোর্ট" data-en="Analytics & Reports">বিস্তারিত অ্যানালিটিক্স ও রিপোর্ট</span>
                 </a>
                 <a asp-controller="Lawyer" asp-action="Queue" class="btn btn-outline btn-sm">
-                    <i data-lucide="file-check-2"></i> আইনজীবী রিভিউ কিউ
+                    <i data-lucide="file-check-2"></i> <span data-bn="আইনজীবী রিভিউ কিউ" data-en="Review Queue">আইনজীবী রিভিউ কিউ</span>
                 </a>
             </div>
         </div>
@@ -34,29 +34,29 @@
     <div class="card" style="margin-bottom: 24px; padding: 18px 22px; background: linear-gradient(135deg, rgba(255,253,247,0.98), rgba(248,242,228,0.95)); border: 1.5px solid #92743a;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
             <strong style="font-size: 14px; display: flex; align-items: center; gap: 8px; color: #4a3812;">
-                <i data-lucide="server" style="width: 16px; height: 16px; color: var(--gold);"></i> লাইভ ইনফ্রাস্ট্রাকচার ও সার্ভিস পালস (System Health)
+                <i data-lucide="server" style="width: 16px; height: 16px; color: var(--gold);"></i> <span data-bn="লাইভ ইনফ্রাস্ট্রাকচার ও সার্ভিস পালস (System Health)" data-en="Live Infrastructure & Service Pulse (System Health)">লাইভ ইনফ্রাস্ট্রাকচার ও সার্ভিস পালস (System Health)</span>
             </strong>
-            <span class="badge badge-success" style="font-size: 12px; font-weight: 700;">সকল সার্ভিস সচল (Operational)</span>
+            <span class="badge badge-success" style="font-size: 12px; font-weight: 700;" data-bn="সকল সার্ভিস সচল (Operational)" data-en="All Services Operational">সকল সার্ভিস সচল (Operational)</span>
         </div>
         <div class="grid grid-3" style="gap: 16px;">
             <div style="display: flex; align-items: center; gap: 12px; font-size: 13.5px;">
                 <span style="width: 10px; height: 10px; border-radius: 50%; background: #16a34a; display: inline-block; box-shadow: 0 0 8px #16a34a;"></span>
                 <div>
-                    <strong style="display: block;">MSSQL ডেটাবেস</strong>
+                    <strong style="display: block;" data-bn="MSSQL ডেটাবেস" data-en="MSSQL Relational DB">MSSQL ডেটাবেস</strong>
                     <span class="muted tiny">@Model.DatabaseStatus</span>
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 12px; font-size: 13.5px;">
                 <span style="width: 10px; height: 10px; border-radius: 50%; background: #16a34a; display: inline-block; box-shadow: 0 0 8px #16a34a;"></span>
                 <div>
-                    <strong style="display: block;">Qdrant ভেক্টর স্টোর (RAG)</strong>
+                    <strong style="display: block;" data-bn="Qdrant ভেক্টর স্টোর (RAG)" data-en="Qdrant Vector Store (RAG)">Qdrant ভেক্টর স্টোর (RAG)</strong>
                     <span class="muted tiny">@Model.VectorDbStatus</span>
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 12px; font-size: 13.5px;">
                 <span style="width: 10px; height: 10px; border-radius: 50%; background: #16a34a; display: inline-block; box-shadow: 0 0 8px #16a34a;"></span>
                 <div>
-                    <strong style="display: block;">Gemini 2.5 Flash API</strong>
+                    <strong style="display: block;" data-bn="Gemini 2.5 Flash API" data-en="Gemini 2.5 Flash API">Gemini 2.5 Flash API</strong>
                     <span class="muted tiny">@Model.AiServiceStatus</span>
                 </div>
             </div>
@@ -66,24 +66,24 @@
     <!-- 2. Operational KPI Cards -->
     <div class="grid grid-4" style="margin-bottom: 24px;">
         <div class="card kpi">
-            <span class="k-label"><i data-lucide="user-check" aria-hidden="true"></i>সনদ যাচাই অপেক্ষমান</span>
+            <span class="k-label" data-bn="সনদ যাচাই অপেক্ষমান" data-en="Verifications Waiting"><i data-lucide="user-check" aria-hidden="true"></i>সনদ যাচাই অপেক্ষমান</span>
             <span class="k-num" style="color: #92743a;">@Model.VerificationsWaiting</span>
-            <span class="k-sub">বাংলাদেশ বার কাউন্সিল আইনজীবী আবেদন</span>
+            <span class="k-sub" data-bn="বাংলাদেশ বার কাউন্সিল আইনজীবী আবেদন" data-en="Bar Council Advocate Applications">বাংলাদেশ বার কাউন্সিল আইনজীবী আবেদন</span>
         </div>
         <div class="card kpi">
-            <span class="k-label"><i data-lucide="clock" aria-hidden="true"></i>রিভিউ কিউ ব্যাকলগ</span>
+            <span class="k-label" data-bn="রিভিউ কিউ ব্যাকলগ" data-en="Review Queue Backlog"><i data-lucide="clock" aria-hidden="true"></i>রিভিউ কিউ ব্যাকলগ</span>
             <span class="k-num" style="color: var(--primary);">@Model.PendingReviews</span>
-            <span class="k-sub">আইনজীবী পর্যালোচনার অপেক্ষায়</span>
+            <span class="k-sub" data-bn="আইনজীবী পর্যালোচনার অপেক্ষায়" data-en="Cases pending lawyer approval">আইনজীবী পর্যালোচনার অপেক্ষায়</span>
         </div>
         <div class="card kpi">
-            <span class="k-label"><i data-lucide="book-marked" aria-hidden="true"></i>আইন ও স্ট্যাটিউট করপাস</span>
+            <span class="k-label" data-bn="আইন ও স্ট্যাটিউট করপাস" data-en="Statutes & Act Corpus"><i data-lucide="book-marked" aria-hidden="true"></i>আইন ও স্ট্যাটিউট করপাস</span>
             <span class="k-num">@Model.TotalActsCount.ToString("N0")</span>
-            <span class="k-sub">সম্পূর্ণ ডিজিটালাইজড আইন ভাণ্ডার</span>
+            <span class="k-sub" data-bn="সম্পূর্ণ ডিজিটালাইজড আইন ভাণ্ডার" data-en="Fully digitalized statutory repository">সম্পূর্ণ ডিজিটালাইজড আইন ভাণ্ডার</span>
         </div>
         <div class="card kpi">
-            <span class="k-label"><i data-lucide="users" aria-hidden="true"></i>মোট প্ল্যাটফর্ম ব্যবহারকারী</span>
+            <span class="k-label" data-bn="মোট প্ল্যাটফর্ম ব্যবহারকারী" data-en="Total Platform Users"><i data-lucide="users" aria-hidden="true"></i>মোট প্ল্যাটফর্ম ব্যবহারকারী</span>
             <span class="k-num">@Model.TotalUsersCount</span>
-            <span class="k-sub">নাগরিক ও আইনজীবী একাউন্ট</span>
+            <span class="k-sub" data-bn="নাগরিক ও আইনজীবী একাউন্ট" data-en="Citizen and advocate accounts">নাগরিক ও আইনজীবী একাউন্ট</span>
         </div>
     </div>
 
@@ -94,20 +94,20 @@
         <div class="card" style="padding: 24px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
                 <div>
-                    <h2 style="font-size: 18px; margin: 0;"><i data-lucide="award" style="display: inline; vertical-align: middle; color: var(--gold);"></i> আইনজীবী সনদ যাচাই ট্রায়াজ (FR-17)</h2>
-                    <span class="muted tiny">বার কাউন্সিল রেজিস্ট্রেশন নম্বর যাচাই করে অনুমোদন দিন</span>
+                    <h2 style="font-size: 18px; margin: 0;"><i data-lucide="award" style="display: inline; vertical-align: middle; color: var(--gold);"></i> <span data-bn="আইনজীবী সনদ যাচাই ট্রায়াজ (FR-17)" data-en="Advocate Bar Verification Triage (FR-17)">আইনজীবী সনদ যাচাই ট্রায়াজ (FR-17)</span></h2>
+                    <span class="muted tiny" data-bn="বার কাউন্সিল রেজিস্ট্রেশন নম্বর যাচাই করে অনুমোদন দিন" data-en="Verify Bar Council registration numbers and approve">বার কাউন্সিল রেজিস্ট্রেশন নম্বর যাচাই করে অনুমোদন দিন</span>
                 </div>
-                <span class="badge badge-gold">@Model.VerificationQueue.Count টি অপেক্ষমান</span>
+                <span class="badge badge-gold" data-bn="@Model.VerificationQueue.Count টি অপেক্ষমান" data-en="@Model.VerificationQueue.Count Pending">@Model.VerificationQueue.Count টি অপেক্ষমান</span>
             </div>
 
             <div class="table-wrap" style="overflow-x: auto;">
                 <table class="table" style="width: 100%; font-size: 14px; text-align: left;">
                     <thead>
                         <tr style="border-bottom: 1.5px solid var(--border);">
-                            <th style="padding: 8px 10px;">আবেদনকারীর নাম</th>
-                            <th style="padding: 8px 10px;">বার রেজিস্ট্রেশন নং</th>
-                            <th style="padding: 8px 10px;">তারিখ</th>
-                            <th style="padding: 8px 10px; text-align: right;">সিদ্ধান্ত</th>
+                            <th style="padding: 8px 10px;" data-bn="আবেদনকারীর নাম" data-en="Applicant Name">আবেদনকারীর নাম</th>
+                            <th style="padding: 8px 10px;" data-bn="বার রেজিস্ট্রেশন নং" data-en="Bar Reg No">বার রেজিস্ট্রেশন নং</th>
+                            <th style="padding: 8px 10px;" data-bn="তারিখ" data-en="Date">তারিখ</th>
+                            <th style="padding: 8px 10px; text-align: right;" data-bn="সিদ্ধান্ত" data-en="Decision">সিদ্ধান্ত</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -120,10 +120,10 @@
                                 <td style="padding: 10px 10px; text-align: right;">
                                     <div style="display: inline-flex; gap: 6px;">
                                         <button class="btn btn-primary btn-sm" style="padding: 4px 8px; font-size: 12px;" title="অনুমোদন করুন">
-                                            <i data-lucide="check" style="width: 13px; height: 13px;"></i> অনুমোদন
+                                            <i data-lucide="check" style="width: 13px; height: 13px;"></i> <span data-bn="অনুমোদন" data-en="Approve">অনুমোদন</span>
                                         </button>
                                         <button class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 12px; color: #b91c1c;" title="বাতিল করুন">
-                                            <i data-lucide="x" style="width: 13px; height: 13px;"></i> বাতিল
+                                            <i data-lucide="x" style="width: 13px; height: 13px;"></i> <span data-bn="বাতিল" data-en="Reject">বাতিল</span>
                                         </button>
                                     </div>
                                 </td>
@@ -135,7 +135,7 @@
             
             <div style="margin-top: 16px; text-align: right;">
                 <a asp-controller="Search" asp-action="Index" class="btn btn-outline btn-sm" style="font-size: 12.5px;">
-                    <i data-lucide="external-link"></i> সকল আইনজীবী অডিট রেকর্ড দেখুন
+                    <i data-lucide="external-link"></i> <span data-bn="সকল আইনজীবী অডিট রেকর্ড দেখুন" data-en="View All Advocate Audit Records">সকল আইনজীবী অডিট রেকর্ড দেখুন</span>
                 </a>
             </div>
         </div>
@@ -146,7 +146,7 @@
             <!-- Management Hub Card -->
             <div class="card" style="padding: 24px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-                    <h2 style="font-size: 18px; margin: 0;"><i data-lucide="sliders" style="display: inline; vertical-align: middle; color: var(--gold);"></i> সিস্টেম ম্যানেজমেন্ট হাব</h2>
+                    <h2 style="font-size: 18px; margin: 0;"><i data-lucide="sliders" style="display: inline; vertical-align: middle; color: var(--gold);"></i> <span data-bn="সিস্টেম ম্যানেজমেন্ট হাব" data-en="System Management Hub">সিস্টেম ম্যানেজমেন্ট হাব</span></h2>
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -154,37 +154,37 @@
                     <!-- 1. User & Role Management -->
                     <div style="border: 1px solid var(--border); padding: 14px 16px; border-radius: var(--radius-btn); background: var(--surface); display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <strong style="font-size: 15px; display: block;"><i data-lucide="users" style="width: 16px; height: 16px; display: inline; vertical-align: text-bottom;"></i> ব্যবহারকারী ও রোল ব্যবস্থাপনা (FR-17)</strong>
-                            <span class="muted tiny">নাগরিক ও আইনজীবী একাউন্ট সক্রিয়/স্থগিতকরণ ও অ্যাক্সেস নিয়ন্ত্রণ</span>
+                            <strong style="font-size: 15px; display: block;"><i data-lucide="users" style="width: 16px; height: 16px; display: inline; vertical-align: text-bottom;"></i> <span data-bn="ব্যবহারকারী ও রোল ব্যবস্থাপনা (FR-17)" data-en="User & Role Management (FR-17)">ব্যবহারকারী ও রোল ব্যবস্থাপনা (FR-17)</span></strong>
+                            <span class="muted tiny" data-bn="নাগরিক ও আইনজীবী একাউন্ট সক্রিয়/স্থগিতকরণ ও অ্যাক্সেস নিয়ন্ত্রণ" data-en="Citizen and advocate account status and access control">নাগরিক ও আইনজীবী একাউন্ট সক্রিয়/স্থগিতকরণ ও অ্যাক্সেস নিয়ন্ত্রণ</span>
                         </div>
-                        <a asp-controller="Search" asp-action="Index" class="btn btn-outline btn-sm">ম্যানেজ</a>
+                        <a asp-controller="Search" asp-action="Index" class="btn btn-outline btn-sm" data-bn="ম্যানেজ" data-en="Manage">ম্যানেজ</a>
                     </div>
 
                     <!-- 2. Legislative Corpus & Indexing -->
                     <div style="border: 1px solid var(--border); padding: 14px 16px; border-radius: var(--radius-btn); background: var(--surface); display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <strong style="font-size: 15px; display: block;"><i data-lucide="book-open-check" style="width: 16px; height: 16px; display: inline; vertical-align: text-bottom;"></i> আইন করপাস ও ভেক্টর রি-ইনডেক্সিং (FR-18)</strong>
-                            <span class="muted tiny">১,৪৮৪টি আইন, সেকশন চাঙ্ক এবং SHA256 ইন্টিগ্রিটি রি-সিঙ্ক</span>
+                            <strong style="font-size: 15px; display: block;"><i data-lucide="book-open-check" style="width: 16px; height: 16px; display: inline; vertical-align: text-bottom;"></i> <span data-bn="আইন করপাস ও ভেক্টর রি-ইনডেক্সিং (FR-18)" data-en="Corpus & Vector Re-indexing (FR-18)">আইন করপাস ও ভেক্টর রি-ইনডেক্সিং (FR-18)</span></strong>
+                            <span class="muted tiny" data-bn="১,৪৮৪টি আইন, সেকশন চাঙ্ক এবং SHA256 ইন্টিগ্রিটি রি-সিঙ্ক" data-en="1,484 Acts, section chunks, and SHA256 integrity re-sync">১,৪৮৪টি আইন, সেকশন চাঙ্ক এবং SHA256 ইন্টিগ্রিটি রি-সিঙ্ক</span>
                         </div>
-                        <a asp-controller="Search" asp-action="Index" class="btn btn-outline btn-sm">করপাস</a>
+                        <a asp-controller="Search" asp-action="Index" class="btn btn-outline btn-sm" data-bn="করপাস" data-en="Corpus">করপাস</a>
                     </div>
 
                     <!-- 3. Scenario Mappings & Legal Boosts -->
                     <div style="border: 1px solid var(--border); padding: 14px 16px; border-radius: var(--radius-btn); background: var(--surface); display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <strong style="font-size: 15px; display: block;"><i data-lucide="zap" style="width: 16px; height: 16px; display: inline; vertical-align: text-bottom;"></i> সিনারিও কি-ওয়ার্ড বুস্ট ম্যাপিং (FR-18)</strong>
-                            <span class="muted tiny">আইনি সমস্যার ধরন ও সেকশন র্যাংকিং বুস্টিং রুলস</span>
+                            <strong style="font-size: 15px; display: block;"><i data-lucide="zap" style="width: 16px; height: 16px; display: inline; vertical-align: text-bottom;"></i> <span data-bn="সিনারিও কি-ওয়ার্ড বুস্ট ম্যাপিং (FR-18)" data-en="Scenario Keyword Boosts (FR-18)">সিনারিও কি-ওয়ার্ড বুস্ট ম্যাপিং (FR-18)</span></strong>
+                            <span class="muted tiny" data-bn="আইনি সমস্যার ধরন ও সেকশন র্যাংকিং বুস্টিং রুলস" data-en="Legal scenario rules and statutory ranking weights">আইনি সমস্যার ধরন ও সেকশন র্যাংকিং বুস্টিং রুলস</span>
                         </div>
-                        <a asp-controller="Category" asp-action="Index" class="btn btn-outline btn-sm">কনফিগার</a>
+                        <a asp-controller="Category" asp-action="Index" class="btn btn-outline btn-sm" data-bn="কনফিগার" data-en="Configure">কনফিগার</a>
                     </div>
 
                     <!-- 4. Deep Analytics Suite -->
                     <div style="border: 1px solid var(--border); padding: 14px 16px; border-radius: var(--radius-btn); background: var(--surface); display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <strong style="font-size: 15px; display: block;"><i data-lucide="pie-chart" style="width: 16px; height: 16px; display: inline; vertical-align: text-bottom;"></i> প্ল্যাটফর্ম অ্যানালিটিক্স ও প্রভাব রিপোর্ট (FR-16)</strong>
-                            <span class="muted tiny">৬৪ জেলাভিত্তিক আইনি চাহিদার চার্ট ও কনভার্সন ফানেল</span>
+                            <strong style="font-size: 15px; display: block;"><i data-lucide="pie-chart" style="width: 16px; height: 16px; display: inline; vertical-align: text-bottom;"></i> <span data-bn="প্ল্যাটফর্ম অ্যানালিটিক্স ও প্রভাব রিপোর্ট (FR-16)" data-en="Platform Analytics & Reports (FR-16)">প্ল্যাটফর্ম অ্যানালিটিক্স ও প্রভাব রিপোর্ট (FR-16)</span></strong>
+                            <span class="muted tiny" data-bn="৬৪ জেলাভিত্তিক আইনি চাহিদার চার্ট ও কনভার্সন ফানেল" data-en="64-district demand heatmaps and conversion funnels">৬৪ জেলাভিত্তিক আইনি চাহিদার চার্ট ও কনভার্সন ফানেল</span>
                         </div>
-                        <a asp-controller="Admin" asp-action="Analytics" class="btn btn-primary btn-sm">অ্যানালিটিক্স</a>
+                        <a asp-controller="Admin" asp-action="Analytics" class="btn btn-primary btn-sm" data-bn="অ্যানালিটিক্স" data-en="Analytics">অ্যানালিটিক্স</a>
                     </div>
                 </div>
             </div>
@@ -193,10 +193,10 @@
             <div class="card" style="padding: 18px 22px; background: rgba(146, 116, 56, 0.06); border: 1px dashed var(--gold);">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <strong style="font-size: 14px; color: #4a3812; display: block;"><i data-lucide="alert-triangle" style="width: 15px; height: 15px; display: inline;"></i> রেট লিমিট ও ব্যাকলগ মনিটর</strong>
-                        <span class="muted tiny">গুগল এআই স্টুডিও ফ্রি-টিয়ার কোটা স্বাস্থ্য স্বাভাবিক (১৫ আরপিএম নিরাপদ)</span>
+                        <strong style="font-size: 14px; color: #4a3812; display: block;"><i data-lucide="alert-triangle" style="width: 15px; height: 15px; display: inline;"></i> <span data-bn="রেট লিমিট ও ব্যাকলগ মনিটর" data-en="Rate Limits & Quota Monitor">রেট লিমিট ও ব্যাকলগ মনিটর</span></strong>
+                        <span class="muted tiny" data-bn="গুগল এআই স্টুডিও ফ্রি-টিয়ার কোটা স্বাস্থ্য স্বাভাবিক (১৫ আরপিএম নিরাপদ)" data-en="Google AI Studio quota healthy (15 RPM safe limit)">গুগল এআই স্টুডিও ফ্রি-টিয়ার কোটা স্বাস্থ্য স্বাভাবিক (১৫ আরপিএম নিরাপদ)</span>
                     </div>
-                    <span class="badge badge-success">কোটা নিরাপদ</span>
+                    <span class="badge badge-success" data-bn="কোটা নিরাপদ" data-en="Quota Safe">কোটা নিরাপদ</span>
                 </div>
             </div>
         </div>
@@ -206,10 +206,10 @@
     <div class="card" style="padding: 24px; margin-bottom: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
             <div>
-                <h2 style="font-size: 18px; margin: 0;"><i data-lucide="history" style="display: inline; vertical-align: middle; color: var(--gold);"></i> সাম্প্রতিক সিস্টেম অডিট ও সিকিউরিটি লগ</h2>
-                <span class="muted tiny">প্ল্যাটফর্মের গুরুত্বপূর্ণ প্রশাসনিক ও স্বয়ংক্রিয় অ্যাকশন রেকর্ডসমূহ</span>
+                <h2 style="font-size: 18px; margin: 0;"><i data-lucide="history" style="display: inline; vertical-align: middle; color: var(--gold);"></i> <span data-bn="সাম্প্রতিক সিস্টেম অডিট ও সিকিউরিটি লগ" data-en="Recent System Audit & Security Logs">সাম্প্রতিক সিস্টেম অডিট ও সিকিউরিটি লগ</span></h2>
+                <span class="muted tiny" data-bn="প্ল্যাটফর্মের গুরুত্বপূর্ণ প্রশাসনিক ও স্বয়ংক্রিয় অ্যাকশন রেকর্ডসমূহ" data-en="Key platform administrative and automated event stream">প্ল্যাটফর্মের গুরুত্বপূর্ণ প্রশাসনিক ও স্বয়ংক্রিয় অ্যাকশন রেকর্ডসমূহ</span>
             </div>
-            <span class="badge badge-primary">লাইভ অডিট ট্রেইল</span>
+            <span class="badge badge-primary" data-bn="লাইভ অডিট ট্রেইল" data-en="Live Audit Trail">লাইভ অডিট ট্রেইল</span>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -219,15 +219,15 @@
                     <div style="display: flex; align-items: center; gap: 12px; min-width: 280px;">
                         @if (log.Status == "Success")
                         {
-                            <span class="badge badge-success" style="font-size: 11px;">সফল</span>
+                            <span class="badge badge-success" style="font-size: 11px;" data-bn="সফল" data-en="Success">সফল</span>
                         }
                         else if (log.Status == "Warning")
                         {
-                            <span class="badge badge-gold" style="font-size: 11px;">সতর্কতা</span>
+                            <span class="badge badge-gold" style="font-size: 11px;" data-bn="সতর্কতা" data-en="Warning">সতর্কতা</span>
                         }
                         else
                         {
-                            <span class="badge badge-info" style="font-size: 11px;">তথ্য</span>
+                            <span class="badge badge-info" style="font-size: 11px;" data-bn="তথ্য" data-en="Info">তথ্য</span>
                         }
                         <div>
                             <strong>@log.Action</strong>
@@ -235,7 +235,7 @@
                         </div>
                     </div>
                     <div style="font-size: 12.5px; color: var(--ink-2); text-align: right;">
-                        <span>দ্বারা: <b>@log.Actor</b></span> · <span>@log.Timestamp</span>
+                        <span><span data-bn="দ্বারা:" data-en="By:">দ্বারা:</span> <b>@log.Actor</b></span> · <span>@log.Timestamp</span>
                     </div>
                 </div>
             }

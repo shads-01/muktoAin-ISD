@@ -424,6 +424,22 @@
       disclaimerEl.innerHTML = "<b>" + dict["disclaimer-tag"] + "</b> " + dict["disclaimer-text"];
     }
 
+    // 2b. Universal declarative translation attribute handler
+    document.querySelectorAll("[data-bn][data-en]").forEach(function (el) {
+      var text = currentLang === "en" ? el.dataset.en : el.dataset.bn;
+      if (el.children.length === 0) {
+        el.textContent = text;
+      } else {
+        // Preserves child icons (e.g. lucide icons) if present
+        var iconEl = el.querySelector("i, svg");
+        if (iconEl) {
+          el.innerHTML = iconEl.outerHTML + " " + text;
+        } else {
+          el.textContent = text;
+        }
+      }
+    });
+
     // 3. Navbar navigation links (Preserving logo brand!)
     var navMap = [
       { sel: '.nav-links a[href="/"], .nav-links a[href=""]', text: dict["nav-legal-aid"], icon: "message-square" },
