@@ -212,6 +212,78 @@ public class AccountControllerTests
         _lawyerProfileRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
     }
 
+    [Fact]
+    public async Task Profile_Get_WhenAuthenticatedCitizen_ReturnsViewWithCitizenData()
+    {
+        var user = new User
+        {
+            Id = 12,
+            Email = "citizen@muktoain.bd",
+            FullName = "Sanjida Erin",
+            Role = UserRole.Citizen,
+            AccountStatus = AccountStatus.Active
+        };
+        _userManager.Setup(m => m.GetUserAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>())).ReturnsAsync(user);
+
+        var result = await _controller.Profile();
+
+        var view = Assert.IsType<ViewResult>(result);
+        var model = Assert.IsType<ProfileViewModel>(view.Model);
+        Assert.Equal("Sanjida Erin", model.FullName);
+        Assert.Equal("citizen@muktoain.bd", model.Email);
+        Assert.Equal("Citizen", model.Role);
+    }
+
+    [Fact]
+    public async Task Profile_Post_WhenValid_UpdatesUserAndRedirects()
+    {
+        var user = new User
+        {
+            Id = 15,
+            Email = "lawyer@muktoain.bd",
+            FullName = "Adv. Hasan",
+            Role = UserRole.Lawyer
+        };
+        _userManager.Setup(m => m.GetUserAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>())).ReturnsAsync(user);
+        _userManager.Setup(m => m.UpdateAsync(It.IsAny<User>())).ReturnsAsync(IdentityResult.Success);
+        _lawyerProfileRepo.Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<LawyerProfile, bool>>>()))
+            .ReturnsAsync(new List<LawyerProfile> { new LawyerProfile { UserId = 15, BarRegistrationNumber = "DHA-999" } });
+
+        var model = new ProfileViewModel
+        {
+            FullName = "Adv. Shahadat Hasan",
+            PhoneNumber = "01700000000",
+            Specialization = "Labour & Cyber Law"
+        };
+
+        var result = await _controller.Profile(model);
+
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal(nameof(AccountController.Profile), redirect.ActionName);
+        Assert.Equal("Adv. Shahadat Hasan", user.FullName);
+    }
+
+    [Fact]
+    public async Task ChangePassword_Post_WhenValid_ChangesPasswordAndSetsSuccess()
+    {
+        var user = new User { Id = 20, Email = "user@muktoain.bd" };
+        _userManager.Setup(m => m.GetUserAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>())).ReturnsAsync(user);
+        _userManager.Setup(m => m.ChangePasswordAsync(user, "OldPass@123", "NewPass@123")).ReturnsAsync(IdentityResult.Success);
+
+        var model = new ChangePasswordViewModel
+        {
+            CurrentPassword = "OldPass@123",
+            NewPassword = "NewPass@123",
+            ConfirmNewPassword = "NewPass@123"
+        };
+
+        var result = await _controller.ChangePassword(model);
+
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal(nameof(AccountController.Profile), redirect.ActionName);
+        Assert.True(_controller.TempData.ContainsKey("Success"));
+    }
+
     private static Mock<UserManager<User>> NewUserManager()
     {
         var store = new Mock<IUserStore<User>>();

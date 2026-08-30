@@ -150,6 +150,131 @@ public class AccountController : Controller
         return RedirectToAction(nameof(Login));
     }
 
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> Profile()
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        var vm = new ProfileViewModel
+        {
+            UserId = user.Id,
+            Email = user.Email ?? string.Empty,
+            FullName = user.FullName,
+            PhoneNumber = user.PhoneNumber,
+            Role = user.Role.ToString(),
+            AccountStatus = user.AccountStatus.ToString(),
+            PreferredLanguage = user.PreferredLanguage ?? "bn",
+            CreatedAt = user.CreatedAt
+        };
+
+        if (user.Role == UserRole.Lawyer)
+        {
+            var profiles = await _lawyerProfileRepo.FindAsync(p => p.UserId == user.Id);
+            var lawyerProfile = profiles.FirstOrDefault();
+            if (lawyerProfile != null)
+            {
+                vm.BarRegistrationNumber = lawyerProfile.BarRegistrationNumber;
+                vm.Specialization = lawyerProfile.Specialization;
+                vm.VerificationStatus = lawyerProfile.VerificationStatus.ToString();
+                vm.VerifiedAt = lawyerProfile.VerifiedAt;
+                vm.TotalReviewsCompleted = lawyerProfile.Reviews?.Count ?? 0;
+            }
+        }
+
+        return View(vm);
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Profile(ProfileViewModel model)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        if (!ModelState.IsValid)
+        {
+            model.Email = user.Email ?? string.Empty;
+            model.Role = user.Role.ToString();
+            model.AccountStatus = user.AccountStatus.ToString();
+            model.CreatedAt = user.CreatedAt;
+            return View(model);
+        }
+
+        user.FullName = model.FullName.Trim();
+        user.PhoneNumber = model.PhoneNumber?.Trim();
+        user.PreferredLanguage = model.PreferredLanguage ?? "bn";
+
+        var result = await _userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+            {
+                var (field, msg) = IdentityErrorMapper.Map(error);
+                ModelState.AddModelError(field ?? string.Empty, msg);
+            }
+            return View(model);
+        }
+
+        if (user.Role == UserRole.Lawyer)
+        {
+            var profiles = await _lawyerProfileRepo.FindAsync(p => p.UserId == user.Id);
+            var lawyerProfile = profiles.FirstOrDefault();
+            if (lawyerProfile != null)
+            {
+                lawyerProfile.Specialization = model.Specialization?.Trim();
+                await _lawyerProfileRepo.SaveChangesAsync();
+            }
+        }
+
+        TempData["Success"] = "প্রোফাইল তথ্য সফলভাবে আপডেট করা হয়েছে!";
+        TempData["SuccessEn"] = "Profile updated successfully!";
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = "পাসওয়ার্ড পরিবর্তনের তথ্য সঠিক নয়। অনুগ্রহ করে শর্তাবলী মেনে আবার চেষ্টা করুন।";
+            TempData["ErrorEn"] = "Invalid password data. Please check requirements and try again.";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+        if (result.Succeeded)
+        {
+            await _signInManager.RefreshSignInAsync(user);
+            TempData["Success"] = "পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে!";
+            TempData["SuccessEn"] = "Password changed successfully!";
+        }
+        else
+        {
+            var firstErr = result.Errors.FirstOrDefault()?.Description ?? "পাসওয়ার্ড পরিবর্তন ব্যর্থ হয়েছে।";
+            TempData["Error"] = $"পাসওয়ার্ড পরিবর্তন ব্যর্থ হয়েছে: {firstErr}";
+            TempData["ErrorEn"] = $"Password change failed: {firstErr}";
+        }
+
+        return RedirectToAction(nameof(Profile));
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
