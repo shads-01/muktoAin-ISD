@@ -4,6 +4,9 @@
     var isLawyer = User.IsInRole("Lawyer");
     var isCitizen = isAuthenticated && !isAdmin && !isLawyer;
 
+    var brandController = isAdmin ? "Admin" : isLawyer ? "Lawyer" : "Home";
+    var brandAction = isAdmin ? "Dashboard" : isLawyer ? "Queue" : "Index";
+
     var userDisplayName = User.FindFirst("FullName")?.Value;
     if (string.IsNullOrWhiteSpace(userDisplayName))
     {
@@ -44,7 +47,7 @@
     <!-- ============ NAVBAR ============ -->
     <header class="nav">
         <div class="nav-inner">
-            <a class="brand" asp-controller="Home" asp-action="Index" aria-label="মুক্ত আইন হোম">
+            <a class="brand" asp-controller="@brandController" asp-action="@brandAction" aria-label="মুক্ত আইন হোম">
                 <span class="brand-name">মুক্ত আইন<small>MuktoAin</small></span>
             </a>
             
@@ -142,7 +145,7 @@
     <div class="drawer-backdrop" id="drawer-backdrop"></div>
     <aside class="drawer" id="drawer" aria-label="মোবাইল মেনু">
         <div class="drawer-head">
-            <a class="brand" asp-controller="Home" asp-action="Index">
+            <a class="brand" asp-controller="@brandController" asp-action="@brandAction">
                 <span class="brand-name">মুক্ত আইন<small>MuktoAin</small></span>
             </a>
             <button class="icon-btn" type="button" data-close-drawer aria-label="মেনু বন্ধ করুন">
@@ -189,6 +192,7 @@
                 <div style="padding: 4px 12px; font-size: 13px; color: var(--muted);">
                     সাইন ইন আছেন: <strong>@userDisplayName</strong>
                 </div>
+                <a asp-controller="Account" asp-action="Profile"><i data-lucide="user"></i> আমার প্রোফাইল ও সেটিংস</a>
                 <form asp-controller="Account" asp-action="Logout" method="post" class="user-logout-form" style="margin: 4px 0;">
                     <button type="submit" class="user-logout-btn" style="background:none; border:none; width:100%; text-align:left; padding:8px 12px; font:inherit; font-size:14px; font-weight:600; color:var(--ink); display:flex; align-items:center; gap:10px; cursor:pointer;">
                         <i data-lucide="log-out"></i> লগআউট
@@ -211,7 +215,7 @@
     <footer class="site-footer">
         <div class="footer-grid">
             <div class="footer-brand">
-                <a class="brand" asp-controller="Home" asp-action="Index">
+                <a class="brand" asp-controller="@brandController" asp-action="@brandAction">
                     <span class="brand-name">মুক্ত আইন<small>MuktoAin</small></span>
                 </a>
                 <p>বাংলাদেশের নাগরিকদের জন্য বিনামূল্যে AI-সহায়ক আইনি তথ্য — প্রতিটি দলিল যাচাইকৃত আইনজীবী দ্বারা পর্যালোচিত।</p>
