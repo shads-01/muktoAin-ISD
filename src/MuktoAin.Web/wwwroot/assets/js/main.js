@@ -1044,10 +1044,22 @@
 
       // Real-time Live Infrastructure Pulse Monitor
       function updateLiveHealthPulse() {
+        if (!document.getElementById("db-status-dot")) {
+          if (window._adminHealthPollInterval) {
+            clearInterval(window._adminHealthPollInterval);
+            window._adminHealthPollInterval = null;
+          }
+          return;
+        }
+
         var updatedSpan = document.getElementById("pulse-last-updated");
-        fetch("/Admin/HealthStatus")
-          .then(function(r) { return r.json(); })
+        fetch("/Admin/HealthStatus", { headers: { "Accept": "application/json" } })
+          .then(function(r) {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.json();
+          })
           .then(function(data) {
+            if (!data) return;
             var dbDot = document.getElementById("db-status-dot");
             var dbText = document.getElementById("db-status-text");
             if (dbDot && dbText) {
@@ -1091,7 +1103,7 @@
             }
           })
           .catch(function(err) {
-            console.warn("HealthStatus fetch error:", err);
+            // Silently catch in background poll
           });
       }
 
@@ -1103,9 +1115,9 @@
         });
       }
 
-      // Automatically poll health status every 4 seconds
-      if (!window._adminHealthPollInterval) {
-        window._adminHealthPollInterval = setInterval(updateLiveHealthPulse, 4000);
+      // Automatically poll health status every 5 seconds only while on the Admin Dashboard
+      if (!window._adminHealthPollInterval && document.getElementById("db-status-dot")) {
+        window._adminHealthPollInterval = setInterval(updateLiveHealthPulse, 5000);
       }
 
     } else if (path.indexOf("/admin/analytics") !== -1) {
