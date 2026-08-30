@@ -289,6 +289,14 @@ public static class MockData
             new() { ApplicationId = 3, ApplicantName = "Adv. Mahmuda Akter", BarRegNo = "RAJ-0231", AppliedDate = "Aug 23", Status = "Pending" },
             new() { ApplicationId = 4, ApplicantName = "Adv. Tanvir Ahmed", BarRegNo = "DHA-1298", AppliedDate = "Aug 24", Status = "Pending" },
             new() { ApplicationId = 5, ApplicantName = "Adv. Priya Das", BarRegNo = "SYL-0190", AppliedDate = "Aug 25", Status = "Pending" }
+        },
+        AuditLogs = new()
+        {
+            new() { Timestamp = "10 mins ago", Action = "Advocate Bar Verification Approved", Actor = "Admin (Shads)", Status = "Success", Details = "Adv. Kazi Farhan (DHA-4412) verified & review permissions granted." },
+            new() { Timestamp = "32 mins ago", Action = "Corpus Re-Index Triggered", Actor = "System Worker", Status = "Info", Details = "SHA256 checksum matched across all 1,484 Acts in Qdrant." },
+            new() { Timestamp = "1 hour ago", Action = "Suspicious Intake Submission Blocked", Actor = "Moderation Filter", Status = "Warning", Details = "Toxic keyword pattern intercepted on anonymous case submission." },
+            new() { Timestamp = "3 hours ago", Action = "New Citizen Account Registered", Actor = "Citizen Intake", Status = "Success", Details = "User ID #418 registered with 2FA enabled." },
+            new() { Timestamp = "5 hours ago", Action = "AI Fallback Invocation", Actor = "Polly Retry Policy", Status = "Info", Details = "Transient 503 from Gemini Studio resolved on second exponential retry." }
         }
     };
 }
