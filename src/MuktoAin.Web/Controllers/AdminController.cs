@@ -1,10 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using MuktoAin.Infrastructure.Ai;
 using MuktoAin.Infrastructure.Data;
-using MuktoAin.Infrastructure.VectorStore;
 using MuktoAin.Web.ViewModels;
 using Qdrant.Client;
 
@@ -15,19 +12,16 @@ public class AdminController : Controller
 {
     private readonly ILogger<AdminController> _logger;
     private readonly AppDbContext _dbContext;
-    private readonly IOptions<QdrantOptions> _qdrantOptions;
-    private readonly IOptions<GeminiOptions> _geminiOptions;
+    private readonly IConfiguration _configuration;
 
     public AdminController(
         ILogger<AdminController> logger,
         AppDbContext dbContext,
-        IOptions<QdrantOptions> qdrantOptions,
-        IOptions<GeminiOptions> geminiOptions)
+        IConfiguration configuration)
     {
         _logger = logger;
         _dbContext = dbContext;
-        _qdrantOptions = qdrantOptions;
-        _geminiOptions = geminiOptions;
+        _configuration = configuration;
     }
 
     [HttpGet]
@@ -44,6 +38,30 @@ public class AdminController : Controller
         ViewData["IsAdminPage"] = true;
         var model = await BuildAdminDashboardViewModelAsync();
         return View(model);
+    }
+
+    /// <summary>
+    /// Live Real-time API endpoint polled by the Admin Dashboard to give immediate
+    /// feedback as configuration or services change without restarting the server.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> HealthStatus()
+    {
+        var model = await BuildAdminDashboardViewModelAsync();
+        return Json(new
+        {
+            isDatabaseHealthy = model.IsDatabaseHealthy,
+            isVectorDbHealthy = model.IsVectorDbHealthy,
+            isAiServiceHealthy = model.IsAiServiceHealthy,
+            databaseStatus = model.DatabaseStatus,
+            vectorDbStatus = model.VectorDbStatus,
+            aiServiceStatus = model.AiServiceStatus,
+            overallHealthBadgeText = model.OverallHealthBadgeText,
+            overallHealthBadgeClass = model.OverallHealthBadgeClass,
+            totalUsersCount = model.TotalUsersCount,
+            totalActsCount = model.TotalActsCount,
+            lastChecked = DateTime.Now.ToString("T")
+        });
     }
 
     private async Task<AdminDashboardViewModel> BuildAdminDashboardViewModelAsync()
@@ -92,13 +110,15 @@ public class AdminController : Controller
             _logger.LogWarning(ex, "Live Database health check failed in AdminController");
         }
 
-        // 2. Live Qdrant Vector Store (RAG) Health Check
-        var qOptions = _qdrantOptions?.Value;
-        if (qOptions == null ||
-            string.IsNullOrWhiteSpace(qOptions.Endpoint) ||
-            qOptions.Endpoint.Contains("your-cluster-id") ||
-            string.IsNullOrWhiteSpace(qOptions.ApiKey) ||
-            qOptions.ApiKey.Contains("YOUR_QDRANT_API_KEY"))
+        // 2. Live Qdrant Vector Store (RAG) Health Check (Direct from live IConfiguration)
+        var qdrantEndpoint = _configuration["Qdrant:Endpoint"];
+        var qdrantApiKey = _configuration["Qdrant:ApiKey"];
+        var qdrantCollection = _configuration["Qdrant:Collection"] ?? "act_section_chunks";
+
+        if (string.IsNullOrWhiteSpace(qdrantEndpoint) ||
+            qdrantEndpoint.Contains("your-cluster-id") ||
+            string.IsNullOrWhiteSpace(qdrantApiKey) ||
+            qdrantApiKey.Contains("YOUR_QDRANT_API_KEY"))
         {
             model.IsVectorDbHealthy = false;
             model.VectorDbStatus = "Unconfigured / Missing in appsettings (SQL FTS Fallback Active)";
@@ -108,14 +128,13 @@ public class AdminController : Controller
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-                var uri = new Uri(qOptions.Endpoint);
-                var client = new QdrantClient(uri.Host, port: uri.Port, https: uri.Scheme == "https", apiKey: qOptions.ApiKey);
-                var collectionName = qOptions.Collection ?? "act_section_chunks";
-                var exists = await client.CollectionExistsAsync(collectionName, cts.Token);
+                var uri = new Uri(qdrantEndpoint);
+                var client = new QdrantClient(uri.Host, port: uri.Port, https: uri.Scheme == "https", apiKey: qdrantApiKey);
+                var exists = await client.CollectionExistsAsync(qdrantCollection, cts.Token);
                 model.IsVectorDbHealthy = true;
                 model.VectorDbStatus = exists
-                    ? $"Operational (Qdrant Vector Store · '{collectionName}' Collection Online)"
-                    : $"Connected (Collection '{collectionName}' Not Found)";
+                    ? $"Operational (Qdrant Vector Store · '{qdrantCollection}' Online)"
+                    : $"Connected (Collection '{qdrantCollection}' Not Found)";
             }
             catch (Exception ex)
             {
@@ -125,13 +144,18 @@ public class AdminController : Controller
             }
         }
 
-        // 3. Live Gemini 2.5 Flash AI API Health Check
-        var gOptions = _geminiOptions?.Value;
-        var validKeys = gOptions?.ApiKeys?
+        // 3. Live Gemini 2.5 Flash AI API Health Check (Direct from live IConfiguration)
+        var geminiSection = _configuration.GetSection("Gemini");
+        var apiKeysList = geminiSection.GetSection("ApiKeys").Get<string[]>() ?? Array.Empty<string>();
+        var singleKey = geminiSection["ApiKey"];
+        var generationModel = geminiSection["GenerationModel"] ?? "Gemini 2.5 Flash";
+
+        var allKeys = apiKeysList
+            .Concat(string.IsNullOrWhiteSpace(singleKey) ? Array.Empty<string>() : new[] { singleKey })
             .Where(k => !string.IsNullOrWhiteSpace(k) && !k.Contains("YOUR_GEMINI_API_KEY") && k.Length >= 10)
             .ToList();
 
-        if (validKeys == null || validKeys.Count == 0)
+        if (allKeys.Count == 0)
         {
             model.IsAiServiceHealthy = false;
             model.AiServiceStatus = "Unconfigured / Missing Gemini API Key in appsettings";
@@ -139,7 +163,7 @@ public class AdminController : Controller
         else
         {
             model.IsAiServiceHealthy = true;
-            model.AiServiceStatus = $"Healthy ({gOptions?.GenerationModel ?? "Gemini 2.5 Flash"} · {validKeys.Count} Key(s) Configured)";
+            model.AiServiceStatus = $"Healthy ({generationModel} · {allKeys.Count} Key(s) Configured)";
         }
 
         // Overall Infrastructure Status Badge

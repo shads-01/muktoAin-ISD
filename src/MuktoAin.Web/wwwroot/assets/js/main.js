@@ -1042,6 +1042,72 @@
         auditHead.parentElement.innerHTML = '<i data-lucide="history" style="display:inline;vertical-align:middle;color:var(--gold);"></i> ' + (currentLang === "en" ? "Recent System Audit & Security Logs" : "সাম্প্রতিক সিস্টেম অডিট ও সিকিউরিটি লগ");
       }
 
+      // Real-time Live Infrastructure Pulse Monitor
+      function updateLiveHealthPulse() {
+        var updatedSpan = document.getElementById("pulse-last-updated");
+        fetch("/Admin/HealthStatus")
+          .then(function(r) { return r.json(); })
+          .then(function(data) {
+            var dbDot = document.getElementById("db-status-dot");
+            var dbText = document.getElementById("db-status-text");
+            if (dbDot && dbText) {
+              dbDot.style.background = data.isDatabaseHealthy ? "#16a34a" : "#dc2626";
+              dbDot.style.boxShadow = data.isDatabaseHealthy ? "0 0 8px #16a34a" : "0 0 8px #dc2626";
+              dbText.textContent = data.databaseStatus;
+              dbText.style.color = data.isDatabaseHealthy ? "" : "#dc2626";
+              dbText.style.fontWeight = data.isDatabaseHealthy ? "" : "600";
+            }
+
+            var qdrantDot = document.getElementById("qdrant-status-dot");
+            var qdrantText = document.getElementById("qdrant-status-text");
+            if (qdrantDot && qdrantText) {
+              qdrantDot.style.background = data.isVectorDbHealthy ? "#16a34a" : "#d97706";
+              qdrantDot.style.boxShadow = data.isVectorDbHealthy ? "0 0 8px #16a34a" : "0 0 8px #d97706";
+              qdrantText.textContent = data.vectorDbStatus;
+              qdrantText.style.color = data.isVectorDbHealthy ? "" : "#b45309";
+              qdrantText.style.fontWeight = data.isVectorDbHealthy ? "" : "600";
+            }
+
+            var geminiDot = document.getElementById("gemini-status-dot");
+            var geminiText = document.getElementById("gemini-status-text");
+            if (geminiDot && geminiText) {
+              geminiDot.style.background = data.isAiServiceHealthy ? "#16a34a" : "#dc2626";
+              geminiDot.style.boxShadow = data.isAiServiceHealthy ? "0 0 8px #16a34a" : "0 0 8px #dc2626";
+              geminiText.textContent = data.aiServiceStatus;
+              geminiText.style.color = data.isAiServiceHealthy ? "" : "#dc2626";
+              geminiText.style.fontWeight = data.isAiServiceHealthy ? "" : "600";
+            }
+
+            var pulseBadge = document.getElementById("pulse-badge");
+            if (pulseBadge) {
+              pulseBadge.className = "badge " + data.overallHealthBadgeClass;
+              pulseBadge.textContent = currentLang === "en" 
+                ? (data.isDatabaseHealthy && data.isVectorDbHealthy && data.isAiServiceHealthy ? "All Services Operational" : "Degraded · Fallback Active")
+                : data.overallHealthBadgeText;
+            }
+
+            if (updatedSpan) {
+              updatedSpan.textContent = (currentLang === "en" ? "Live: " : "লাইভ: ") + data.lastChecked;
+            }
+          })
+          .catch(function(err) {
+            console.warn("HealthStatus fetch error:", err);
+          });
+      }
+
+      var refreshBtn = document.getElementById("pulse-refresh-btn");
+      if (refreshBtn && !refreshBtn.dataset.wired) {
+        refreshBtn.dataset.wired = "true";
+        refreshBtn.addEventListener("click", function() {
+          updateLiveHealthPulse();
+        });
+      }
+
+      // Automatically poll health status every 4 seconds
+      if (!window._adminHealthPollInterval) {
+        window._adminHealthPollInterval = setInterval(updateLiveHealthPulse, 4000);
+      }
+
     } else if (path.indexOf("/admin/analytics") !== -1) {
       // Admin Analytics Page
       var kicker = document.querySelector(".page-head .kicker");
