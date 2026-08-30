@@ -63,13 +63,13 @@ public class CaseService
             case UserRole.Lawyer:
                 break;
             case UserRole.Citizen:
-                if (userId == null)
+                if (c.IsAnonymous || c.UserId == null)
                 {
                     var codeValid = !string.IsNullOrEmpty(trackingCode)
                                     && c.AnonymousTrackingCode == trackingCode;
-                    if (!(codeValid && c.UserId == null)) return null;
+                    if (!codeValid) return null;
                 }
-                else if (c.IsAnonymous || c.UserId != userId)
+                else if (userId == null || c.UserId != userId)
                 {
                     return null;
                 }
