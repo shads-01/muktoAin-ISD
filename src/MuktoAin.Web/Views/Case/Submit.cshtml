@@ -21,6 +21,7 @@
     <div class="card card-pad-lg" style="margin-bottom: 3rem;">
         <form method="post" asp-action="Submit">
             @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Language" id="caseLanguageInput" />
 
             <div class="field">
                 <label asp-for="CategoryId">আইনি বিভাগ / Legal Category</label>
