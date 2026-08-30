@@ -42,7 +42,7 @@
     <a class="skip-link" href="#main">সরাসরি কন্টেন্টে যান / Skip to content</a>
 
     <!-- ============ NAVBAR ============ -->
-    <header class="nav @(ViewData["IsAdminPage"] as bool? == true ? "has-adminbar" : "")">
+    <header class="nav">
         <div class="nav-inner">
             <a class="brand" asp-controller="Home" asp-action="Index" aria-label="মুক্ত আইন হোম">
                 <span class="brand-name">মুক্ত আইন<small>MuktoAin</small></span>
@@ -132,17 +132,6 @@
                 </button>
             </div>
         </div>
-
-        @if (ViewData["IsAdminPage"] as bool? == true)
-        {
-            <nav class="nav-adminbar" aria-label="অ্যাডমিন সেকশন">
-                <a asp-controller="Admin" asp-action="Dashboard" aria-current="page">Dashboard</a>
-                <a asp-controller="Lawyer" asp-action="Queue">Lawyer Queue</a>
-                <a asp-controller="Search" asp-action="Index">Corpus & Acts</a>
-                <a asp-controller="Category" asp-action="Index">Categories</a>
-                <a asp-controller="Case" asp-action="Track">All Cases</a>
-            </nav>
-        }
     </header>
 
     <!-- Surface 1 Non-Dismissible Legal Disclaimer -->
