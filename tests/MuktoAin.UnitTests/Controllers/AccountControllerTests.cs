@@ -92,7 +92,7 @@ public class AccountControllerTests
     }
 
     [Fact]
-    public async Task Login_WhenSucceededForCitizen_RedirectsToCaseTrack()
+    public async Task Login_WhenSucceededForCitizen_RedirectsToLegalAidHome()
     {
         _userManager.Setup(m => m.FindByEmailAsync("citizen@example.com"))
             .ReturnsAsync(new User { Id = 6, Role = UserRole.Citizen, AccountStatus = AccountStatus.Active });
@@ -103,8 +103,8 @@ public class AccountControllerTests
         var result = await _controller.Login(new LoginViewModel { Email = "citizen@example.com", Password = "Citizen@123" });
 
         var redirect = Assert.IsType<RedirectToActionResult>(result);
-        Assert.Equal("Track", redirect.ActionName);
-        Assert.Equal("Case", redirect.ControllerName);
+        Assert.Equal("Index", redirect.ActionName);
+        Assert.Equal("Home", redirect.ControllerName);
     }
 
     [Fact]

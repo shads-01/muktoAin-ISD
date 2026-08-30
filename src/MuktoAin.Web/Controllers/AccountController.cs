@@ -72,7 +72,7 @@ public class AccountController : Controller
             {
                 UserRole.Admin => RedirectToAction("Dashboard", "Admin"),
                 UserRole.Lawyer => RedirectToAction("Queue", "Lawyer"),
-                _ => RedirectToAction("Track", "Case")
+                _ => RedirectToAction("Index", "Home")
             };
         }
 
