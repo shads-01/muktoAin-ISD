@@ -175,8 +175,8 @@ public class AccountController : Controller
 
         if (user.Role == UserRole.Lawyer)
         {
-            var profiles = await _lawyerProfileRepo.FindAsync(p => p.UserId == user.Id);
-            var lawyerProfile = profiles.FirstOrDefault();
+            var profiles = await _lawyerProfileRepo.GetAllAsync();
+            var lawyerProfile = profiles.FirstOrDefault(p => p.UserId == user.Id);
             if (lawyerProfile != null)
             {
                 vm.BarRegistrationNumber = lawyerProfile.BarRegistrationNumber;
@@ -227,8 +227,8 @@ public class AccountController : Controller
 
         if (user.Role == UserRole.Lawyer)
         {
-            var profiles = await _lawyerProfileRepo.FindAsync(p => p.UserId == user.Id);
-            var lawyerProfile = profiles.FirstOrDefault();
+            var profiles = await _lawyerProfileRepo.GetAllAsync();
+            var lawyerProfile = profiles.FirstOrDefault(p => p.UserId == user.Id);
             if (lawyerProfile != null)
             {
                 lawyerProfile.Specialization = model.Specialization?.Trim();

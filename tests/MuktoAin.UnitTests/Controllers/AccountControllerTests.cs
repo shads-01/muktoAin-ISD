@@ -246,7 +246,7 @@ public class AccountControllerTests
         };
         _userManager.Setup(m => m.GetUserAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>())).ReturnsAsync(user);
         _userManager.Setup(m => m.UpdateAsync(It.IsAny<User>())).ReturnsAsync(IdentityResult.Success);
-        _lawyerProfileRepo.Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<LawyerProfile, bool>>>()))
+        _lawyerProfileRepo.Setup(r => r.GetAllAsync())
             .ReturnsAsync(new List<LawyerProfile> { new LawyerProfile { UserId = 15, BarRegistrationNumber = "DHA-999" } });
 
         var model = new ProfileViewModel
