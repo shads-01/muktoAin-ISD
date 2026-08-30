@@ -1,0 +1,171 @@
+@model MuktoAin.Web.ViewModels.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "সিস্টেম অ্যানালিটিক্স ও রিপোর্ট — Admin Analytics";
+    ViewData["IsAdminPage"] = true;
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Home</a>
+        <span class="sep">/</span>
+        <a asp-controller="Admin" asp-action="Dashboard">Admin Console</a>
+        <span class="sep">/</span>
+        <span>Analytics & KPIs</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="bar-chart-3" aria-hidden="true"></i> FR-16 · Anonymized Analytics & Observability</span>
+        <h1 class="page-title">সিস্টেম অ্যানালিটিক্স ও কার্যক্ষমতা রিপোর্ট</h1>
+        <p class="page-sub">প্ল্যাটফর্ম ব্যবহার, আইনি বিভাগের ভৌগোলিক বণ্টন, এআই প্রসেসিং লেটেন্সি ও আইনজীবী রিভিউ টার্নঅ্যারাউন্ড মেট্রিক্স।</p>
+    </div>
+
+    <!-- KPI Metric Summary Cards -->
+    <div class="grid grid-4" style="margin-bottom: 24px;">
+        <div class="card kpi">
+            <span class="k-label"><i data-lucide="folder-check" aria-hidden="true"></i>সর্বমোট সমাধানকৃত মামলা</span>
+            <span class="k-num">@Model.TotalCases.ToString("N0")</span>
+            <span class="k-sub">+@Model.CasesThisWeek এই সপ্তাহে নতুন</span>
+        </div>
+        <div class="card kpi">
+            <span class="k-label"><i data-lucide="clock" aria-hidden="true"></i>গড় আইনজীবী রিভিউ সময়</span>
+            <span class="k-num">৩.৪ ঘণ্টা</span>
+            <span class="k-sub">টার্গেট: &lt; ৬ ঘণ্টা</span>
+        </div>
+        <div class="card kpi">
+            <span class="k-label"><i data-lucide="cpu" aria-hidden="true"></i>AI কল ভলিউম (আজ)</span>
+            <span class="k-num">@Model.AiCallsToday</span>
+            <span class="k-sub">ব্যর্থতার হার: @Model.AiFailureRate%</span>
+        </div>
+        <div class="card kpi">
+            <span class="k-label"><i data-lucide="zap" aria-hidden="true"></i>গড় RAG রেসপন্স লেটেন্সি</span>
+            <span class="k-num">১,৮২০ ms</span>
+            <span class="k-sub">Google Gemini + Qdrant</span>
+        </div>
+    </div>
+
+    <!-- Charts Row: Distribution & Funnel -->
+    <div class="grid grid-2" style="margin-bottom: 24px;">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="font-size: 17px; margin: 0;">আইনি বিষয়ভিত্তিক মামলা বিভাজন (Case Share)</h3>
+                <span class="badge badge-info">৪টি মূল ক্যাটাগরি</span>
+            </div>
+            <div class="barchart">
+                @foreach (var cat in Model.CategoryStats)
+                {
+                    <div class="bar-row">
+                        <span style="font-weight: 500;">@cat.Name</span>
+                        <div class="bar-track">
+                            <div class="bar-fill @cat.ColorClass" style="--w:@cat.Percentage%"></div>
+                        </div>
+                        <b>@cat.Percentage%</b>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="font-size: 17px; margin: 0;">নাগরিক সেবা ফানেল মেট্রিক্স (Conversion Funnel)</h3>
+                <span class="badge badge-gold">সরাসরি ট্র্যাকিং</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+                        <span>১. আইনি সমস্যা ইনটেক ও অধিকার বিশ্লেষণ</span>
+                        <strong>১০০% (১,২৮৪টি)</strong>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill primary" style="--w:100%"></div></div>
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+                        <span>২. স্বয়ংক্রিয় আইনি ড্রাফট প্রস্তুত</span>
+                        <strong>৯৪.২% (১,২১০টি)</strong>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill gold" style="--w:94.2%"></div></div>
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+                        <span>৩. আইনজীবী দ্বারা ভেরিফাইড ও অনুমোদিত</span>
+                        <strong>৮৯.৫% (১,১৪৯টি)</strong>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill green" style="--w:89.5%"></div></div>
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+                        <span>৪. নাগরিক কর্তৃক চূড়ান্ত PDF ডাউনলোড</span>
+                        <strong>৮২.১% (১,০৫৪টি)</strong>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill info" style="--w:82.1%"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Geographic Intake & Observability Row -->
+    <div class="grid grid-2" style="margin-bottom: 24px;">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="font-size: 17px; margin: 0;">শীর্ষ জেলাভিত্তিক মামলা বণ্টন (Top Districts)</h3>
+                <span class="badge badge-subtle">৬৪ জেলা কভারেজ</span>
+            </div>
+            <div class="barchart">
+                @foreach (var dist in Model.DistrictStats)
+                {
+                    <div class="bar-row">
+                        <span style="font-weight: 500;">@dist.Name</span>
+                        <div class="bar-track">
+                            <div class="bar-fill gold" style="--w:@dist.Percentage%"></div>
+                        </div>
+                        <b>@dist.Count মামলা</b>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="font-size: 17px; margin: 0;">AI সিস্টেম হেলথ ও কোটা ব্যবহার (Observability)</h3>
+                <span class="badge badge-success">সক্রিয় (Healthy)</span>
+            </div>
+            <div class="table-wrap">
+                <table class="min-w-table" style="font-size: 13px;">
+                    <thead>
+                        <tr>
+                            <th>সার্ভিস কম্পোনেন্ট</th>
+                            <th>মডেল / ইঞ্জিন</th>
+                            <th>স্ট্যাটাস</th>
+                            <th>গড় লেটেন্সি</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>আইনি অধিকার বিশ্লেষণ (FR-4)</strong></td>
+                            <td><code>gemini-2.5-flash</code></td>
+                            <td><span class="badge badge-success">অনলাইন</span></td>
+                            <td>১,৪৫০ ms</td>
+                        </tr>
+                        <tr>
+                            <td><strong>দলিল ড্রাফটিং ইঞ্জিন (FR-5)</strong></td>
+                            <td><code>gemini-2.5-flash</code></td>
+                            <td><span class="badge badge-success">অনলাইন</span></td>
+                            <td>২,১০০ ms</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ভেক্টর এমবেডিং (FR-3)</strong></td>
+                            <td><code>text-embedding-004</code></td>
+                            <td><span class="badge badge-success">অনলাইন</span></td>
+                            <td>৩২০ ms</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ফুল-টেক্সট সার্চ ফলব্যাক (FR-7)</strong></td>
+                            <td>MSSQL FTS Index</td>
+                            <td><span class="badge badge-subtle">স্ট্যান্ডবাই</span></td>
+                            <td>৪৫ ms</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>

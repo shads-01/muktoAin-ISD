@@ -19,4 +19,11 @@ public class AdminController : Controller
         ViewData["IsAdminPage"] = true;
         return View(MockData.SampleAnalytics);
     }
+
+    [HttpGet]
+    public IActionResult Analytics()
+    {
+        ViewData["IsAdminPage"] = true;
+        return View(MockData.SampleAnalytics);
+    }
 }
