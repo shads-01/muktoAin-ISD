@@ -161,61 +161,44 @@
         <!-- Right: Role Quick Stats & Security Settings -->
         <div style="display: flex; flex-direction: column; gap: 24px;">
             
-            <!-- Role Overview Card -->
-            <div class="card" style="padding: 24px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-                    <h2 style="font-size: 18px; margin: 0;"><i data-lucide="activity" style="display: inline; vertical-align: middle; color: var(--gold);"></i> কাজের বিবরণী ও দ্রুত লিঙ্ক</h2>
-                </div>
+            @if (!isAdmin)
+            {
+                <!-- Role Overview Card -->
+                <div class="card" style="padding: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                        <h2 style="font-size: 18px; margin: 0;"><i data-lucide="activity" style="display: inline; vertical-align: middle; color: var(--gold);"></i> কাজের বিবরণী ও দ্রুত লিঙ্ক</h2>
+                    </div>
 
-                @if (isAdmin)
-                {
-                    <p style="font-size: 14px; color: var(--ink-2); margin-bottom: 16px;">
-                        আপনি প্ল্যাটফর্মের সর্বোচ্চ প্রশাসনিক ক্ষমতাপ্রাপ্ত সুপার-অ্যাডমিনিস্ট্রেটর। এখান থেকে সম্পূর্ণ সিস্টেম পর্যবেক্ষণ করুন।
-                    </p>
-                    <div style="display: flex; flex-direction: column; gap: 8px;">
-                        <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline btn-sm" style="display: flex; align-items: center; justify-content: space-between;">
-                            <span><i data-lucide="shield" style="display: inline; vertical-align: middle;"></i> অ্যাডমিন কনসোল ওভারভিউ</span>
-                            <i data-lucide="chevron-right"></i>
+                    @if (isLawyer)
+                    {
+                        <p style="font-size: 14px; color: var(--ink-2); margin-bottom: 14px;">
+                            নাগরিকদের এআই প্রস্তুতকৃত আইনি ড্রাফটগুলো আপনার পর্যালোচনার মাধ্যমে চূড়ান্ত আইনি বৈধতা ও PDF ডাউনলোডযোগ্যতা পায়।
+                        </p>
+                        <div style="background: rgba(146, 116, 56, 0.08); padding: 14px; border-radius: var(--radius-btn); border: 1px solid var(--gold-soft); margin-bottom: 16px;">
+                            <div style="font-size: 13px; color: #4a3812; font-weight: 700;">স্বীকৃত আইনি দায়িত্ব (Human-in-the-Loop Safeguard)</div>
+                            <div style="font-size: 12.5px; color: var(--ink-2); margin-top: 4px;">আইনজীবী হিসেবে আপনার প্রতিটি অনুমোদন সরাসরি কোর্ট ও থানার ফরম্যাটে কার্যকর হয়।</div>
+                        </div>
+                        <a asp-controller="Lawyer" asp-action="Queue" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i data-lucide="file-check-2"></i> আইনজীবী রিভিউ কিউতে যান (Go to Queue)
                         </a>
-                        <a asp-controller="Admin" asp-action="Analytics" class="btn btn-outline btn-sm" style="display: flex; align-items: center; justify-content: space-between;">
-                            <span><i data-lucide="bar-chart-3" style="display: inline; vertical-align: middle;"></i> সিস্টেম অ্যানালিটিক্স ও রিপোর্ট</span>
-                            <i data-lucide="chevron-right"></i>
-                        </a>
-                        <a asp-controller="Lawyer" asp-action="Queue" class="btn btn-outline btn-sm" style="display: flex; align-items: center; justify-content: space-between;">
-                            <span><i data-lucide="file-check-2" style="display: inline; vertical-align: middle;"></i> আইনজীবী রিভিউ কিউ পর্যবেক্ষণ</span>
-                            <i data-lucide="chevron-right"></i>
-                        </a>
-                    </div>
-                }
-                else if (isLawyer)
-                {
-                    <p style="font-size: 14px; color: var(--ink-2); margin-bottom: 14px;">
-                        নাগরিকদের এআই প্রস্তুতকৃত আইনি ড্রাফটগুলো আপনার পর্যালোচনার মাধ্যমে চূড়ান্ত আইনি বৈধতা ও PDF ডাউনলোডযোগ্যতা পায়।
-                    </p>
-                    <div style="background: rgba(146, 116, 56, 0.08); padding: 14px; border-radius: var(--radius-btn); border: 1px solid var(--gold-soft); margin-bottom: 16px;">
-                        <div style="font-size: 13px; color: #4a3812; font-weight: 700;">স্বীকৃত আইনি দায়িত্ব (Human-in-the-Loop Safeguard)</div>
-                        <div style="font-size: 12.5px; color: var(--ink-2); margin-top: 4px;">আইনজীবী হিসেবে আপনার প্রতিটি অনুমোদন সরাসরি কোর্ট ও থানার ফরম্যাটে কার্যকর হয়।</div>
-                    </div>
-                    <a asp-controller="Lawyer" asp-action="Queue" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i data-lucide="file-check-2"></i> আইনজীবী রিভিউ কিউতে যান (Go to Queue)
-                    </a>
-                }
-                else
-                {
-                    <p style="font-size: 14px; color: var(--ink-2); margin-bottom: 14px;">
-                        আপনার দায়েরকৃত আইনি সমস্যাসমূহ এবং আইনজীবী দ্বারা পর্যালোচিত ড্রাফটসমূহ সহজে ট্র্যাক করুন।
-                    </p>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <a asp-controller="Case" asp-action="Track" class="btn btn-outline" style="display: flex; align-items: center; justify-content: space-between;">
-                            <span><i data-lucide="folder-clock" style="display: inline; vertical-align: middle;"></i> আমার দায়েরকৃত মামলাসমূহ</span>
-                            <i data-lucide="chevron-right"></i>
-                        </a>
-                        <a asp-controller="Case" asp-action="Submit" class="btn btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <i data-lucide="plus-circle"></i> নতুন আইনি সমস্যা জমা দিন (Intake)
-                        </a>
-                    </div>
-                }
-            </div>
+                    }
+                    else
+                    {
+                        <p style="font-size: 14px; color: var(--ink-2); margin-bottom: 14px;">
+                            আপনার দায়েরকৃত আইনি সমস্যাসমূহ এবং আইনজীবী দ্বারা পর্যালোচিত ড্রাফটসমূহ সহজে ট্র্যাক করুন।
+                        </p>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <a asp-controller="Case" asp-action="Track" class="btn btn-outline" style="display: flex; align-items: center; justify-content: space-between;">
+                                <span><i data-lucide="folder-clock" style="display: inline; vertical-align: middle;"></i> আমার দায়েরকৃত মামলাসমূহ</span>
+                                <i data-lucide="chevron-right"></i>
+                            </a>
+                            <a asp-controller="Case" asp-action="Submit" class="btn btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <i data-lucide="plus-circle"></i> নতুন আইনি সমস্যা জমা দিন (Intake)
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
 
             <!-- Password Change Card -->
             <div class="card" style="padding: 24px;">
