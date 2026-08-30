@@ -98,31 +98,11 @@
                             @userInitial
                         </button>
                         <div class="menu-pop" id="user-pop">
-                            <div style="padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px;">
+                            <div style="padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; margin-bottom: 4px;">
                                 <strong style="display:block; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@userDisplayName</strong>
                                 <span class="muted tiny">@(isAdmin ? "অ্যাডমিন / Administrator" : isLawyer ? "আইনজীবী / Advocate" : "নাগরিক / Citizen")</span>
                             </div>
                             
-                            @if (isAdmin)
-                            {
-                                <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i>অ্যাডমিন ড্যাশবোর্ড</a>
-                                <a asp-controller="Admin" asp-action="Analytics"><i data-lucide="bar-chart-3"></i>সিস্টেম অ্যানালিটিক্স</a>
-                                <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>আইনজীবী রিভিউ কিউ</a>
-                                <a asp-controller="Case" asp-action="Track"><i data-lucide="folder"></i>সকল মামলাসমূহ</a>
-                            }
-                            else if (isLawyer)
-                            {
-                                <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>আইনজীবী রিভিউ কিউ</a>
-                                <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i>আইন অনুসন্ধান</a>
-                                <a asp-controller="Case" asp-action="Track"><i data-lucide="folder"></i>মামলা ট্র্যাকিং</a>
-                            }
-                            else
-                            {
-                                <a asp-controller="Case" asp-action="Track"><i data-lucide="folder"></i>আমার মামলাসমূহ</a>
-                                <a asp-controller="Case" asp-action="Submit"><i data-lucide="edit-3"></i>নতুন সমস্যা জমা দিন</a>
-                            }
-                            
-                            <hr class="divider" style="margin:4px 0" />
                             <a asp-controller="Account" asp-action="Profile"><i data-lucide="user"></i>আমার প্রোফাইল ও সেটিংস</a>
                             <form asp-controller="Account" asp-action="Logout" method="post" class="user-logout-form">
                                 <button type="submit" class="user-logout-btn"><i data-lucide="log-out"></i>লগআউট</button>
