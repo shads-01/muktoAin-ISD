@@ -10,7 +10,7 @@ public static class SeedDistricts
 
     public static async Task SeedAsync(AppDbContext context, string contentRootPath)
     {
-        if (await context.Districts.AnyAsync()) return; // idempotent
+        if (await context.Districts.AsNoTracking().AnyAsync()) return; // idempotent
 
         var dtos = await SeedJsonLoader.LoadAsync<DistrictSeedDto>(contentRootPath, "districts.json");
         var districts = dtos.Select(d => new District { DistrictId = d.DistrictId, Name = d.Name });
