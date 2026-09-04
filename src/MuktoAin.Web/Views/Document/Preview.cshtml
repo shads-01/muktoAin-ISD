@@ -15,7 +15,7 @@
 <div class="container" style="max-width: 900px; padding: 2rem 1rem;">
     <!-- Breadcrumb & Top Navigation -->
     <nav class="breadcrumb-nav mb-4" aria-label="ব্রেডক্রাম্ব">
-        <a asp-controller="Case" asp-action="Track">← মামলা তালিকায় ফিরে যান / Back to Cases</a>
+        <a asp-controller="Case" asp-action="Track"><span data-bn="← মামলা তালিকায় ফিরে যান" data-en="← Back to Cases">← মামলা তালিকায় ফিরে যান</span></a>
     </nav>
 
     <!-- Header Card -->
@@ -23,14 +23,14 @@
         <div class="row spread wrap" style="gap: 12px; align-items: center;">
             <div>
                 <span class="kicker"><i data-lucide="file-text"></i> @Model.DocumentType</span>
-                <h2 style="font-size: 22px; margin: 4px 0;">আইনি খসড়া দলিল / Generated Legal Document</h2>
+                <h2 style="font-size: 22px; margin: 4px 0;" data-bn="আইনি খসড়া দলিল" data-en="Generated Legal Document">আইনি খসড়া দলিল</h2>
                 <div class="muted tiny">
-                    মামলা আইডি: <strong>#@Model.CaseId</strong> · দলিল আইডি: <strong>#@Model.DocumentId</strong> · দাখিলের তারিখ: @Model.CreatedAt.ToString("dd MMMM yyyy, hh:mm tt")
+                    <span data-bn="মামলা আইডি:" data-en="Case ID:">মামলা আইডি:</span> <strong>#@Model.CaseId</strong> · <span data-bn="দলিল আইডি:" data-en="Document ID:">দলিল আইডি:</span> <strong>#@Model.DocumentId</strong> · <span data-bn="দাখিলের তারিখ:" data-en="Submitted:">দাখিলের তারিখ:</span> @Model.CreatedAt.ToString("dd MMMM yyyy, hh:mm tt")
                 </div>
             </div>
             <div class="row wrap" style="gap: 8px; align-items: center;">
                 <span class="badge @statusBadgeClass" style="font-size: 14px; padding: 6px 14px;">
-                    <i data-lucide="shield-alert"></i> @Model.Status
+                    <i data-lucide="shield-alert"></i> <span data-bn="@Model.Status" data-en="@Model.Status">@Model.Status</span>
                 </span>
             </div>
         </div>
@@ -43,12 +43,12 @@
             <div class="row" style="gap: 12px; align-items: flex-start;">
                 <i data-lucide="check-circle-2" style="color: var(--success); width: 24px; height: 24px; flex: none;"></i>
                 <div>
-                    <strong style="color: var(--success);">আইনজীবী দ্বারা পর্যালোচিত ও অনুমোদিত / Lawyer Approved</strong>
+                    <strong style="color: var(--success);"><span data-bn="আইনজীবী দ্বারা পর্যালোচিত ও অনুমোদিত" data-en="Lawyer Approved">আইনজীবী দ্বারা পর্যালোচিত ও অনুমোদিত</span></strong>
                     <p class="tiny muted" style="margin: 4px 0 0;">
-                        এই দলিলটি একজন সনদপ্রাপ্ত আইনজীবী দ্বারা যাচাই করা হয়েছে এবং এটি আনুষ্ঠানিক আবেদনের জন্য প্রস্তুত।
+                        <span data-bn="এই দলিলটি একজন সনদপ্রাপ্ত আইনজীবী দ্বারা যাচাই করা হয়েছে এবং এটি আনুষ্ঠানিক আবেদনের জন্য প্রস্তুত।" data-en="This document has been verified by a certified lawyer and is ready for formal submission.">এই দলিলটি একজন সনদপ্রাপ্ত আইনজীবী দ্বারা যাচাই করা হয়েছে এবং এটি আনুষ্ঠানিক আবেদনের জন্য প্রস্তুত।</span>
                         @if (!string.IsNullOrEmpty(Model.LawyerComments))
                         {
-                            <br /><span><strong>আইনজীবীর মন্তব্য:</strong> @Model.LawyerComments</span>
+                            <br /><span><strong><span data-bn="আইনজীবীর মন্তব্য:" data-en="Lawyer comments:">আইনজীবীর মন্তব্য:</span></strong> @Model.LawyerComments</span>
                         }
                     </p>
                 </div>
@@ -61,9 +61,9 @@
             <div class="row" style="gap: 12px; align-items: flex-start;">
                 <i data-lucide="clock" style="color: #b45309; width: 24px; height: 24px; flex: none;"></i>
                 <div>
-                    <strong style="color: #b45309;">আইনজীবী পর্যালোচনার অপেক্ষায় / Pending Lawyer Review</strong>
+                    <strong style="color: #b45309;"><span data-bn="আইনজীবী পর্যালোচনার অপেক্ষায়" data-en="Pending Lawyer Review">আইনজীবী পর্যালোচনার অপেক্ষায়</span></strong>
                     <p class="tiny muted" style="margin: 4px 0 0;">
-                        আইনি নিরাপত্তা নিশ্চিত করতে একজন সনদপ্রাপ্ত আইনজীবী দ্বারা পর্যালোচনা শেষ না হওয়া পর্যন্ত অফিসিয়াল পিডিএফ ডাউনলোড লক থাকবে।
+                        <span data-bn="আইনি নিরাপত্তা নিশ্চিত করতে একজন সনদপ্রাপ্ত আইনজীবী দ্বারা পর্যালোচনা শেষ না হওয়া পর্যন্ত অফিসিয়াল পিডিএফ ডাউনলোড লক থাকবে।" data-en="Until review by a certified lawyer is complete, the official PDF download stays locked.">আইনি নিরাপত্তা নিশ্চিত করতে একজন সনদপ্রাপ্ত আইনজীবী দ্বারা পর্যালোচনা শেষ না হওয়া পর্যন্ত অফিসিয়াল পিডিএফ ডাউনলোড লক থাকবে।</span>
                     </p>
                 </div>
             </div>
@@ -97,18 +97,18 @@
         </a>
         <div class="row wrap" style="gap: 10px;">
             <button type="button" class="btn btn-outline" onclick="window.print();">
-                <i data-lucide="printer"></i> প্রিন্ট / Print
+                <i data-lucide="printer"></i> <span data-bn="প্রিন্ট" data-en="Print">প্রিন্ট</span>
             </button>
             @if (Model.CanDownloadPdf)
             {
                 <a asp-controller="Document" asp-action="Download" asp-route-id="@Model.DocumentId" class="btn btn-primary">
-                    <i data-lucide="download"></i> অফিসিয়াল PDF ডাউনলোড
+                    <i data-lucide="download"></i> <span data-bn="অফিসিয়াল PDF ডাউনলোড" data-en="Download Official PDF">অফিসিয়াল PDF ডাউনলোড</span>
                 </a>
             }
             else
             {
-                <button type="button" class="btn btn-outline disabled" title="Lawyer review required" disabled style="opacity: 0.6; cursor: not-allowed;">
-                    <i data-lucide="lock"></i> PDF ডাউনলোড (লকড)
+                <button type="button" class="btn btn-outline disabled" title="Lawyer review required" data-bn-title="আইনজীবী পর্যালোচনা প্রয়োজন" data-en-title="Lawyer review required" disabled style="opacity: 0.6; cursor: not-allowed;">
+                    <i data-lucide="lock"></i> <span data-bn="PDF ডাউনলোড (লকড)" data-en="PDF Download (Locked)">PDF ডাউনলোড (লকড)</span>
                 </button>
             }
         </div>

@@ -64,6 +64,8 @@ public class AdminController : Controller
         });
     }
 
+    private static int? _cachedTotalChunks;
+
     /// <summary>
     /// Live endpoint for tracking Qdrant embedding and upload progress.
     /// </summary>
@@ -71,8 +73,16 @@ public class AdminController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> EmbeddingProgress()
     {
-        var totalChunks = await _dbContext.ActSectionChunks.CountAsync();
-        var embeddedChunks = await _dbContext.ActSectionChunks.CountAsync(c => c.VectorId != null);
+        if (!_cachedTotalChunks.HasValue || _cachedTotalChunks.Value == 0)
+        {
+            _cachedTotalChunks = await _dbContext.ActSectionChunks.AsNoTracking().CountAsync();
+        }
+
+        var totalChunks = _cachedTotalChunks.Value;
+        var embeddedChunks = await _dbContext.ActSectionChunks
+            .AsNoTracking()
+            .Where(c => c.VectorId != null)
+            .CountAsync();
         var percent = totalChunks > 0 ? (double)embeddedChunks / totalChunks * 100.0 : 0;
 
         return Json(new
@@ -83,8 +93,12 @@ public class AdminController : Controller
             percentage = Math.Round(percent, 2),
             isRunning = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.IsRunning,
             lastStatus = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.LastStatus,
+            lastStatusEn = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.LastStatusEn,
             totalProcessed = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.TotalProcessed,
-            totalSkipped = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.TotalSkipped
+            totalSkipped = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.TotalSkipped,
+            requestsPerMinuteBudget = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.RequestsPerMinuteBudget,
+            estimatedCompletion = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.EstimatedCompletion,
+            estimatedCompletionEn = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.EstimatedCompletionEn
         });
     }
 

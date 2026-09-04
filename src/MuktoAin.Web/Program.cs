@@ -38,7 +38,12 @@ builder.Services.AddSession(options =>
 // this context only maps onto that predefined schema. No EF migrations by design.
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions =>
+        {
+            sqlOptions.CommandTimeout(60);
+            sqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
+        }));
 
 // S-1.1: ASP.NET Core Identity against the manually-authored [dbo].[USER] table.
 // Role tables do not exist in the SSMS schema by design -- authorization runs off
@@ -155,7 +160,16 @@ builder.Services.AddDataProtection();
 builder.Services.AddScoped<IEncryptionService, EncryptionService>();
 
 // S-1.8: Embedding batch job — indexes un-embedded chunks into Qdrant.
-// Controlled by Embedding:RunOnStartup config flag.
+// Controlled by Embedding:RunOnStartup config flag. The quota state is
+// config-driven (Embedding:MaxRequestsPerMinute / MaxTokensPerMinute) so the
+// pacing budgets match the REAL free-tier limits read from 429 quotaIds —
+// keys under one Google Cloud project share ONE quota pool, so key count
+// does not multiply these numbers.
+builder.Services.AddSingleton(sp => new EmbeddingQuotaState(
+    maxRequestsPerMinute: sp.GetRequiredService<IConfiguration>()
+        .GetValue<int?>("Embedding:MaxRequestsPerMinute") ?? 100,
+    maxTokensPerMinute: sp.GetRequiredService<IConfiguration>()
+        .GetValue<int?>("Embedding:MaxTokensPerMinute") ?? 100_000));
 builder.Services.AddHostedService<EmbeddingBatchJob>();
 
 // S-2.1: Prompt assembly from retrieved sections + scenario mappings
@@ -261,6 +275,17 @@ using (var scope = app.Services.CreateScope())
 
     var vectorStore = scope.ServiceProvider.GetRequiredService<QdrantVectorStore>();
 
+    // Fail fast on dimension mismatch: Gemini:EmbeddingOutputDimensionality (when
+    // set) MUST equal Qdrant:VectorSize, or upserts/searches silently corrupt.
+    var geminiOpts = app.Services.GetRequiredService<IOptions<GeminiOptions>>().Value;
+    var qdrantOpts = app.Services.GetRequiredService<IOptions<QdrantOptions>>().Value;
+    if (geminiOpts.EmbeddingOutputDimensionality is { } dims && dims != qdrantOpts.VectorSize)
+    {
+        throw new InvalidOperationException(
+            $"Gemini:EmbeddingOutputDimensionality ({dims}) != Qdrant:VectorSize ({qdrantOpts.VectorSize}). " +
+            "Fix appsettings so embedding output and the Qdrant collection agree.");
+    }
+
     try
     {
         await vectorStore.EnsureCollectionAsync();
@@ -271,7 +296,10 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 
 app.UseRouting();

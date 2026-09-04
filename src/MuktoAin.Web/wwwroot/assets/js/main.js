@@ -444,6 +444,13 @@
       }
     });
 
+    // 2c. Bilingual title tooltips (data-bn-title/data-en-title) -- elements
+    // like the locked-PDF button whose visible text may carry no data-bn/en
+    // pair but whose title attribute still needs to follow the language.
+    document.querySelectorAll("[data-bn-title][data-en-title]").forEach(function (el) {
+      el.setAttribute("title", currentLang === "en" ? el.getAttribute("data-en-title") : el.getAttribute("data-bn-title"));
+    });
+
     // 3. Navbar navigation links (Preserving logo brand!)
     var navMap = [
       { sel: '.nav-links a[href="/"], .nav-links a[href=""]', text: dict["nav-legal-aid"], icon: "message-square" },

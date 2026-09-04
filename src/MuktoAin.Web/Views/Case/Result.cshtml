@@ -7,9 +7,9 @@
     <nav class="breadcrumbs" aria-label="Breadcrumb">
         <a asp-controller="Home" asp-action="Index">Home</a>
         <span class="sep">/</span>
-        <a asp-controller="Case" asp-action="Track">মামলাসমূহ</a>
+        <a asp-controller="Case" asp-action="Track" data-bn="মামলাসমূহ" data-en="Cases">মামলাসমূহ</a>
         <span class="sep">/</span>
-        <span>মামলা #@Model.CaseId</span>
+        <span data-bn="মামলা #@Model.CaseId" data-en="Case #@Model.CaseId">মামলা #@Model.CaseId</span>
     </nav>
 
     <!-- Page Header & Status -->
@@ -18,15 +18,15 @@
             <span class="kicker"><i data-lucide="folder-check"></i> Analysis & Draft · Case #@Model.CaseId</span>
             <h1 class="page-title">@Model.Title</h1>
             <p class="page-sub">
-                বিভাগ: <b>@Model.CategoryName</b> · জেলা: <b>@Model.DistrictName</b> · দাখিলের তারিখ: <b>@Model.CreatedAt.ToString("dd MMMM, yyyy")</b>
+                <span data-bn="বিভাগ:" data-en="Category:">বিভাগ:</span> <b>@Model.CategoryName</b> · <span data-bn="জেলা:" data-en="District:">জেলা:</span> <b>@Model.DistrictName</b> · <span data-bn="দাখিলের তারিখ:" data-en="Submitted:">দাখিলের তারিখ:</span> <b>@Model.CreatedAt.ToString("dd MMMM, yyyy")</b>
             </p>
         </div>
         <div class="row" style="gap: 10px;">
             <span class="badge badge-@Model.Status.ToLower()">
-                স্ট্যাটাস: @Model.Status
+                <span data-bn="স্ট্যাটাস:" data-en="Status:">স্ট্যাটাস:</span> <span data-bn="@StatusText.Bn(Model.Status)" data-en="@StatusText.En(Model.Status)">@StatusText.Bn(Model.Status)</span>
             </span>
-            <button class="btn btn-outline btn-sm" type="button" data-copy="https://muktoain.bd/Case/Result/@Model.CaseId" data-copy-msg="মামলার লিংক কপি হয়েছে ✓">
-                <i data-lucide="share-2"></i> শেয়ার
+            <button class="btn btn-outline btn-sm" type="button" data-copy="https://muktoain.bd/Case/Result/@Model.CaseId" data-copy-msg="মামলার লিংক কপি হয়েছে ✓" data-copy-msg-en="Case link copied ✓">
+                <i data-lucide="share-2"></i> <span data-bn="শেয়ার" data-en="Share">শেয়ার</span>
             </button>
         </div>
     </div>
@@ -36,23 +36,23 @@
         <div class="timeline">
             <div class="t-step done">
                 <div class="dot"><i data-lucide="check"></i></div>
-                <span>দাখিল সম্পন্ন</span>
+                <span data-bn="দাখিল সম্পন্ন" data-en="Submitted">দাখিল সম্পন্ন</span>
                 <small>@Model.CreatedAt.ToString("dd MMM")</small>
             </div>
             <div class="t-step done">
                 <div class="dot"><i data-lucide="check"></i></div>
-                <span>AI অধিকার বিশ্লেষণ</span>
-                <small>সম্পন্ন</small>
+                <span data-bn="AI অধিকার বিশ্লেষণ" data-en="AI Rights Analysis">AI অধিকার বিশ্লেষণ</span>
+                <small data-bn="সম্পন্ন" data-en="Done">সম্পন্ন</small>
             </div>
             <div class="t-step current">
                 <div class="dot">৩</div>
-                <span>আইনজীবী পর্যালোচনা</span>
-                <small>প্রক্রিয়াধীন</small>
+                <span data-bn="আইনজীবী পর্যালোচনা" data-en="Lawyer Review">আইনজীবী পর্যালোচনা</span>
+                <small data-bn="প্রক্রিয়াধীন" data-en="In Progress">প্রক্রিয়াধীন</small>
             </div>
             <div class="t-step">
                 <div class="dot">৪</div>
-                <span>চূড়ান্ত PDF</span>
-                <small>লকড</small>
+                <span data-bn="চূড়ান্ত PDF" data-en="Final PDF">চূড়ান্ত PDF</span>
+                <small data-bn="লকড" data-en="Locked">লকড</small>
             </div>
         </div>
     </div>
@@ -60,9 +60,9 @@
     <!-- Rights Explanation Section -->
     <div class="card card-pad-lg" style="margin-bottom: 24px;">
         <div class="row spread wrap" style="margin-bottom: 12px;">
-            <h2 class="section-h" style="margin: 0;"><i data-lucide="scale"></i> আপনার আইনি অধিকার / Your Rights</h2>
+            <h2 class="section-h" style="margin: 0;"><i data-lucide="scale"></i> <span data-bn="আপনার আইনি অধিকার" data-en="Your Legal Rights">আপনার আইনি অধিকার</span></h2>
             <button class="read-aloud" type="button" onclick="showToast('পাঠ করে শোনানো হচ্ছে (TTS ডেমো)...', 'info')">
-                <i data-lucide="volume-2"></i> পাঠ শুনুন
+                <i data-lucide="volume-2"></i> <span data-bn="পাঠ শুনুন" data-en="Read Aloud">পাঠ শুনুন</span>
             </button>
         </div>
         <div style="font-size: 16.5px; line-height: 1.85;">
@@ -73,8 +73,8 @@
             else
             {
                 <p class="muted" style="margin-bottom: 0;">
-                    আপনার মামলাটি গ্রহণ করা হয়েছে। AI অধিকার বিশ্লেষণ (FR-3) শীঘ্রই এখানে প্রদর্শিত হবে।
-                    <em>Your case has been received — the AI rights analysis will appear here once generated.</em>
+                    <span data-bn="আপনার মামলাটি গ্রহণ করা হয়েছে। AI অধিকার বিশ্লেষণ (FR-3) শীঘ্রই এখানে প্রদর্শিত হবে।" data-en="Your case has been received — the AI rights analysis will appear here once generated.">আপনার মামলাটি গ্রহণ করা হয়েছে। AI অধিকার বিশ্লেষণ (FR-3) শীঘ্রই এখানে প্রদর্শিত হবে।</span>
+                    <em data-bn="" data-en=""></em>
                 </p>
             }
         </div>
@@ -82,14 +82,14 @@
 
     <!-- Cited Legal Provisions -->
     <div class="card card-pad-lg" style="margin-bottom: 24px;">
-        <h2 class="section-h" style="margin-top: 0;"><i data-lucide="book-open"></i> সংশ্লিষ্ট আইনের ধারা / Cited Legal Provisions (FR-7)</h2>
+        <h2 class="section-h" style="margin-top: 0;"><i data-lucide="book-open"></i> <span data-bn="সংশ্লিষ্ট আইনের ধারা" data-en="Cited Legal Provisions (FR-7)">সংশ্লিষ্ট আইনের ধারা</span></h2>
         <div class="stack" style="gap: 14px;">
             @foreach (var sec in Model.CitedSections)
             {
                 <div style="background: var(--surface-2); padding: 16px 18px; border-radius: var(--radius); border: 1px solid var(--border);">
                     <div class="row spread wrap" style="margin-bottom: 8px;">
                         <b style="font-size: 16px; color: var(--ink);">@sec.ActTitle</b>
-                        <span class="citation-chip">সাদৃশ্য স্কোর: @sec.RelevanceScore</span>
+                        <span class="citation-chip"><span data-bn="সাদৃশ্য স্কোর:" data-en="Relevance:">সাদৃশ্য স্কোর:</span> @sec.RelevanceScore</span>
                     </div>
                     <div class="serif" style="font-weight: 700; color: var(--gold); margin-bottom: 6px; font-size: 15px;">
                         <i data-lucide="bookmark"></i> @sec.SectionNumber
@@ -107,9 +107,9 @@
             <div class="row spread wrap" style="margin-bottom: 18px;">
                 <div>
                     <span class="kicker"><i data-lucide="file-text"></i> Draft Document</span>
-                    <h2 class="section-h" style="margin: 0;">প্রস্তুতকৃত আইনি খসড়া দলিল</h2>
+                    <h2 class="section-h" style="margin: 0;" data-bn="প্রস্তুতকৃত আইনি খসড়া দলিল" data-en="Generated Legal Draft">প্রস্তুতকৃত আইনি খসড়া দলিল</h2>
                 </div>
-                <span class="badge badge-review">পর্যালোচনাধীন (Under Review)</span>
+                <span class="badge badge-review" data-bn="পর্যালোচনাধীন (Under Review)" data-en="Under Review">পর্যালোচনাধীন (Under Review)</span>
             </div>
 
             <!-- Vintage Parchment Document Sheet -->
@@ -140,9 +140,9 @@
                 <div class="row" style="gap: 10px; flex: 1; min-width: 260px;">
                     <i data-lucide="shield-alert" style="color: var(--warn-text);"></i>
                     <div>
-                        <b>আইনজীবী পর্যালোচনা সুরক্ষা (Mandatory Review Gate · FR-14):</b>
+                        <b data-bn="আইনজীবী পর্যালোচনা সুরক্ষা (Mandatory Review Gate · FR-14):" data-en="Mandatory Lawyer Review Gate (FR-14):">আইনজীবী পর্যালোচনা সুরক্ষা (Mandatory Review Gate · FR-14):</b>
                         <div class="tiny" style="color: inherit; opacity: 0.9;">
-                            আইনজীবী এই খসড়াটি আইনের ধারার সাথে মিলিয়ে সত্যায়িত করার পর নিরাপদ অফিশিয়াল PDF ডাউনলোড বাটন স্বয়ংক্রিয়ভাবে সক্রিয় হবে।
+                            <span data-bn="আইনজীবী এই খসড়াটি আইনের ধারার সাথে মিলিয়ে সত্যায়িত করার পর নিরাপদ অফিশিয়াল PDF ডাউনলোড বাটন স্বয়ংক্রিয়ভাবে সক্রিয় হবে।" data-en="Once a lawyer verifies this draft against the statutes, the secure official PDF download button unlocks automatically.">আইনজীবী এই খসড়াটি আইনের ধারার সাথে মিলিয়ে সত্যায়িত করার পর নিরাপদ অফিশিয়াল PDF ডাউনলোড বাটন স্বয়ংক্রিয়ভাবে সক্রিয় হবে।</span>
                         </div>
                     </div>
                 </div>
@@ -150,13 +150,13 @@
                 @if (Model.CanDownloadPdf)
                 {
                     <a class="btn btn-primary" href="#">
-                        <i data-lucide="download"></i> অফিসিয়াল PDF ডাউনলোড
+                        <i data-lucide="download"></i> <span data-bn="অফিসিয়াল PDF ডাউনলোড" data-en="Download Official PDF">অফিসিয়াল PDF ডাউনলোড</span>
                     </a>
                 }
                 else
                 {
-                    <button class="btn btn-outline" disabled style="opacity: 0.7; cursor: not-allowed;" title="আইনজীবী অনুমোদনের অপেক্ষায়">
-                        <i data-lucide="lock"></i> PDF ডাউনলোড লক রয়েছে
+                    <button class="btn btn-outline" disabled style="opacity: 0.7; cursor: not-allowed;" title="আইনজীবী অনুমোদনের অপেক্ষায়" data-bn-title="আইনজীবী অনুমোদনের অপেক্ষায়" data-en-title="Awaiting lawyer approval">
+                        <i data-lucide="lock"></i> <span data-bn="PDF ডাউনলোড লক রয়েছে" data-en="PDF Download Locked">PDF ডাউনলোড লক রয়েছে</span>
                     </button>
                 }
             </div>

@@ -13,30 +13,30 @@
     <div class="row spread wrap page-head" style="align-items: center; gap: 14px;">
         <div>
             <span class="kicker"><i data-lucide="award"></i> Verified Advocate Portal · FR-13</span>
-            <h1 class="page-title">দলিল পর্যালোচনা কিউ (Review Queue)</h1>
-            <p class="page-sub">AI দ্বারা প্রস্তুতকৃত খসড়া দলিল পর্যালোচনা ও সত্যায়ন করে নাগরিকের জন্য চূড়ান্ত PDF অনুমোদন করুন।</p>
+            <h1 class="page-title" data-bn="দলিল পর্যালোচনা কিউ" data-en="Document Review Queue">দলিল পর্যালোচনা কিউ (Review Queue)</h1>
+            <p class="page-sub" data-bn="AI দ্বারা প্রস্তুতকৃত খসড়া দলিল পর্যালোচনা ও সত্যায়ন করে নাগরিকের জন্য চূড়ান্ত PDF অনুমোদন করুন।" data-en="Review and certify AI-generated drafts to approve final official documents for citizens.">AI দ্বারা প্রস্তুতকৃত খসড়া দলিল পর্যালোচনা ও সত্যায়ন করে নাগরিকের জন্য চূড়ান্ত PDF অনুমোদন করুন।</p>
         </div>
         <div class="row wrap" style="gap: 8px;">
-            <span class="badge badge-final"><i data-lucide="check-circle-2"></i> বার সনদ যাচাইকৃত: DHA-1187</span>
+            <span class="badge badge-final"><i data-lucide="check-circle-2"></i> <span data-bn="বার সনদ যাচাইকৃত: DHA-1187" data-en="Bar Verified: DHA-1187">বার সনদ যাচাইকৃত: DHA-1187</span></span>
         </div>
     </div>
 
     <!-- Stat Strip -->
     <div class="stat-strip" style="margin-bottom: 20px;">
         <div class="card kpi">
-            <span class="k-label"><i data-lucide="clock"></i>Pending in Queue</span>
+            <span class="k-label"><i data-lucide="clock"></i><span data-bn="অপেক্ষমাণ কিউ" data-en="Pending in Queue">অপেক্ষমাণ কিউ</span></span>
             <span class="k-num">৩টি</span>
-            <span class="k-sub">গড় পর্যালোচনা সময়: ২ ঘণ্টা</span>
+            <span class="k-sub" data-bn="গড় পর্যালোচনা সময়: ২ ঘণ্টা" data-en="Avg Review Time: 2 hours">গড় পর্যালোচনা সময়: ২ ঘণ্টা</span>
         </div>
         <div class="card kpi">
-            <span class="k-label"><i data-lucide="check-check"></i>Your Reviews</span>
+            <span class="k-label"><i data-lucide="check-check"></i><span data-bn="আপনার পর্যালোচনাসমূহ" data-en="Your Reviews">আপনার পর্যালোচনাসমূহ</span></span>
             <span class="k-num">২৮টি</span>
-            <span class="k-sub">এই মাসে সম্পন্ন</span>
+            <span class="k-sub" data-bn="এই মাসে সম্পন্ন" data-en="Completed this month">এই মাসে সম্পন্ন</span>
         </div>
         <div class="card kpi">
-            <span class="k-label"><i data-lucide="star"></i>Pro-Bono Hours</span>
+            <span class="k-label"><i data-lucide="star"></i><span data-bn="প্রো-বোনো ঘণ্টা" data-en="Pro-Bono Hours">প্রো-বোনো ঘণ্টা</span></span>
             <span class="k-num">১৪.৫</span>
-            <span class="k-sub">আইনি সহায়তা অবদান</span>
+            <span class="k-sub" data-bn="আইনি সহায়তা অবদান" data-en="Legal aid contribution">আইনি সহায়তা অবদান</span>
         </div>
     </div>
 
@@ -47,12 +47,12 @@
                 <table class="min-w-table">
                     <thead>
                         <tr>
-                            <th>মামলা ট্র্যাকিং</th>
-                            <th>শিরোনাম ও বিবরণ</th>
-                            <th>আইনি বিভাগ</th>
-                            <th>দাখিলের সময়</th>
-                            <th>বর্তমান অবস্থা</th>
-                            <th style="text-align: right;">অ্যাকশন</th>
+                            <th data-bn="মামলা ট্র্যাকিং" data-en="Case Tracking">মামলা ট্র্যাকিং</th>
+                            <th data-bn="শিরোনাম ও বিবরণ" data-en="Title & Description">শিরোনাম ও বিবরণ</th>
+                            <th data-bn="আইনি বিভাগ" data-en="Legal Category">আইনি বিভাগ</th>
+                            <th data-bn="দাখিলের সময়" data-en="Submitted At">দাখিলের সময়</th>
+                            <th data-bn="বর্তমান অবস্থা" data-en="Status">বর্তমান অবস্থা</th>
+                            <th style="text-align: right;" data-bn="অ্যাকশন" data-en="Action">অ্যাকশন</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -66,11 +66,11 @@
                                 <td>@item.CategoryName</td>
                                 <td class="tiny muted">@item.CreatedAt.ToString("dd MMM, hh:mm tt")</td>
                                 <td>
-                                    <span class="badge badge-@item.Status.ToLower()">@item.Status</span>
+                                    <span class="badge badge-@item.Status.ToLower()" data-bn="@StatusText.Bn(item.Status)" data-en="@StatusText.En(item.Status)">@StatusText.Bn(item.Status)</span>
                                 </td>
                                 <td style="text-align: right;">
                                     <a class="btn btn-primary btn-sm" asp-action="Review" asp-route-id="@item.CaseId">
-                                        <i data-lucide="file-edit"></i> পর্যালোচনা করুন →
+                                        <i data-lucide="file-edit"></i> <span data-bn="পর্যালোচনা করুন" data-en="Review Draft">পর্যালোচনা করুন</span> →
                                     </a>
                                 </td>
                             </tr>
