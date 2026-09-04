@@ -21,7 +21,7 @@ SQL Repositories, Manual DDL Scripts, Gemini Client, Qdrant, QuestPDF, Polly"]
     D --> F[("Qdrant Vector DB
 Chunk-Level Embeddings")]
     D --> G["Google Gemini API
-Embedding (text-embedding-004) + LLM (gemini-2.5-flash)"]
+Embedding (gemini-embedding-001) + LLM (gemini-2.5-flash)"]
 ```
 
 ---
@@ -163,7 +163,7 @@ Authoritative ERD structure matching `MuktoAin_ERD_v3.drawio`:
 
 ### Normal RAG Retrieval Flow
 1. **Citizen Query:** Natural language text in Bangla / English / Banglish.
-2. **Embedding:** `GeminiEmbeddingService` creates a 768-dim vector using `text-embedding-004`.
+2. **Embedding:** `GeminiEmbeddingService` creates a 3072-dim vector using `gemini-embedding-001`.
 3. **Qdrant Search:** `QdrantVectorStore` searches collection for top-$k$ nearest chunks ($k \approx 8$) by cosine distance.
 4. **Section Rollup:** Retrieved `ChunkId` values are mapped to their parent `SectionId` records in SQL Server.
 5. **Prompt Grounding:** `PromptAssembler` injects the statutory text, curated `SCENARIO_MAPPING` rules, and disclaimer into the Gemini prompt.

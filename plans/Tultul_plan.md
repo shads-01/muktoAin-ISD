@@ -478,7 +478,7 @@ We configure SQL Server Full-Text Search via a manual MSSQL script executed in S
         // the single EmbeddingBatchJob run against a merged database (Shads runs it once
         // after Tultul's import PR merges).
         private string CollectionName => _options.Value.Collection ?? "act_section_chunks";
-        private const int VectorSize = 768;  // text-embedding-004 output dimension
+         private const int VectorSize = 3072;  // gemini-embedding-001 output dimension
 
         public QdrantVectorStore(IOptions<QdrantOptions> options)
         {

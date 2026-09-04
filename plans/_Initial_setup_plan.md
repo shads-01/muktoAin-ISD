@@ -94,7 +94,7 @@ git checkout <your-branch>
        "ApiKeys": [
          "YOUR_KEY_HERE"
        ],
-       "EmbeddingModel": "text-embedding-004",
+        "EmbeddingModel": "gemini-embedding-001",
        "GenerationModel": "gemini-2.5-flash"
      },
      "Qdrant": {
@@ -162,7 +162,7 @@ We use **Qdrant Cloud Free Tier** as our cloud vector store for CP1 & CP2:
 2. **Teammate Configuration**:
    - Paste the shared URL and API key into `appsettings.Development.json`.
 3. **Collection Creation**:
-   - Automatically ensured on application startup via `IVectorStore.EnsureCollectionAsync()` (768-dimensional Cosine distance for `text-embedding-004`).
+    - Automatically ensured on application startup via `IVectorStore.EnsureCollectionAsync()` (3072-dimensional Cosine distance for `gemini-embedding-001`).
 4. **Checkpoint 3 Note**:
    - In Checkpoint 3, Docker containerization (`docker-compose.yml` with local Qdrant + SQL Server container) will be configured for local offline testing and CI/CD pipelines.
 

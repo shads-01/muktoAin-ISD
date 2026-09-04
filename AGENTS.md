@@ -24,7 +24,7 @@ Welcome to the MuktoAin codebase. This document is the core instruction and boun
 | **Primary Relational DB** | Microsoft SQL Server (SSMS) | Database schema and queries managed manually in SSMS; LocalDB / SQL Server Express / Dev for local |
 | **Vector DB (RAG)** | Qdrant (.NET SDK) | Official vector store for chunk embeddings (Qdrant Cloud initially; Docker container in CP3) |
 | **Full-Text Search (FTS)** | SQL Server FTS | Configured via manual T-SQL scripts in SSMS; **fallback only** when Qdrant is unavailable, plus standalone Acts search (FR-7) |
-| **Embedding Model** | Google `text-embedding-004` | Multilingual (Bangla, English, Banglish) |
+| **Embedding Model** | Google `gemini-embedding-001` (3072-dim; MRL-truncatable to 768/1536) | Multilingual (Bangla, English, Banglish) |
 | **Generation Model** | Gemini API (`gemini-2.5-flash` via Google AI Studio free tier) | Best-in-class Bengali; behind swappable `IAiService` interface |
 | **Frontend** | Razor Views + Bootstrap 5 + Vanilla JS / Fetch | Server-rendered MVC (no SPA frameworks like React/Vue/Angular) |
 | **Authentication** | ASP.NET Core Identity | Role-based (Citizen, Lawyer, Admin) |
