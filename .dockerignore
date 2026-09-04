@@ -1,0 +1,17 @@
+> .dockerignore
+bin/
+obj/
+.git/
+.github/
+*.md
+plans/
+frontend/
+frontend.zip
+scripts/
+tests/
+
+# The ~50-100MB Kaggle dataset is git-ignored and optional at runtime
+# (ActImportService no-ops when it's absent). Small seed files under data/
+# (districts.json, categories.json, scenario-mappings.json) MUST ship in the
+# image -- SeedDistricts/SeedCategories throw without them.
+data/bangladesh-acts-dataset.json

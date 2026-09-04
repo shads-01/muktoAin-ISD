@@ -1,0 +1,77 @@
+# S-3.4: CI pipeline. CI-only by design (Shads_plan Step 3.4 Option A) --
+# deployment stays manual until Azure credits are set up.
+#
+# Eng-review notes baked in:
+# - Unit tests run on plain ubuntu-latest (EF InMemory only, no services needed).
+#   FromSqlRaw/CONTAINSTABLE/ExecuteUpdateAsync paths are NOT covered here
+#   (unsupported by InMemory) -- they belong to the integration job.
+# - The integration job uses a Linux runner because GitHub Actions service
+#   containers are only supported there.
+# - The standard mssql/server image does NOT include Full-Text Search; FTS tests
+#   must be tagged [Trait("Category", "RequiresFts")] and will skip in CI until a
+#   full-text image is chosen for the integration job (TODOS.md).
+# - The integration job is gated behind the ENABLE_INTEGRATION_TESTS repository
+#   variable + secrets, so the pipeline is green-by-construction until real
+#   Qdrant/Gemini credentials are configured (see docs/deployment-guide.md).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - run: dotnet restore src/MuktoAin.Web/MuktoAin.Web.csproj
+      - run: dotnet build src/MuktoAin.Web/MuktoAin.Web.csproj --no-restore -c Release
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      # Unit tests only — no SQL Server / Qdrant / Gemini needed.
+      - run: dotnet test tests/MuktoAin.UnitTests/MuktoAin.UnitTests.csproj -c Release --verbosity normal
+
+  integration-tests:
+    # Opt-in: set repo variable ENABLE_INTEGRATION_TESTS=true and configure the
+    # QDRANT_* / GEMINI_* secrets to activate this job.
+    if: vars.ENABLE_INTEGRATION_TESTS == 'true'
+    runs-on: ubuntu-latest
+    needs: build
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          SA_PASSWORD: YourStrong!Passw0rd
+          ACCEPT_EULA: Y
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'YourStrong!Passw0rd' -Q 'SELECT 1' || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ConnectionStrings__DefaultConnection: "Server=localhost,1433;Database=MuktoAin_Test;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True"
+      Qdrant__Endpoint: ${{ secrets.QDRANT_ENDPOINT }}
+      Qdrant__ApiKey: ${{ secrets.QDRANT_API_KEY }}
+      Gemini__ApiKeys__0: ${{ secrets.GEMINI_API_KEY_1 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Apply schema scripts
+        run: pwsh ./scripts/run-all.ps1 -ServerInstance "localhost,1433" -User sa -Password 'YourStrong!Passw0rd'
+      - run: dotnet test tests/MuktoAin.IntegrationTests/MuktoAin.IntegrationTests.csproj -c Release --verbosity normal
