@@ -110,8 +110,8 @@ Store the keys as an array in `appsettings.Development.json` (this file is `.git
       "key-from-arpita-project",
       "key-from-erin-project"
     ],
-    "EmbeddingModel": "text-embedding-004",
-    "GenerationModel": "gemini-2.5-flash"
+     "EmbeddingModel": "gemini-embedding-001",
+     "GenerationModel": "gemini-2.5-flash"
   }
 }
 ```
@@ -155,7 +155,7 @@ Create `appsettings.Development.json.template` (committed to repo) so teammates 
       "REPLACE_WITH_KEY_3",
       "REPLACE_WITH_KEY_4"
     ],
-    "EmbeddingModel": "text-embedding-004",
+    "EmbeddingModel": "gemini-embedding-001",
     "GenerationModel": "gemini-2.5-flash"
   },
   "Qdrant": {
@@ -329,7 +329,7 @@ Once Tultul's schema PR is merged and scripts executed in SSMS:
    public class GeminiOptions
    {
        public string[] ApiKeys { get; set; } = [];
-       public string EmbeddingModel { get; set; } = "text-embedding-004";
+        public string EmbeddingModel { get; set; } = "gemini-embedding-001";
        public string GenerationModel { get; set; } = "gemini-2.5-flash";
    }
    ```

@@ -23,12 +23,12 @@
 
     <!-- Filter chips -->
     <div class="row wrap" style="margin-bottom: 16px; gap: 8px;">
-        <span class="tiny muted" style="margin-right: 4px;">ফিল্টার:</span>
+        <span class="tiny muted" style="margin-right: 4px;" data-bn="ফিল্টার:" data-en="Filter:">ফিল্টার:</span>
         <div class="chip-row" data-chip-group>
-            <button type="button" class="chip chip-sm active">সকল মামলা (@Model.Cases.Count)</button>
-            <button type="button" class="chip chip-sm">পর্যালোচনাধীন (Under Review)</button>
-            <button type="button" class="chip chip-sm">অনুমোদিত (Finalized)</button>
-            <button type="button" class="chip chip-sm">দাখিলকৃত (Submitted)</button>
+            <button type="button" class="chip chip-sm active" data-bn="সকল মামলা" data-en="All Cases">সকল মামলা (@Model.Cases.Count)</button>
+            <button type="button" class="chip chip-sm" data-bn="পর্যালোচনাধীন" data-en="Under Review">পর্যালোচনাধীন (Under Review)</button>
+            <button type="button" class="chip chip-sm" data-bn="অনুমোদিত" data-en="Approved">অনুমোদিত (Finalized)</button>
+            <button type="button" class="chip chip-sm" data-bn="দাখিলকৃত" data-en="Submitted">দাখিলকৃত (Submitted)</button>
         </div>
     </div>
 
@@ -38,12 +38,12 @@
                 <table class="min-w-table">
                     <thead>
                         <tr>
-                            <th>ট্র্যাকিং কোড</th>
-                            <th>শিরোনাম</th>
-                            <th>আইনি বিভাগ</th>
-                            <th>দাখিলের তারিখ</th>
-                            <th>বর্তমান স্ট্যাটাস</th>
-                            <th style="text-align: right;">পদক্ষেপ</th>
+                            <th data-bn="ট্র্যাকিং কোড" data-en="Tracking Code">ট্র্যাকিং কোড</th>
+                            <th data-bn="শিরোনাম" data-en="Title">শিরোনাম</th>
+                            <th data-bn="আইনি বিভাগ" data-en="Legal Category">আইনি বিভাগ</th>
+                            <th data-bn="দাখিলের তারিখ" data-en="Submitted On">দাখিলের তারিখ</th>
+                            <th data-bn="বর্তমান স্ট্যাটাস" data-en="Status">বর্তমান স্ট্যাটাস</th>
+                            <th style="text-align: right;" data-bn="পদক্ষেপ" data-en="Action">পদক্ষেপ</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -57,11 +57,11 @@
                                 <td>@c.CategoryName</td>
                                 <td class="tiny muted">@c.CreatedAt.ToString("dd MMM yyyy")</td>
                                 <td>
-                                    <span class="badge badge-@c.Status.ToLower()">@c.Status</span>
+                                    <span class="badge badge-@c.Status.ToLower()" data-bn="@StatusText.Bn(c.Status)" data-en="@StatusText.En(c.Status)">@StatusText.Bn(c.Status)</span>
                                 </td>
                                 <td style="text-align: right;">
                                     <a class="btn btn-outline btn-sm" asp-controller="Case" asp-action="Result" asp-route-id="@c.CaseId" asp-route-code="@(string.IsNullOrEmpty(c.TrackingCode) ? null : c.TrackingCode)">
-                                        ফলাফল দেখুন →
+                                        <i data-lucide="eye"></i> <span data-bn="ফলাফল দেখুন" data-en="View Result">ফলাফল দেখুন</span> →
                                     </a>
                                 </td>
                             </tr>

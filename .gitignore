@@ -513,8 +513,11 @@ src/MuktoAin.Web/wwwroot/lib/
 TODOS.md
 
 # Frontend prototypes & UI design drafts
-frontend/
-frontend.zip
+template-frontend/
 UI.md
 UI_SPEC.md
 Copy_Paste_Plan.md
+
+# Scratch files
+.agent/scratch/
+

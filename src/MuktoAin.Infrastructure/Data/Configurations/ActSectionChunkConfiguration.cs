@@ -13,5 +13,11 @@ public class ActSectionChunkConfiguration : IEntityTypeConfiguration<ActSectionC
     {
         builder.ToTable("ACT_SECTION_CHUNK", "dbo");
         builder.HasKey(c => c.ChunkId);
+
+        builder.HasIndex(c => c.SectionId)
+            .HasDatabaseName("IX_ACT_SECTION_CHUNK_SectionId");
+
+        builder.HasIndex(c => new { c.VectorId, c.ChunkId })
+            .HasDatabaseName("IX_ACT_SECTION_CHUNK_VectorId");
     }
 }

@@ -7,28 +7,28 @@
     <nav class="breadcrumbs" aria-label="Breadcrumb">
         <a asp-controller="Home" asp-action="Index">Home</a>
         <span class="sep">/</span>
-        <a asp-controller="Lawyer" asp-action="Queue">রিভিউ কিউ</a>
+        <a asp-controller="Lawyer" asp-action="Queue" data-bn="রিভিউ কিউ" data-en="Review Queue">রিভিউ কিউ</a>
         <span class="sep">/</span>
-        <span>দলিল #@Model.DocumentId</span>
+        <span data-bn="দলিল #@Model.DocumentId" data-en="Document #@Model.DocumentId">দলিল #@Model.DocumentId</span>
     </nav>
 
     <div class="row spread wrap page-head" style="align-items: flex-start; gap: 14px;">
         <div>
             <span class="kicker"><i data-lucide="file-check-2"></i> Mandatory Review Gate · FR-14</span>
-            <h1 class="page-title">দলিল পর্যালোচনা ও সম্পাদন</h1>
+            <h1 class="page-title" data-bn="দলিল পর্যালোচনা ও সম্পাদন" data-en="Review & Edit Document">দলিল পর্যালোচনা ও সম্পাদন</h1>
             <p class="page-sub">
-                মামলা: <b>@Model.CaseTitle</b> · বিভাগ: <b>@Model.CategoryName</b>
+                <span data-bn="মামলা:" data-en="Case:">মামলা:</span> <b>@Model.CaseTitle</b> · <span data-bn="বিভাগ:" data-en="Category:">বিভাগ:</span> <b>@Model.CategoryName</b>
             </p>
         </div>
         <a class="btn btn-outline btn-sm" asp-action="Queue">
-            <i data-lucide="arrow-left"></i> কিউতে ফিরুন
+            <i data-lucide="arrow-left"></i> <span data-bn="কিউতে ফিরুন" data-en="Back to Queue">কিউতে ফিরুন</span>
         </a>
     </div>
 
     <!-- Mobile Comparison Tabs (shown only on small screens) -->
     <div class="compare-tabs" id="compare-mobile-tabs">
-        <button type="button" class="active" id="btn-show-draft">মূল AI খসড়া</button>
-        <button type="button" id="btn-show-edit">আইনজীবী সম্পাদিত রূপ</button>
+        <button type="button" class="active" id="btn-show-draft" data-bn="মূল AI খসড়া" data-en="Original AI Draft">মূল AI খসড়া</button>
+        <button type="button" id="btn-show-edit" data-bn="আইনজীবী সম্পাদিত রূপ" data-en="Lawyer Edited Version">আইনজীবী সম্পাদিত রূপ</button>
     </div>
 
     <form method="post" asp-action="SubmitReview">
@@ -42,7 +42,7 @@
             <div class="pane" id="pane-draft">
                 <div class="pane-head red">
                     <i data-lucide="file-text"></i>
-                    <span>মূল AI খসড়া (Original AI Generated Draft)</span>
+                    <span data-bn="মূল AI খসড়া (Original AI Generated Draft)" data-en="Original AI Generated Draft">মূল AI খসড়া (Original AI Generated Draft)</span>
                 </div>
                 <div class="pane-body">@Model.ContentDraft</div>
             </div>
@@ -51,7 +51,7 @@
             <div class="pane" id="pane-edit">
                 <div class="pane-head green">
                     <i data-lucide="edit-3"></i>
-                    <span>আইনজীবী সত্যায়ন ও সম্পাদনা (Lawyer Editable Version)</span>
+                    <span data-bn="আইনজীবী সত্যায়ন ও সম্পাদনা (Lawyer Editable Version)" data-en="Lawyer Editable Version">আইনজীবী সত্যায়ন ও সম্পাদনা (Lawyer Editable Version)</span>
                 </div>
                 <textarea asp-for="EditedContent" class="pane-body editable" rows="18" placeholder="প্রয়োজনে আইনের ধারা সংশোধন বা তথ্য পরিমার্জন করুন...">@Model.EditedContent</textarea>
             </div>
@@ -59,7 +59,7 @@
 
         <!-- Decision & Comments Box -->
         <div class="card card-pad-lg" style="margin-bottom: 3rem;">
-            <h3 style="font-size: 18px; margin-bottom: 14px;"><i data-lucide="check-square"></i> আইনজীবী সিদ্ধান্ত ও মন্তব্য (Lawyer Decision)</h3>
+            <h3 style="font-size: 18px; margin-bottom: 14px;"><i data-lucide="check-square"></i> <span data-bn="আইনজীবী সিদ্ধান্ত ও মন্তব্য (Lawyer Decision)" data-en="Lawyer Decision & Comments">আইনজীবী সিদ্ধান্ত ও মন্তব্য (Lawyer Decision)</span></h3>
 
             <div class="field" style="margin-bottom: 16px;">
                 <label asp-for="Decision">সিদ্ধান্ত / Decision</label>
@@ -71,14 +71,14 @@
             </div>
 
             <div class="field" style="margin-bottom: 20px;">
-                <label asp-for="Comments">নাগরিকের জন্য আইনি পরামর্শ বা পর্যালোচনার নোট</label>
+                <label asp-for="Comments"><span data-bn="নাগরিকের জন্য আইনি পরামর্শ বা পর্যালোচনার নোট" data-en="Legal advice or review notes for the citizen">নাগরিকের জন্য আইনি পরামর্শ বা পর্যালোচনার নোট</span></label>
                 <textarea asp-for="Comments" class="textarea autogrow" rows="3" placeholder="যেমন: ধারা ১২৩ ও ২৮৯ অনুযায়ী বকেয়া মজুরির লিখিত অভিযোগপত্র সম্পূর্ণ হয়েছে..."></textarea>
             </div>
 
             <div class="row spread wrap" style="gap: 12px;">
-                <span class="tiny muted">অনুমোদনের সাথে সাথে নাগরিকের জন্য PDF ডাউনলোড সক্রিয় হয়ে যাবে।</span>
+                <span class="tiny muted" data-bn="অনুমোদনের সাথে সাথে নাগরিকের জন্য PDF ডাউনলোড সক্রিয় হয়ে যাবে।" data-en="On approval, the citizen's PDF download unlocks immediately.">অনুমোদনের সাথে সাথে নাগরিকের জন্য PDF ডাউনলোড সক্রিয় হয়ে যাবে।</span>
                 <button type="submit" class="btn btn-primary btn-lg">
-                    <i data-lucide="check-circle-2"></i> পর্যালোচনা সাবমিট করুন
+                    <i data-lucide="check-circle-2"></i> <span data-bn="পর্যালোচনা সাবমিট করুন" data-en="Submit Review">পর্যালোচনা সাবমিট করুন</span>
                 </button>
             </div>
         </div>

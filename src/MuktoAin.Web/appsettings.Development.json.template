@@ -16,10 +16,10 @@
   "Qdrant": {
     "Endpoint": "https://your-cluster-id.cloud.qdrant.io:6333",
     "ApiKey": "REPLACE_WITH_QDRANT_API_KEY",
-    "Collection": "act_section_chunks_dev",
-    "Collection_Comment": "Per-developer namespace, avoids clashing local IDs. Canonical (no suffix) is EmbeddingBatchJob-only.",
-    "VectorSize": 768,
-    "VectorSize_Comment": "Must match the embedding model's output dimension."
+    "Collection": "act_section_chunks_yourname",
+    "Collection_Comment": "Per-developer namespace (act_section_chunks_<your-name>), avoids clashing local IDs. Never use the bare 'act_section_chunks' — that canonical collection is written only by the single merged-database EmbeddingBatchJob run. NOTE: any local collection is auto-recreated at the configured VectorSize on first run, so starting fresh is normal.",
+    "VectorSize": 3072,
+    "VectorSize_Comment": "Must match the embedding model's output dimension (3072 for gemini-embedding-001 default; set Gemini:EmbeddingOutputDimensionality to 768/1536 if you use MRL truncation)."
   },
   "SeedAdmin": {
     "Email": "admin@muktoain.bd",

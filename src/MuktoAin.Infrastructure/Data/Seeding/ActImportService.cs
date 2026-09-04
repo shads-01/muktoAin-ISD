@@ -57,10 +57,9 @@ public static class ActImportService
         }
 
         // Fast-path: if acts are already populated, skip reading and deserializing the 100MB JSON on startup.
-        var actCount = await context.Acts.CountAsync();
-        if (actCount >= 1484)
+        if (await context.Acts.AsNoTracking().AnyAsync())
         {
-            logger?.LogInformation("ActImportService: all {Count} acts already present, skipping import.", actCount);
+            logger?.LogInformation("ActImportService: acts already present, skipping import.");
             return;
         }
 

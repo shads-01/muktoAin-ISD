@@ -303,20 +303,24 @@
                 if (remTxt) remTxt.textContent = data.remainingChunks.toLocaleString();
 
                 if (stateBadge) {
+                    var lang = (localStorage.getItem('mkt-lang') || 'bn');
                     if (data.isRunning) {
                         stateBadge.className = 'badge badge-success';
-                        stateBadge.textContent = 'Running (Syncing)';
+                        stateBadge.textContent = lang === 'en' ? 'Running (Syncing)' : 'চলছে (সিঙ্কিং)';
                     } else if (data.embeddedChunks === data.totalChunks && data.totalChunks > 0) {
                         stateBadge.className = 'badge badge-success';
-                        stateBadge.textContent = 'Completed (100%)';
+                        stateBadge.textContent = lang === 'en' ? 'Completed (100%)' : 'সম্পন্ন (১০০%)';
                     } else {
                         stateBadge.className = 'badge badge-gold';
-                        stateBadge.textContent = 'Idle';
+                        stateBadge.textContent = lang === 'en' ? 'Idle' : 'স্থগিত';
                     }
                 }
 
                 if (msg) {
-                    msg.textContent = data.lastStatus || (data.isRunning ? 'Embedding in progress...' : 'Ready');
+                    var lang2 = (localStorage.getItem('mkt-lang') || 'bn');
+                    var bn = data.lastStatus || (data.isRunning ? 'Embedding in progress...' : 'Ready');
+                    var en = data.lastStatusEn || data.lastStatus || (data.isRunning ? 'Embedding in progress...' : 'Ready');
+                    msg.textContent = lang2 === 'en' ? en : bn;
                 }
             } catch (e) {
                 console.error('Failed to update embedding progress:', e);

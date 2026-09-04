@@ -8,6 +8,7 @@
 /* ---------- Tokens ---------- */
 /* Light = "Reading Room" · matched 1:1 to design-gallery.html option H */
 :root {
+  color-scheme: light;
   --bg: #f8f2e4;
   --bg-rule: rgba(146, 116, 56, .12);
   --surface: rgba(255, 252, 242, .92);
@@ -58,6 +59,7 @@
 
 [data-theme="dark"] {
   /* "Chalkboard Slate" — Courtroom blackboard · subtle chalk rules · crisp & high contrast */
+  color-scheme: dark;
   --bg: #12181b;
   --bg-rule: rgba(203, 218, 225, 0.09);
   --surface: rgba(26, 35, 40, 0.96);
@@ -128,7 +130,7 @@ body::before {
 }
 [data-theme="dark"] body::before { box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.7); }
 
-h1, h2, h3, .display { font-family: "EB Garamond", "Noto Sans Bengali", "Noto Serif Bengali", serif; font-weight: 700; line-height: 1.25; color: #4d3c10; }
+h1, h2, h3, .display { font-family: "EB Garamond", "Noto Sans Bengali", "Noto Serif Bengali", serif; font-weight: 700; line-height: 1.25; color: var(--ink-heading); }
 [data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3, [data-theme="dark"] .display { color: #ffffff; }
 ::selection { background: var(--primary); color: var(--on-primary); }
 a { color: var(--primary); text-decoration: none; }
@@ -478,7 +480,8 @@ a.card.click { color: var(--ink); }
   font-family: var(--font-doc); font-style: italic; font-size: 13.5px; font-weight: 500;
   cursor: pointer; transition: all .15s var(--ease); text-decoration: none;
 }
-.citation-chip:hover { border-style: solid; filter: brightness(.97); text-decoration: none; }
+.citation-chip:hover { border-style: solid; filter: brightness(1.04); text-decoration: none; }
+[data-theme="dark"] .citation-chip:hover { filter: brightness(1.25); }
 
 /* ---------- Forms ---------- */
 .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
@@ -861,6 +864,7 @@ details.acc .acc-body { padding: 2px 18px 16px; font-size: 14.5px; color: var(--
   font-family: var(--font-display); font-size: 84px; font-weight: 700; letter-spacing: .18em;
   color: rgba(153, 35, 31, .08); text-transform: uppercase; white-space: nowrap;
 }
+[data-theme="dark"] .paper-watermark span { color: rgba(248, 113, 113, 0.06); }
 
 /* ---------- Auth layout ---------- */
 .auth-split { display: grid; min-height: calc(100dvh - 96px); }
