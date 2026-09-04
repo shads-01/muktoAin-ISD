@@ -76,6 +76,28 @@ public class QdrantVectorStore : IVectorStore
         await _client.UpsertAsync(CollectionName, new[] { point });
     }
 
+    public async Task UpsertBatchAsync(IReadOnlyList<(string vectorId, float[] embedding, Dictionary<string, string> payload)> points)
+    {
+        if (points.Count == 0) return;
+
+        var pointStructs = new List<PointStruct>(points.Count);
+        foreach (var (vectorId, embedding, payload) in points)
+        {
+            var point = new PointStruct
+            {
+                Id = new PointId { Uuid = vectorId },
+                Vectors = embedding,
+            };
+            foreach (var (key, value) in payload)
+            {
+                point.Payload[key] = value;
+            }
+            pointStructs.Add(point);
+        }
+
+        await _client.UpsertAsync(CollectionName, pointStructs);
+    }
+
     public async Task<IEnumerable<VectorSearchResult>> SearchAsync(float[] queryVector, int topK)
     {
         // SearchAsync is deprecated in Qdrant.Client 1.19.0 in favor of QueryAsync

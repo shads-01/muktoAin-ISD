@@ -12,8 +12,9 @@ public class QdrantOptions
     // canonical name when unset.
     public string? Collection { get; set; }
 
-    // gemini-embedding-001 output dimension. Confirm against the live GeminiEmbeddingService
-    // (S-1.4) before the real EmbeddingBatchJob run -- kept here as config, not a hardcoded
-    // const, so a wrong guess is a one-line appsettings fix, not a code change.
+    // Embedding output dimension. MUST match Gemini:EmbeddingOutputDimensionality
+    // (when set) or the model's default (3072 for gemini-embedding-001).
+    // QdrantVectorStore auto-recreates the collection on a dimension mismatch,
+    // so changing this is a one-line appsettings fix.
     public uint VectorSize { get; set; } = 3072;
 }
