@@ -1,74 +1,78 @@
-@model MuktoAin.Web.ViewModels.CaseSubmitViewModel
+@model CaseSubmitViewModel
 @{
-    ViewData["Title"] = "মামলা দাখিল — Submit Case";
+    ViewData["Title"] = "মামলা জমা দিন — মুক্ত আইন";
 }
 
-<main class="container container-sm" id="main">
+<main class="container" id="main">
     <nav class="breadcrumbs" aria-label="Breadcrumb">
-        <a asp-controller="Home" asp-action="Index">Home</a>
+        <a asp-controller="Home" asp-action="Index" data-bn="হোম" data-en="Home">হোম</a>
         <span class="sep">/</span>
-        <a asp-controller="Case" asp-action="Track">মামলাসমূহ</a>
-        <span class="sep">/</span>
-        <span>নতুন দাখিল</span>
+        <span data-bn="সমস্যা জমা দিন" data-en="Submit a case">সমস্যা জমা দিন</span>
     </nav>
 
     <div class="page-head">
-        <span class="kicker"><i data-lucide="edit-3"></i> Citizen Intake · FR-2</span>
-        <h1 class="page-title">আইনি সমস্যা জমা দিন</h1>
-        <p class="page-sub">বাংলা, English বা Banglish-এ আপনার সমস্যার বিবরণ লিখুন — AI প্রয়োজনীয় আইন খুঁজবে ও দলিল প্রস্তুত করবে।</p>
+        <span class="kicker"><i data-lucide="edit-3"></i> FR-2 · বিকল্প পথ</span>
+        <h1 class="page-title" data-bn="মামলা জমা দিন" data-en="Submit a case">মামলা জমা দিন</h1>
+        <p class="page-sub" data-bn="ফর্মে গোছাতে পছন্দ করলে এখানে জমা দিন — চ্যাটের মতোই একই প্রক্রিয়া।" data-en="Prefer forms? Submit here — same pipeline as the chat.">ফর্মে গোছাতে পছন্দ করলে এখানে জমা দিন — চ্যাটের মতোই একই প্রক্রিয়া।</p>
     </div>
 
-    <div class="card card-pad-lg" style="margin-bottom: 3rem;">
-        <form method="post" asp-action="Submit">
-            @Html.AntiForgeryToken()
-            <input type="hidden" asp-for="Language" id="caseLanguageInput" />
+    <div class="grid" style="grid-template-columns: minmax(0, 1fr); gap: 20px">
+        <div class="card">
+            <form asp-action="Submit" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-            <div class="field">
-                <label asp-for="CategoryId">আইনি বিভাগ / Legal Category</label>
-                <select asp-for="CategoryId" asp-items="Model.Categories" class="input" required>
-                    <option value="">— বিভাগ নির্বাচন করুন —</option>
-                </select>
-                <span class="hint">আপনার সমস্যার ধরন অনুযায়ী সঠিক বিভাগ বাছাই করুন (যেমন: মজুরি সমস্যা হলে শ্রম অভিযোগ)</span>
-            </div>
-
-            <div class="field">
-                <label asp-for="DistrictId">জেলা / District (FR-2)</label>
-                <select asp-for="DistrictId" asp-items="Model.Districts" class="input" required>
-                    <option value="">— জেলা নির্বাচন করুন —</option>
-                </select>
-                <span class="hint">যে জেলায় ঘটনাটি ঘটেছে বা সংশ্লিষ্ট কারখানা/প্রতিষ্ঠান অবস্থিত</span>
-            </div>
-
-            <div class="field">
-                <label asp-for="Title">সংক্ষিপ্ত শিরোনাম / Brief Title</label>
-                <input asp-for="Title" class="input" maxlength="250" placeholder="যেমন: ৩ মাস ধরে বকেয়া বেতন পরিশোধ না করা" required />
-                <span class="hint">এক লাইনে মূল অভিযোগ বা সমস্যার সারসংক্ষেপ</span>
-            </div>
-
-            <div class="field">
-                <label asp-for="Description">সমস্যার পূর্ণ বিবরণ / Describe Your Problem</label>
-                <textarea asp-for="Description" class="textarea autogrow" rows="6" maxlength="5000" data-counter="#descCounter" placeholder="ঘটনাটি বিস্তারিত লিখুন — কখন ঘটেছে, কী অন্যায় হয়েছে, আপনার কী ক্ষতি হয়েছে এবং আপনি কী আইনি প্রতিকার চান..." required></textarea>
-                <div class="row spread" style="margin-top: 4px;">
-                    <span class="tiny muted">বাংলা, English বা Banglish যেকোনো ভাষায় লিখতে পারেন</span>
-                    <span class="char-counter" id="descCounter">০ / ৫,০০০</span>
+                <div style="margin-bottom: 14px">
+                    <label class="form-label" asp-for="CategoryId" data-bn="অভিযোগের ধরন" data-en="Category">অভিযোগের ধরন</label>
+                    <select class="input" asp-for="CategoryId" asp-items="Model.Categories"></select>
                 </div>
-            </div>
 
-            <div class="field" style="background: var(--surface-2); padding: 14px; border-radius: var(--radius); border: 1px solid var(--border); margin: 20px 0;">
-                <label class="check-row align-start" for="anonCheck">
-                    <input asp-for="IsAnonymous" type="checkbox" id="anonCheck" />
-                    <span>
-                        <b>বেনামে জমা দিন (Anonymous Submission · FR-2)</b>
-                        <small class="muted" style="display:block; margin-top:2px;">
-                            আপনার নাম বা ব্যক্তিগত পরিচয় সংরক্ষিত থাকবে না; একটি গোপনীয় ট্র্যাকিং কোডের মাধ্যমে যেকোনো সময় ফলাফল ও খসড়া দেখতে পারবেন।
-                        </small>
-                    </span>
-                </label>
-            </div>
+                <div style="margin-bottom: 14px">
+                    <label class="form-label" asp-for="DistrictId" data-bn="জেলা (৬৪)" data-en="District (64)">জেলা (৬৪)</label>
+                    <select class="input" asp-for="DistrictId" asp-items="Model.Districts"></select>
+                </div>
 
-            <button type="submit" class="btn btn-primary btn-lg btn-block">
-                <i data-lucide="send"></i> সমস্যা জমা দিন ও অধিকার জানুন →
-            </button>
-        </form>
+                <div style="margin-bottom: 14px">
+                    <label class="form-label" asp-for="Title" data-bn="শিরোনাম" data-en="Title">শিরোনাম</label>
+                    <input class="input" asp-for="Title" maxlength="250" placeholder="যেমন: ৩ মাসের বকেয়া বেতন" />
+                    <span class="text-danger" asp-validation-for="Title"></span>
+                </div>
+
+                <div style="margin-bottom: 14px">
+                    <label class="form-label" asp-for="Description" data-bn="বিবরণ" data-en="Description">বিবরণ</label>
+                    <textarea class="input autogrow" asp-for="Description" rows="5" maxlength="5000"
+                              placeholder="বাংলা / English / Banglish — যেভাবে খুশি লিখুন"
+                              data-counter="#desc-counter"></textarea>
+                    <small class="muted tiny" id="desc-counter"></small>
+                    <span class="text-danger" asp-validation-for="Description"></span>
+                </div>
+
+                <div class="alert alert-warn tiny" style="margin-bottom: 14px">
+                    <input type="checkbox" asp-for="IsAnonymous" style="margin-right: 8px" />
+                    <span data-bn="বেনামে জমা দিন — একটি ট্র্যাকিং কোড পাবেন যা দিয়ে মামলা দেখতে পারবেন" data-en="Submit anonymously — you'll get a tracking code to view the case">বেনামে জমা দিন — একটি ট্র্যাকিং কোড পাবেন যা দিয়ে মামলা দেখতে পারবেন</span>
+                </div>
+
+                <div class="row wrap" style="gap: 10px">
+                    <button class="btn btn-primary" type="submit">
+                        <i data-lucide="send"></i> <span data-bn="জমা দিন" data-en="Submit">জমা দিন</span>
+                    </button>
+                    <a class="btn btn-ghost" asp-controller="Home" asp-action="Index">
+                        <i data-lucide="message-circle"></i> <span data-bn="চ্যাটের মাধ্যমে জমা দিন" data-en="Submit via chat instead">চ্যাটের মাধ্যমে জমা দিন</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <aside class="card">
+            <h2 class="section-h"><i data-lucide="workflow"></i> <span data-bn="এরপর কী হবে" data-en="What happens next">এরপর কী হবে</span></h2>
+            <ol style="padding-left: 20px; line-height: 2.2">
+                <li data-bn="AI আপনার অধিকার ব্যাখ্যা করবে (ধারাসহ)" data-en="AI explains your rights (with citations)">AI আপনার অধিকার ব্যাখ্যা করবে (ধারাসহ)</li>
+                <li data-bn="খসড়া দলিল তৈরি হবে — আপনি সম্পাদনা করতে পারবেন" data-en="A draft document is generated — you can edit it">খসড়া দলিল তৈরি হবে — আপনি সম্পাদনা করতে পারবেন</li>
+                <li data-bn="আইনজীবী অনুমোদনের পরেই PDF ডাউনলোড আনলক হবে" data-en="PDF download unlocks only after lawyer approval">আইনজীবী অনুমোদনের পরেই PDF ডাউনলোড আনলক হবে</li>
+            </ol>
+        </aside>
     </div>
 </main>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

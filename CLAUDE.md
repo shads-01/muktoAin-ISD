@@ -2,6 +2,10 @@
 
 See `AGENTS.md` for full project guidelines, clean architecture boundaries, and technology stack.
 
+## Git Commit Policy
+
+**NEVER commit, stage, push, or amend — ever.** Shads (the human) is the sole committer. Skip any plan/skill step that says `git commit` — leave changes in the working tree.
+
 ## Mandatory Task Progress Tracking Rule
 
 **Every AI coding agent (Antigravity, Claude Code, OpenCode, Codex, Cursor, etc.) MUST strictly adhere to this workflow:**

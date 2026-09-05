@@ -1,0 +1,100 @@
+@model IReadOnlyList<MuktoAin.Application.DTOs.PaymentOrderDto>
+@{
+    ViewData["Title"] = "Transactions — Admin — MuktoAin";
+    ViewData["IsAdminPage"] = true;
+    var payouts = (IReadOnlyList<MuktoAin.Domain.Entities.PayoutRequest>?)ViewData["Payouts"] ?? new List<MuktoAin.Domain.Entities.PayoutRequest>();
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+        <span class="sep">/</span>
+        <span>Transactions</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="receipt"></i> FR-24</span>
+        <h1 class="page-title">Transactions</h1>
+        <p class="page-sub">
+            <span class="badge badge-warn sandbox-badge">ডেমো মোড — স্যান্ডবক্স পেমেন্ট / Sandbox — no real money</span>
+        </p>
+    </div>
+
+    <div class="card" style="margin-bottom: 20px">
+        <h2 class="section-h"><i data-lucide="landmark"></i> Orders</h2>
+        <table>
+            <thead>
+                <tr><th>Order</th><th>Purpose</th><th>Case</th><th>Amount</th><th>Commission</th><th>Net to lawyer</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var o in Model)
+                {
+                    <tr>
+                        <td class="mono">#@o.PaymentOrderId<br /><small class="muted">@o.CreatedAt.ToString("d MMM HH:mm")</small></td>
+                        <td>@o.Purpose</td>
+                        <td>@(o.CaseId.HasValue ? $"CASE-{o.CaseId}" : "—")</td>
+                        <td>৳@o.Amount</td>
+                        <td>৳@o.Commission</td>
+                        <td>৳@o.NetToLawyer @(o.LawyerName != null ? $"· {o.LawyerName}" : "")</td>
+                        <td><span class="badge badge-@(o.Status == "Paid" ? "final" : o.Status == "Refunded" ? "neutral" : o.Status == "Failed" ? "rejected" : "draft")">@o.Status</span></td>
+                        <td>
+                            @if (o.Status == "Pending")
+                            {
+                                <form asp-action="MarkOrderPaid" method="post" style="display:inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="orderId" value="@o.PaymentOrderId" />
+                                    <button class="btn btn-outline btn-sm" type="submit">Mark paid (SBX)</button>
+                                </form>
+                            }
+                            else if (o.Status == "Paid")
+                            {
+                                <form asp-action="RefundOrder" method="post" style="display:inline"
+                                      data-confirm="Refund this order (sandbox) and reverse the ledger?">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="orderId" value="@o.PaymentOrderId" />
+                                    <button class="btn btn-danger-outline btn-sm" type="submit">Refund</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="8" class="muted" style="text-align:center">No orders yet (sandbox).</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2 class="section-h"><i data-lucide="banknote"></i> Payout requests</h2>
+        @if (payouts != null && payouts.Any())
+        {
+            <table>
+                <thead><tr><th>Request</th><th>Lawyer</th><th>Amount</th><th>Requested</th><th>Action</th></tr></thead>
+                <tbody>
+                    @foreach (var p in payouts)
+                    {
+                        <tr>
+                            <td class="mono">#@p.PayoutRequestId</td>
+                            <td>Lawyer #@p.LawyerProfileId</td>
+                            <td>৳@p.Amount</td>
+                            <td>@p.RequestedAt.ToString("d MMM HH:mm")</td>
+                            <td>
+                                <form asp-action="ApprovePayout" method="post" style="display:inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="payoutRequestId" value="@p.PayoutRequestId" />
+                                    <button class="btn btn-outline btn-sm" type="submit">Approve → mark paid</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p class="muted">No pending payout requests.</p>
+        }
+    </div>
+</main>

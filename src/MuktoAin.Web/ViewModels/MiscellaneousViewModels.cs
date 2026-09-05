@@ -6,6 +6,7 @@ public class SearchViewModel
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 10;
     public int TotalResults { get; set; }
+    public int? ActId { get; set; }
     public List<SearchResultItemViewModel> Results { get; set; } = new();
 }
 
@@ -127,4 +128,39 @@ public class DocumentPreviewViewModel
     public bool CanDownloadPdf { get; set; }
     public string? LawyerComments { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+public class LawyerStatusViewModel
+{
+    public string LawyerName { get; set; } = string.Empty;
+    public string BarRegistrationNumber { get; set; } = string.Empty;
+    public string Specialization { get; set; } = string.Empty;
+    public string Status { get; set; } = "Pending"; // Pending / Approved / Rejected
+    public string? RejectionReason { get; set; }
+    public DateTime SubmittedAt { get; set; }
+}
+
+public class LawyerQueueViewModel
+{
+    public string LawyerName { get; set; } = string.Empty;
+    public string BarRegistrationNumber { get; set; } = string.Empty;
+    public string Specialization { get; set; } = string.Empty;
+    public int PendingCount { get; set; }
+    public string ActiveFilter { get; set; } = "All";
+    public List<LawyerQueueItemViewModel> Items { get; set; } = new();
+}
+
+public class LawyerQueueItemViewModel
+{
+    public int DocumentId { get; set; }
+    public int CaseId { get; set; }
+    public string CaseTitle { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public string DistrictName { get; set; } = string.Empty;
+    public bool CitizenEdited { get; set; }
+    public int VersionNo { get; set; }
+    public string? ClaimedBy { get; set; }
+    public bool IsMine { get; set; }
+    public int WaitingHours { get; set; }
+    public bool CanOpen { get; set; }
 }

@@ -1,0 +1,73 @@
+@model AdminUsersViewModel
+@{
+    ViewData["Title"] = "Users — Admin — MuktoAin";
+    ViewData["IsAdminPage"] = true;
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+        <span class="sep">/</span>
+        <span>Users</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="users"></i> FR-18</span>
+        <h1 class="page-title">User Management</h1>
+        <p class="page-sub">Suspend or restore accounts. Admin accounts are protected from modification.</p>
+    </div>
+
+    <div class="chip-row" style="margin-bottom: 16px">
+        @foreach (var f in new[] { "All", "Citizen", "Lawyer", "Admin" })
+        {
+            <a class="chip chip-sm @(Model.RoleFilter == f ? "active" : "")"
+               asp-action="Users" asp-route-role="@f">@f</a>
+        }
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model.Users)
+                {
+                    <tr>
+                        <td>@u.FullName</td>
+                        <td class="mono">@u.Email</td>
+                        <td><span class="badge badge-neutral">@u.Role</span></td>
+                        <td>
+                            <span class="badge badge-@(u.Status == "Suspended" ? "rejected" : "final")">@u.Status</span>
+                        </td>
+                        <td>
+                            @if (u.Role == "Admin")
+                            {
+                                <span class="badge badge-neutral" title="Protected">Protected</span>
+                            }
+                            else if (u.Status == "Suspended")
+                            {
+                                <form asp-action="Suspend" method="post" style="display:inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@u.UserId" />
+                                    <input type="hidden" name="suspend" value="false" />
+                                    <button class="btn btn-outline btn-sm" type="submit">Activate</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="Suspend" method="post" style="display:inline"
+                                      data-confirm="Suspend this account? Login will be blocked.">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@u.UserId" />
+                                    <input type="hidden" name="suspend" value="true" />
+                                    <button class="btn btn-danger-outline btn-sm" type="submit">Suspend</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</main>

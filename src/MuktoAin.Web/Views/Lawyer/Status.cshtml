@@ -1,0 +1,68 @@
+@model LawyerStatusViewModel
+@{
+    ViewData["Title"] = "ভেরিফিকেশন স্ট্যাটাস — মুক্ত আইন";
+    var badge = Model.Status == "Approved" ? "final" : Model.Status == "Rejected" ? "rejected" : "draft";
+}
+
+<main class="container" id="main" style="max-width: 620px">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index" data-bn="হোম" data-en="Home">হোম</a>
+        <span class="sep">/</span>
+        <span data-bn="ভেরিফিকেশন" data-en="Verification">ভেরিফিকেশন</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="badge-check"></i> FR-15</span>
+        <h1 class="page-title" data-bn="আইনজীবী যাচাইকরণ" data-en="Lawyer Verification">আইনজীবী যাচাইকরণ</h1>
+    </div>
+
+    <div class="card" style="text-align: center; padding: 32px">
+        @if (Model.Status == "Rejected")
+        {
+            <div class="item-ico" style="margin: 0 auto 12px"><i data-lucide="x-circle"></i></div>
+        }
+        else
+        {
+            <div class="item-ico" style="margin: 0 auto 12px"><i data-lucide="hourglass"></i></div>
+        }
+
+        <h2>@(Model.Status == "Rejected" ? "আবেদন প্রত্যাখ্যাত / Rejected" : "যাচাইকরণ অপেক্ষমান / Verification Pending")</h2>
+        <p>
+            <span class="badge badge-@badge">@Model.Status</span>
+        </p>
+        <p class="muted">
+            Bar #@Model.BarRegistrationNumber · @Model.Specialization
+        </p>
+
+        @if (Model.Status == "Pending")
+        {
+            <p class="muted tiny" data-bn="সাধারণত ২৪–৪৮ ঘণ্টার মধ্যে যাচাই সম্পন্ন হয়।" data-en="Verification typically takes 24–48 hours.">সাধারণত ২৪–৪৮ ঘণ্টার মধ্যে যাচাই সম্পন্ন হয়।</p>
+            <div class="alert alert-info tiny" style="text-align: left">
+                <b data-bn="অপেক্ষার সময় আপনি করতে পারবেন:" data-en="While you wait:">অপেক্ষার সময় আপনি করতে পারবেন:</b>
+                <ul style="margin: 6px 0 0 18px; line-height: 1.9">
+                    <li><a asp-controller="Search" asp-action="Index">আইন অনুসন্ধান / Search laws</a></li>
+                    <li><a asp-controller="Category" asp-action="Index">বিষয়সমূহ দেখুন / Browse categories</a></li>
+                    <li><a asp-controller="Account" asp-action="Profile">প্রোফাইল সম্পূর্ণ করুন / Complete profile</a></li>
+                </ul>
+            </div>
+        }
+        else if (Model.Status == "Rejected")
+        {
+            <div class="alert alert-danger tiny" style="text-align: left">
+                <b>প্রত্যাখ্যানের কারণ / Reason:</b> @(Model.RejectionReason ?? "অ্যাডমিন কোনো কারণ উল্লেখ করেননি।")
+                নিচের ফর্মে সঠিক তথ্য দিয়ে পুনরায় আবেদন করুন।
+            </div>
+
+            <form asp-action="Resubmit" method="post" style="text-align: left; margin-top: 16px">
+                @Html.AntiForgeryToken()
+                <label class="form-label" data-bn="বার রেজিস্ট্রেশন নম্বর" data-en="Bar registration number">বার রেজিস্ট্রেশন নম্বর</label>
+                <input class="input" asp-for="BarRegistrationNumber" placeholder="DHA-12345" />
+                <label class="form-label" style="margin-top: 10px" data-bn="বিশেষজ্ঞ এলাকা" data-en="Specialization">বিশেষজ্ঞ এলাকা</label>
+                <input class="input" asp-for="Specialization" placeholder="Labour / Criminal / Civil / Family / Consumer / Tax" />
+                <button class="btn btn-primary btn-block" style="margin-top: 16px" type="submit">
+                    <i data-lucide="send"></i> <span data-bn="পুনরায় আবেদন করুন" data-en="Resubmit application">পুনরায় আবেদন করুন</span>
+                </button>
+            </form>
+        }
+    </div>
+</main>

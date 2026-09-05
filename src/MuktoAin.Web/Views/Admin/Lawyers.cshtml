@@ -1,0 +1,108 @@
+@model AdminLawyersViewModel
+@{
+    ViewData["Title"] = "Lawyer Verification — Admin — MuktoAin";
+    ViewData["IsAdminPage"] = true;
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+        <span class="sep">/</span>
+        <span>Lawyers</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="badge-check"></i> FR-15 · FR-18</span>
+        <h1 class="page-title">Lawyer Verification</h1>
+        <p class="page-sub">Approve or reject bar-registration applications. Rejection requires a reason.</p>
+    </div>
+
+    <div class="chip-row" style="margin-bottom: 16px">
+        <span class="chip chip-sm">Pending · @Model.Pending.Count</span>
+        <span class="chip chip-sm">Approved · @Model.Approved.Count</span>
+        <span class="chip chip-sm">Rejected · @Model.Rejected.Count</span>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>Applicant</th><th>Bar Reg No</th><th>Specialization</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var l in Model.Pending)
+                {
+                    <tr>
+                        <td>@l.ApplicantName<br /><small class="muted mono">@l.Email</small></td>
+                        <td class="mono">@l.BarRegistrationNumber</td>
+                        <td>@l.Specialization</td>
+                        <td><span class="badge badge-draft">Pending</span></td>
+                        <td>
+                            <form asp-action="VerifyLawyer" method="post" style="display:inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="lawyerProfileId" value="@l.LawyerProfileId" />
+                                <input type="hidden" name="approve" value="true" />
+                                <button class="btn btn-outline btn-sm" type="submit"
+                                        data-confirm="Approve this lawyer? Queue access unlocks.">Approve</button>
+                            </form>
+                            <button class="btn btn-danger-outline btn-sm" type="button"
+                                    data-open-modal="#reject-@l.LawyerProfileId">Reject</button>
+                        </td>
+                    </tr>
+                }
+                @foreach (var l in Model.Approved)
+                {
+                    <tr>
+                        <td>@l.ApplicantName<br /><small class="muted mono">@l.Email</small></td>
+                        <td class="mono">@l.BarRegistrationNumber</td>
+                        <td>@l.Specialization</td>
+                        <td><span class="badge badge-final">Approved</span></td>
+                        <td><span class="muted tiny">—</span></td>
+                    </tr>
+                }
+                @foreach (var l in Model.Rejected)
+                {
+                    <tr>
+                        <td>@l.ApplicantName<br /><small class="muted mono">@l.Email</small></td>
+                        <td class="mono">@l.BarRegistrationNumber</td>
+                        <td>@l.Specialization</td>
+                        <td><span class="badge badge-rejected">Rejected</span></td>
+                        <td><span class="muted tiny">—</span></td>
+                    </tr>
+                }
+                @if (!Model.Pending.Any() && !Model.Approved.Any() && !Model.Rejected.Any())
+                {
+                    <tr><td colspan="5" class="muted" style="text-align:center">No applications.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<!-- Rejection reason modals (one per pending row) -->
+@foreach (var l in Model.Pending)
+{
+    <div class="modal-backdrop" id="reject-@l.LawyerProfileId" role="dialog" aria-modal="true">
+        <div class="modal">
+            <div class="modal-handle"></div>
+            <div class="modal-head">
+                <div>
+                    <span class="kicker" style="color: var(--danger)">Reject application</span>
+                    <h3>@l.ApplicantName · @l.BarRegistrationNumber</h3>
+                </div>
+                <button class="icon-btn" type="button" data-close-modal aria-label="Close"><i data-lucide="x"></i></button>
+            </div>
+            <form asp-action="VerifyLawyer" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="lawyerProfileId" value="@l.LawyerProfileId" />
+                <input type="hidden" name="approve" value="false" />
+                <label class="form-label">Reason (mandatory — shown to the lawyer)</label>
+                <textarea class="input" name="reason" rows="3" maxlength="500"
+                          placeholder="e.g. Bar number not found in the Bar Council registry."></textarea>
+                <div class="row" style="justify-content: flex-end; gap: 10px; margin-top: 14px">
+                    <button class="btn btn-outline btn-sm" type="button" data-close-modal>Cancel</button>
+                    <button class="btn btn-danger-outline btn-sm" type="submit">Reject application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}

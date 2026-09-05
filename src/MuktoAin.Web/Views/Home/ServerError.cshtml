@@ -7,13 +7,11 @@
         <div class="error-code">500</div>
         <h1 class="page-title">সার্ভার সাময়িক সমস্যায় পড়েছে</h1>
         <p class="muted" data-bn="আমাদের দিকে অপ্রত্যাশিত সমস্যা হয়েছে। আপনার জমা দেওয়া তথ্য এনক্রিপ্টেড অবস্থায় সুরক্ষিত আছে।" data-en="Something unexpected occurred on our end. Your submitted case data remains safely encrypted.">Something unexpected occurred on our end. Your submitted case data remains safely encrypted.</p>
-        <div class="row wrap" style="justify-content: center; gap: 10px; margin-top: 10px;">
-            <button class="btn btn-primary" type="button" onclick="showToast('পুনরায় চেষ্টা করা হচ্ছে...', 'info'); location.reload();">
-                <i data-lucide="refresh-cw"></i> <span data-bn="আবার চেষ্টা করুন" data-en="Try Again">আবার চেষ্টা করুন</span>
+        <div class="row wrap" style="justify-content: center; align-items: center; gap: 10px; margin-top: 10px;">
+            <button class="btn btn-primary" type="button" onclick="location.reload()">
+                <i data-lucide="refresh-cw"></i> <span>আবার চেষ্টা করুন / Try again</span>
             </button>
-            <a class="btn btn-ghost" asp-controller="Home" asp-action="About">
-                <i data-lucide="info"></i> <span data-bn="সিস্টেম স্ট্যাটাস" data-en="System Status">সিস্টেম স্ট্যাটাস</span>
-            </a>
+            <span class="muted tiny">আপনার মামলার তথ্য সুরক্ষিত আছে / Your case data is safe</span>
         </div>
     </div>
 </main>

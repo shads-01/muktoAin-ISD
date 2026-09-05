@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using MuktoAin.Application.DTOs;
 using MuktoAin.Application.Services;
+using MuktoAin.Domain.Interfaces.Repositories;
 using MuktoAin.Web.ViewModels;
 
 namespace MuktoAin.Web.Controllers;
@@ -27,22 +28,34 @@ public class SearchController : Controller
         { "a", "A", "1", "i", "I", "ক", "১" };
 
     private readonly SearchService _searchService;
+    private readonly IActRepository _actRepo;
 
-    public SearchController(SearchService searchService)
+    public SearchController(SearchService searchService, IActRepository actRepo)
     {
         _searchService = searchService;
+        _actRepo = actRepo;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? q, int page = 1)
+    public async Task<IActionResult> Index(string? q, int page = 1, int? actId = null)
     {
+        // Act filter dropdown data (always, so the filter renders on empty state too)
+        var acts = await _actRepo.GetAllAsync();
+        ViewBag.Acts = acts.OrderBy(a => a.Title).Select(a => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+        {
+            Value = a.ActId.ToString(),
+            Text = $"{a.Title} ({a.Year})"
+        }).ToList();
+
         if (string.IsNullOrWhiteSpace(q))
         {
             return View(new SearchViewModel());
         }
 
-        var result = await _searchService.SearchActsAsync(q, page, PageSize);
-        return View(ToViewModel(result));
+        var result = await _searchService.SearchActsAsync(q, page, PageSize, actId);
+        var vm = ToViewModel(result);
+        vm.ActId = actId;
+        return View(vm);
     }
 
     private static SearchViewModel ToViewModel(SearchResultDto result)

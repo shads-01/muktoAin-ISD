@@ -206,6 +206,14 @@ builder.Services.AddScoped<DocumentService>();
 // A-2.6: Lawyer verification service
 builder.Services.AddScoped<LawyerVerificationService>();
 
+// Frontend redesign 2026-09: chat-first home + AI budget
+builder.Services.AddScoped<AiBudgetService>();
+builder.Services.AddScoped<ChatService>();
+
+// Part B: lawyer review flow
+builder.Services.AddScoped<LawyerReviewService>();
+builder.Services.AddScoped<PaymentService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

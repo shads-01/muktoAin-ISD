@@ -1,74 +1,78 @@
-@model MuktoAin.Web.ViewModels.CaseTrackViewModel
+@model CaseTrackViewModel
+@using MuktoAin.Web.Controllers
 @{
-    ViewData["Title"] = "মামলা ট্র্যাকিং — My Cases";
+    ViewData["Title"] = "আমার মামলা — মুক্ত আইন";
 }
 
 <main class="container" id="main">
     <nav class="breadcrumbs" aria-label="Breadcrumb">
-        <a asp-controller="Home" asp-action="Index">Home</a>
+        <a asp-controller="Home" asp-action="Index" data-bn="হোম" data-en="Home">হোম</a>
         <span class="sep">/</span>
-        <span>মামলা ট্র্যাকিং</span>
+        <span data-bn="আমার মামলা" data-en="My Cases">আমার মামলা</span>
     </nav>
 
-    <div class="row spread wrap page-head" style="align-items: center; gap: 14px;">
-        <div>
-            <span class="kicker"><i data-lucide="folder-clock"></i> Citizen Dashboard · FR-8</span>
-            <h1 class="page-title">আপনার জমাকৃত মামলাসমূহ</h1>
-            <p class="page-sub">আপনার সকল আইনি সমস্যা, ধারা বিশ্লেষণ ও খসড়া দলিলের অগ্রগতি পর্যবেক্ষণ করুন</p>
-        </div>
-        <a class="btn btn-primary" asp-controller="Case" asp-action="Submit">
-            <i data-lucide="plus-circle"></i> নতুন সমস্যা জমা দিন
-        </a>
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="folder-open"></i> FR-8</span>
+        <h1 class="page-title" data-bn="আমার মামলাসমূহ" data-en="My Cases">আমার মামলাসমূহ</h1>
+        <p class="page-sub" data-bn="আপনার জমা দেওয়া মামলাগুলোর সর্বশেষ অবস্থা।" data-en="Track the status of your submitted cases.">আপনার জমা দেওয়া মামলাগুলোর সর্বশেষ অবস্থা।</p>
     </div>
 
-    <!-- Filter chips -->
-    <div class="row wrap" style="margin-bottom: 16px; gap: 8px;">
-        <span class="tiny muted" style="margin-right: 4px;" data-bn="ফিল্টার:" data-en="Filter:">ফিল্টার:</span>
-        <div class="chip-row" data-chip-group>
-            <button type="button" class="chip chip-sm active" data-bn="সকল মামলা" data-en="All Cases">সকল মামলা (@Model.Cases.Count)</button>
-            <button type="button" class="chip chip-sm" data-bn="পর্যালোচনাধীন" data-en="Under Review">পর্যালোচনাধীন (Under Review)</button>
-            <button type="button" class="chip chip-sm" data-bn="অনুমোদিত" data-en="Approved">অনুমোদিত (Finalized)</button>
-            <button type="button" class="chip chip-sm" data-bn="দাখিলকৃত" data-en="Submitted">দাখিলকৃত (Submitted)</button>
-        </div>
+    <!-- Guest tracking-code lookup -->
+    <div class="card" style="margin-bottom: 16px">
+        <form asp-action="Track" method="get" class="row" style="gap: 10px; align-items: center">
+            <div class="item-ico"><i data-lucide="key-round"></i></div>
+            <input class="input mono" style="flex: 1; min-width: 180px" type="text" name="code" value="@Model.LookupCode"
+                   placeholder="MKT-XXXXXXXX (ট্র্যাকিং কোড)" aria-label="ট্র্যাকিং কোড" />
+            <button class="btn btn-primary" type="submit">
+                <i data-lucide="search"></i> <span data-bn="ট্র্যাক করুন" data-en="Track">ট্র্যাক করুন</span>
+            </button>
+        </form>
+        <p class="muted tiny" style="margin: 8px 0 0" data-bn="অ্যাকাউন্ট ছাড়া জমা দেওয়া মামলা এই কোড দিয়ে খুলুন।" data-en="Open anonymously-submitted cases with this code.">অ্যাকাউন্ট ছাড়া জমা দেওয়া মামলা এই কোড দিয়ে খুলুন।</p>
     </div>
 
-    <div class="card" style="margin-bottom: 3rem;">
-        <div class="table-wrap">
-            <div class="table-scroll">
-                <table class="min-w-table">
-                    <thead>
-                        <tr>
-                            <th data-bn="ট্র্যাকিং কোড" data-en="Tracking Code">ট্র্যাকিং কোড</th>
-                            <th data-bn="শিরোনাম" data-en="Title">শিরোনাম</th>
-                            <th data-bn="আইনি বিভাগ" data-en="Legal Category">আইনি বিভাগ</th>
-                            <th data-bn="দাখিলের তারিখ" data-en="Submitted On">দাখিলের তারিখ</th>
-                            <th data-bn="বর্তমান স্ট্যাটাস" data-en="Status">বর্তমান স্ট্যাটাস</th>
-                            <th style="text-align: right;" data-bn="পদক্ষেপ" data-en="Action">পদক্ষেপ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var c in Model.Cases)
-                        {
-                            <tr>
-                                <td class="mono"><b>@c.TrackingCode</b></td>
-                                <td>
-                                    <b>@c.Title</b>
-                                </td>
-                                <td>@c.CategoryName</td>
-                                <td class="tiny muted">@c.CreatedAt.ToString("dd MMM yyyy")</td>
-                                <td>
-                                    <span class="badge badge-@c.Status.ToLower()" data-bn="@StatusText.Bn(c.Status)" data-en="@StatusText.En(c.Status)">@StatusText.Bn(c.Status)</span>
-                                </td>
-                                <td style="text-align: right;">
-                                    <a class="btn btn-outline btn-sm" asp-controller="Case" asp-action="Result" asp-route-id="@c.CaseId" asp-route-code="@(string.IsNullOrEmpty(c.TrackingCode) ? null : c.TrackingCode)">
-                                        <i data-lucide="eye"></i> <span data-bn="ফলাফল দেখুন" data-en="View Result">ফলাফল দেখুন</span> →
-                                    </a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+    <!-- Server-side filter chips -->
+    <div class="chip-row" style="margin-bottom: 16px">
+        @foreach (var f in new[] { "All", "Submitted", "UnderReview", "Approved", "Rejected" })
+        {
+            <a class="chip chip-sm @(Model.ActiveStatusFilter == f ? "active" : "")"
+               asp-action="Track" asp-route-status="@f">@StatusText.Bn(f)</a>
+        }
+    </div>
+
+    @if (!Model.Cases.Any())
+    {
+        <div class="empty-state">
+            <div class="item-ico"><i data-lucide="folder-open"></i></div>
+            <h3 data-bn="এখনো কোনো মামলা নেই" data-en="No cases yet">এখনো কোনো মামলা নেই</h3>
+            <p class="muted" data-bn="চ্যাটে সমস্যা বলুন অথবা ফর্মে জমা দিন।" data-en="Describe your problem in chat or use the form.">চ্যাটে সমস্যা বলুন অথবা ফর্মে জমা দিন।</p>
+            <div class="row" style="justify-content: center; gap: 10px">
+                <a class="btn btn-primary btn-sm" asp-controller="Home" asp-action="Index"><i data-lucide="message-circle"></i> চ্যাট</a>
+                <a class="btn btn-outline btn-sm" asp-controller="Case" asp-action="Submit"><i data-lucide="edit-3"></i> ফর্ম</a>
             </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <div class="list-rows">
+            @foreach (var c in Model.Cases)
+            {
+                <a class="item-row" asp-controller="Case" asp-action="Result"
+                   asp-route-id="@c.CaseId" asp-route-code="@c.TrackingCode">
+                    @if (c.HasUnread)
+                    {
+                        <span class="unread-dot" title="আইনজীবী মতামত দিয়েছেন / New activity" aria-label="Unread activity"></span>
+                    }
+                    <div class="item-ico"><i data-lucide="folder"></i></div>
+                    <div style="flex: 1; min-width: 0">
+                        <b>@c.Title</b><br />
+                        <small class="muted">@c.CategoryName · @c.CreatedAt.ToString("d MMM yyyy")</small>
+                    </div>
+                    <span class="badge badge-@c.Status.ToLower()">@StatusText.Bn(c.Status)</span>
+                </a>
+            }
+        </div>
+    }
+
+    <!-- Mobile FAB -->
+    <a class="fab" asp-controller="Home" asp-action="Index" aria-label="নতুন মামলা"><i data-lucide="plus"></i></a>
 </main>

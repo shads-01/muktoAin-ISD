@@ -79,7 +79,7 @@
                     <div class="field">
                         <div class="row spread">
                             <label asp-for="Password">পাসওয়ার্ড / Password</label>
-                            <a href="#" class="tiny muted" onclick="showToast('পাসওয়ার্ড রিসেট লিংক আপনার ইমেইলে পাঠানো হয়েছে (ডেমো)', 'info'); return false;">পাসওয়ার্ড ভুলে গেছেন?</a>
+                            <a asp-controller="Account" asp-action="ForgotPassword" class="tiny muted">পাসওয়ার্ড ভুলে গেছেন? / Forgot password?</a>
                         </div>
                         <input asp-for="Password" class="input" type="password" placeholder="••••••••" required autocomplete="current-password" />
                         <span asp-validation-for="Password" class="err"></span>

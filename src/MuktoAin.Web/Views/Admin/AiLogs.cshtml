@@ -1,0 +1,93 @@
+@model AdminAiLogsViewModel
+@{
+    ViewData["Title"] = "AI Logs — Admin — MuktoAin";
+    ViewData["IsAdminPage"] = true;
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+        <span class="sep">/</span>
+        <span>AI Logs</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="activity"></i> FR-12</span>
+        <h1 class="page-title">AI Audit Log</h1>
+        <p class="page-sub">Every Gemini call — tokens, latency, outcome. Prompts are PII-scrubbed before storage (S-2.7).</p>
+    </div>
+
+    <div class="grid grid-3" style="margin-bottom: 16px">
+        <div class="card"><span class="kicker">Calls today</span><div style="font-size:32px;font-weight:700">@Model.CallsToday</div></div>
+        <div class="card"><span class="kicker">Rows shown</span><div style="font-size:32px;font-weight:700">@Model.Logs.Count</div></div>
+        <div class="card"><span class="kicker">Retention</span><div style="font-size:16px;font-weight:700;margin-top:10px">180 days (design)</div></div>
+    </div>
+
+    <div class="card" style="margin-bottom: 16px">
+        <form asp-action="AiLogs" method="get" class="row wrap" style="gap: 10px; align-items: flex-end">
+            <div>
+                <label class="form-label">Type</label>
+                <select class="input" name="type">
+                    @foreach (var t in new[] { "All", "LawIdentification", "RightsExplanation", "Drafting" })
+                    {
+                        <option value="@t">@t</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Min latency (ms)</label>
+                <select class="input" name="minLatency">
+                    <option value="0">Any</option>
+                    <option value="1000">&gt; 1s</option>
+                    <option value="2000">&gt; 2s</option>
+                    <option value="5000">&gt; 5s</option>
+                </select>
+            </div>
+            <button class="btn btn-outline btn-sm" type="submit">Apply</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>Time</th><th>Type</th><th>Model</th><th>Tokens</th><th>Latency</th><th>Case</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var l in Model.Logs)
+                {
+                    <tr>
+                        <td class="mono tiny">@l.Time</td>
+                        <td>@l.Type</td>
+                        <td class="mono tiny">@l.Model</td>
+                        <td>@l.Tokens</td>
+                        <td>
+                            <span class="badge badge-@(l.LatencyMs > 5000 ? "rejected" : l.LatencyMs > 2000 ? "review" : "final")">@(l.LatencyMs)ms</span>
+                        </td>
+                        <td>
+                            @if (l.CaseId.HasValue)
+                            {
+                                <a class="tiny mono" asp-controller="Case" asp-action="Result" asp-route-id="@l.CaseId.Value">CASE-@l.CaseId</a>
+                            }
+                            else
+                            {
+                                <span class="muted tiny">chat</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <details class="acc card" style="margin-top: 14px">
+        <summary><b>Inspect prompts/responses (first 200 rows, preview only)</b></summary>
+        @foreach (var l in Model.Logs.Take(20))
+        {
+            <details class="acc">
+                <summary class="mono tiny">LOG-@l.LogId · @l.Type · @l.Time</summary>
+                <p class="mono tiny" style="white-space: pre-wrap; background: var(--surface-2); padding: 10px; border-radius: 8px">PROMPT: @l.PromptPreview</p>
+                <p class="mono tiny" style="white-space: pre-wrap; background: var(--surface-2); padding: 10px; border-radius: 8px">RESPONSE: @l.ResponsePreview</p>
+            </details>
+        }
+    </details>
+</main>

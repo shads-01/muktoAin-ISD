@@ -28,8 +28,11 @@
         <p class="page-sub" style="margin: 0 auto 1.25rem;">২৪টি পূর্ণাঙ্গ আইন ও ৩,৮০০+ ধারা থেকে সরাসরি কীওয়ার্ড, ধারা নম্বর বা বিষয়বস্তু খুঁজুন</p>
 
         <form method="get" asp-action="Index" class="search-bar">
-            <div class="row">
-                <input name="q" value="@Model.Query" class="input" placeholder="কীওয়ার্ড লিখুন... (যেমন: মজুরি, ক্ষতিপূরণ, ধারা ১২৩, ট্রেড ইউনিয়ন)" autofocus required />
+            <div class="row wrap" style="gap: 8px;">
+                <input name="q" value="@Model.Query" class="input" style="flex: 2; min-width: 240px;" placeholder="কীওয়ার্ড লিখুন... (যেমন: মজুরি, ক্ষতিপূরণ, ধারা ১২৩, ট্রেড ইউনিয়ন)" autofocus required />
+                <select class="input" name="actId" asp-for="ActId" asp-items="(List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Acts" style="flex: 1; min-width: 180px;">
+                    <option value="">সব আইন / All acts</option>
+                </select>
                 <button type="submit" class="btn btn-primary search-submit btn-lg">
                     <i data-lucide="search"></i> খুঁজুন
                 </button>
@@ -100,10 +103,16 @@
                                             </a>
                                         }
                                     </div>
-                                    <a class="btn btn-quiet btn-sm" asp-controller="Case" asp-action="Submit"
-                                       data-bn="এই ধারা উদ্ধৃত করে মামলা দাখিল →" data-en="File a Case Citing This Section →">
-                                        এই ধারা উদ্ধৃত করে মামলা দাখিল →
-                                    </a>
+                                    <div class="row wrap" style="gap: 8px;">
+                                        <a class="chip chip-sm" asp-controller="Home" asp-action="Index"
+                                           asp-route-prefill='@($"এই ধারাটি আমার মামলায় প্রযোজ্য কি? {res.ActTitle} {(string.IsNullOrWhiteSpace(res.SectionNumber) ? "" : "ধারা " + res.SectionNumber)}")'>
+                                            AI-কে জিজ্ঞেস করুন
+                                        </a>
+                                        <a class="btn btn-quiet btn-sm" asp-controller="Case" asp-action="Submit"
+                                           data-bn="এই ধারা উদ্ধৃত করে মামলা দাখিল →" data-en="File a Case Citing This Section →">
+                                            এই ধারা উদ্ধৃত করে মামলা দাখিল →
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
 
@@ -156,7 +165,7 @@
                         <div class="pagination">
                             @if (Model.Page > 1)
                             {
-                                <a asp-action="Index" asp-route-q="@Model.Query" asp-route-page="@(Model.Page - 1)"><i data-lucide="chevron-left"></i></a>
+                                <a asp-action="Index" asp-route-q="@Model.Query" asp-route-actId="@Model.ActId" asp-route-page="@(Model.Page - 1)"><i data-lucide="chevron-left"></i></a>
                             }
                             else
                             {
@@ -174,13 +183,13 @@
                                 }
                                 else
                                 {
-                                    <a asp-action="Index" asp-route-q="@Model.Query" asp-route-page="@p" data-page="@p">@ToBn(p)</a>
+                                    <a asp-action="Index" asp-route-q="@Model.Query" asp-route-actId="@Model.ActId" asp-route-page="@p" data-page="@p">@ToBn(p)</a>
                                 }
                             }
 
                             @if (Model.Page < totalPages)
                             {
-                                <a asp-action="Index" asp-route-q="@Model.Query" asp-route-page="@(Model.Page + 1)"><i data-lucide="chevron-right"></i></a>
+                                <a asp-action="Index" asp-route-q="@Model.Query" asp-route-actId="@Model.ActId" asp-route-page="@(Model.Page + 1)"><i data-lucide="chevron-right"></i></a>
                             }
                             else
                             {
@@ -201,25 +210,13 @@
 
             <!-- Rail / Filter sidebar -->
             <aside class="rail">
-                <div class="card">
-                    <h3 style="font-size: 16px; margin-bottom: 12px;">
-                        <i data-lucide="filter"></i> <span data-bn="আইন অনুযায়ী ফিল্টার" data-en="Filter by Act">আইন অনুযায়ী ফিল্টার</span>
-                    </h3>
-                    <div class="stack" style="gap: 8px;">
-                        <label class="check-row"><input type="checkbox" checked /> <span data-bn="বাংলাদেশ শ্রম আইন, ২০০৬" data-en="Bangladesh Labour Act, 2006">বাংলাদেশ শ্রম আইন, ২০০৬</span></label>
-                        <label class="check-row"><input type="checkbox" checked /> <span data-bn="দণ্ডবিধি, ১৮৬০" data-en="Penal Code, 1860">দণ্ডবিধি, ১৮৬০</span></label>
-                        <label class="check-row"><input type="checkbox" checked /> <span data-bn="তথ্য অধিকার আইন, ২০০৯" data-en="Right to Information Act, 2009">তথ্য অধিকার আইন, ২০০৯</span></label>
-                        <label class="check-row"><input type="checkbox" checked /> <span data-bn="ভোক্তা অধিকার আইন, ২০০৯" data-en="Consumer Rights Act, 2009">ভোক্তা অধিকার আইন, ২০০৯</span></label>
-                    </div>
-                </div>
-
                 <div class="card" style="background: var(--surface-2);">
                     <div class="kicker">
                         <i data-lucide="help-circle"></i> <span data-bn="অনুসন্ধান সহায়িকা" data-en="Search Tips">অনুসন্ধান সহায়িকা</span>
                     </div>
                     <p class="tiny muted" style="margin-top: 6px; line-height: 1.6;">
-                        <span class="i18n-bn">আপনি সুনির্দিষ্ট ধারা নম্বর লিখেও সার্চ করতে পারেন (যেমন: <i>ধারা ১২৩</i> বা <i>Section 123</i>)।</span>
-                        <span class="i18n-en" style="display:none">You can also search for a specific section number directly (e.g. <i>section 123</i> or <i>ধারা ১২৩</i>).</span>
+                        <span class="i18n-bn">আপনি সুনির্দিষ্ট ধারা নম্বর লিখেও সার্চ করতে পারেন (যেমন: <i>ধারা ১২৩</i> বা <i>Section 123</i>)। উপরের ড্রপডাউন থেকে নির্দিষ্ট আইন ফিল্টার করা যায়।</span>
+                        <span class="i18n-en" style="display:none">You can also search for a specific section number directly (e.g. <i>section 123</i> or <i>ধারা ১২৩</i>). Filter by a specific Act using the dropdown above.</span>
                     </p>
                 </div>
             </aside>

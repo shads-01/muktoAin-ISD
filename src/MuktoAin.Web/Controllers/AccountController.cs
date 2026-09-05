@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
@@ -14,17 +15,20 @@ public class AccountController : Controller
     private readonly SignInManager<User> _signInManager;
     private readonly UserManager<User> _userManager;
     private readonly IRepository<LawyerProfile> _lawyerProfileRepo;
+    private readonly PaymentService _paymentService;
     private readonly ILogger<AccountController> _logger;
 
     public AccountController(
         SignInManager<User> signInManager,
         UserManager<User> userManager,
         IRepository<LawyerProfile> lawyerProfileRepo,
+        PaymentService paymentService,
         ILogger<AccountController> logger)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _lawyerProfileRepo = lawyerProfileRepo;
+        _paymentService = paymentService;
         _logger = logger;
     }
 
@@ -184,6 +188,25 @@ public class AccountController : Controller
                 vm.VerificationStatus = lawyerProfile.VerificationStatus.ToString();
                 vm.VerifiedAt = lawyerProfile.VerifiedAt;
                 vm.TotalReviewsCompleted = lawyerProfile.Reviews?.Count ?? 0;
+
+                // Earnings card is for APPROVED lawyers only (redesign B6-5b):
+                // pending/rejected lawyers can have no honoraria, so a ৳0 card
+                // would be noise on their Status-oriented profile.
+                if (lawyerProfile.VerificationStatus == VerificationStatus.Approved)
+                {
+                    var earnings = await _paymentService.GetLawyerEarningsAsync(lawyerProfile.LawyerProfileId);
+                    vm.EarningsBalance = earnings.Balance;
+                    vm.EarningsHistory = earnings.History.Select(h => new EarningRowViewModel
+                    {
+                        PaymentOrderId = h.PaymentOrderId,
+                        CaseId = h.CaseId,
+                        Gross = h.Gross,
+                        Commission = h.Commission,
+                        Net = h.Net,
+                        PaidAt = h.PaidAt
+                    }).ToList();
+                    ViewData["LawyerProfileId"] = lawyerProfile.LawyerProfileId;
+                }
             }
         }
 
@@ -274,6 +297,121 @@ public class AccountController : Controller
         }
 
         return RedirectToAction(nameof(Profile));
+    }
+
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RequestPayout()
+    {
+        var userId = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var id) ? id : (int?)null;
+        if (userId == null) return RedirectToAction("Login");
+        var profiles = await _lawyerProfileRepo.GetAllAsync();
+        var profile = profiles.FirstOrDefault(p => p.UserId == userId);
+        if (profile == null) return Forbid();
+
+        var earnings = await _paymentService.GetLawyerEarningsAsync(profile.LawyerProfileId);
+        if (earnings.Balance <= 0)
+        {
+            TempData["Error"] = "পরিশোধযোগ্য ব্যালেন্স নেই।";
+            TempData["ErrorEn"] = "No payable balance.";
+            return RedirectToAction(nameof(Profile));
+        }
+        await _paymentService.RequestPayoutAsync(profile.LawyerProfileId, earnings.Balance);
+        TempData["Success"] = "পরিশোধের অনুরোধ জমা হয়েছে (স্যান্ডবক্স)।";
+        TempData["SuccessEn"] = "Payout request submitted (sandbox).";
+        return RedirectToAction(nameof(Profile));
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult ForgotPassword() => View();
+
+    [HttpPost]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel vm)
+    {
+        if (!ModelState.IsValid) return View(vm);
+
+        var user = await _userManager.FindByEmailAsync(vm.Email);
+        if (user == null || user.AccountStatus == Domain.Enums.AccountStatus.Suspended)
+        {
+            // Do NOT reveal account existence — generic confirmation either way
+            TempData["Info"] = "যদি অ্যাকাউন্টটি থাকে, রিসেট লিংক ইমেইলে পাঠানো হয়েছে।";
+            TempData["InfoEn"] = "If the account exists, a reset link has been emailed.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var resetUrl = Url.Action(nameof(ResetPassword), "Account",
+            new { email = vm.Email, token }, Request.Scheme);
+
+        // SMTP is not configured in the academic build. In Development, show
+        // the link directly (dev convenience, honestly labeled); in Production
+        // this is where an email would be sent (documented gap).
+        if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+        {
+            TempData["Info"] = "ডেভ মোড: রিসেট লিংক — " + resetUrl;
+            TempData["InfoEn"] = "Dev mode reset link: " + resetUrl;
+        }
+        else
+        {
+            TempData["Info"] = "যদি অ্যাকাউন্টটি থাকে, রিসেট লিংক ইমেইলে পাঠানো হয়েছে।";
+            TempData["InfoEn"] = "If the account exists, a reset link has been emailed.";
+        }
+        return RedirectToAction(nameof(Login));
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult ResetPassword(string email, string token)
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+            return RedirectToAction(nameof(ForgotPassword));
+        return View(new ResetPasswordViewModel { Email = email, Token = token });
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(ResetPasswordViewModel vm)
+    {
+        if (!ModelState.IsValid) return View(vm);
+
+        var user = await _userManager.FindByEmailAsync(vm.Email);
+        if (user == null) return RedirectToAction(nameof(Login));
+
+        var result = await _userManager.ResetPasswordAsync(user, vm.Token, vm.NewPassword);
+        if (result.Succeeded)
+        {
+            TempData["Success"] = "পাসওয়ার্ড পরিবর্তন হয়েছে — সাইন ইন করুন।";
+            TempData["SuccessEn"] = "Password changed — please sign in.";
+            return RedirectToAction(nameof(Login));
+        }
+        foreach (var e in result.Errors) ModelState.AddModelError(string.Empty, e.Description);
+        return View(vm);
+    }
+
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> LogoutEverywhere()
+    {
+        var userId = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var id) ? id : (int?)null;
+        if (userId != null)
+        {
+            var user = await _userManager.FindByIdAsync(userId.Value.ToString());
+            if (user != null)
+            {
+                // Rotating the security stamp invalidates all existing cookies
+                await _userManager.UpdateSecurityStampAsync(user);
+            }
+        }
+        await _signInManager.SignOutAsync();
+        TempData["Info"] = "সব ডিভাইস থেকে লগ আউট হয়েছে।";
+        TempData["InfoEn"] = "Signed out of all devices.";
+        return RedirectToAction(nameof(Login));
     }
 
     [HttpPost]
