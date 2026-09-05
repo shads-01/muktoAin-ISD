@@ -22,6 +22,7 @@ public class AccountControllerTests
     private readonly Mock<UserManager<User>> _userManager;
     private readonly Mock<SignInManager<User>> _signInManager;
     private readonly Mock<IRepository<LawyerProfile>> _lawyerProfileRepo;
+    private readonly Mock<MuktoAin.Application.Services.PaymentService> _paymentService;
     private readonly AccountController _controller;
 
     public AccountControllerTests()
@@ -32,11 +33,19 @@ public class AccountControllerTests
         _userManager = NewUserManager();
         _signInManager = NewSignInManager(_userManager.Object);
 
+        _paymentService = new Mock<MuktoAin.Application.Services.PaymentService>(
+            new Mock<MuktoAin.Domain.Interfaces.Repositories.IRepository<MuktoAin.Domain.Entities.PaymentOrder>>().Object,
+            new Mock<MuktoAin.Domain.Interfaces.Repositories.IRepository<MuktoAin.Domain.Entities.PayoutRequest>>().Object,
+            _lawyerProfileRepo.Object,
+            new Mock<MuktoAin.Domain.Interfaces.Repositories.IRepository<MuktoAin.Domain.Entities.Case>>().Object,
+            _userManager.Object);
+
         var httpContext = new DefaultHttpContext();
         _controller = new AccountController(
             _signInManager.Object,
             _userManager.Object,
             _lawyerProfileRepo.Object,
+            _paymentService.Object,
             Mock.Of<ILogger<AccountController>>())
         {
             ControllerContext = new ControllerContext { HttpContext = httpContext },
