@@ -33,7 +33,7 @@ public class LawyerVerificationService
         return profile.LawyerProfileId;
     }
 
-    public async Task VerifyAsync(int lawyerProfileId, int adminUserId, bool approve)
+    public async Task VerifyAsync(int lawyerProfileId, int adminUserId, bool approve, string? reason = null)
     {
         var profile = await _profileRepo.GetByIdAsync(lawyerProfileId);
         if (profile == null) throw new ArgumentException("Profile not found");
@@ -43,6 +43,7 @@ public class LawyerVerificationService
             : VerificationStatus.Rejected;
         profile.VerifiedByAdminId = adminUserId;
         profile.VerifiedAt = DateTime.UtcNow;
+        profile.RejectionReason = approve ? null : (reason ?? string.Empty);
 
         await _profileRepo.SaveChangesAsync();
     }
