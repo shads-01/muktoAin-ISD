@@ -961,3 +961,60 @@ details.acc .acc-body { padding: 2px 18px 16px; font-size: 14.5px; color: var(--
   .grid-3 { grid-template-columns: repeat(3, 1fr); }
   .grid-4 { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ---------- Frontend redesign additions (2026-09-05) ---------- */
+.recent-chats { margin-bottom: 12px; }
+.recent-chats .tiny { display: block; margin-bottom: 6px; }
+.quota-note { text-align: right; padding: 4px 2px 0; }
+.answer-cached { color: var(--ink-3); }
+.unread-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--gold); display: inline-block; flex: none;
+  box-shadow: 0 0 0 3px var(--gold-soft);
+}
+/* chat home replaces the landing page — hide the site footer there */
+body:has(.chat-shell) .site-footer { display: none; }
+
+/* ---------- Lawyer review compare (Part B) ---------- */
+.compare-pane { border: 1px solid var(--border); border-radius: 14px; padding: 12px; min-width: 0; }
+.compare-original { border-left: 3px solid var(--danger-soft); background: var(--surface-2); }
+.compare-edit { border-left: 3px solid var(--success-soft); }
+.compare-grid-desktop { display: none; }
+@media (min-width: 900px) {
+  .compare-grid-desktop { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  .compare-grid-desktop + * { margin-top: 0; }
+  /* on desktop, the mobile tab copy of the editable textarea is redundant —
+     both textareas bind asp-for="EditedContent"; only ONE may post.
+     Hide the tab-panel version's textarea (values stay identical because
+     JS syncs is unnecessary: user edits on desktop pane). */
+  .tab-panel[data-tab-panel="editable"] textarea { display: none; }
+}
+@media (max-width: 899px) {
+  .compare-grid-desktop { display: none !important; }
+}
+.btn-danger-outline {
+  border: 1px solid var(--danger); color: var(--danger);
+  background: transparent; border-radius: 8px;
+  font-weight: 600; padding: 10px 18px; min-height: 40px;
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+}
+.btn-danger-outline:hover { background: var(--danger-soft); }
+.sticky-action-bar { position: sticky; bottom: 12px; z-index: 20;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; box-shadow: 0 4px 18px rgba(43,33,20,.08); }
+
+/* Sandbox payment surfaces (Part B) */
+.sandbox-badge { background: var(--warn-bg); color: var(--ink); border: 1px solid var(--warn-border); }
+
+/* Admin secondary bar (Part B) */
+.nav-adminbar {
+  display: flex; gap: 4px; overflow-x: auto; padding: 6px 16px;
+  background: var(--surface-2); border-bottom: 1px solid var(--border);
+}
+.nav-adminbar a {
+  font-size: 13px; font-weight: 600; color: var(--ink-2);
+  padding: 6px 10px; border-radius: 8px; white-space: nowrap;
+}
+.nav-adminbar a:hover, .nav-adminbar a[aria-current="page"] {
+  color: var(--primary); background: var(--primary-soft);
+}
