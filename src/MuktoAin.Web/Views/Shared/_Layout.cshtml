@@ -1,11 +1,30 @@
+@using Microsoft.Extensions.DependencyInjection
 @{
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var isAdmin = User.IsInRole("Admin");
     var isLawyer = User.IsInRole("Lawyer");
     var isCitizen = isAuthenticated && !isAdmin && !isLawyer;
 
+    bool isVerifiedLawyer = false;
+    if (isLawyer && isAuthenticated)
+    {
+        try
+        {
+            var lawyerRepo = Context.RequestServices
+                .GetRequiredService<MuktoAin.Domain.Interfaces.Repositories.IRepository<MuktoAin.Domain.Entities.LawyerProfile>>();
+            var profiles = await lawyerRepo.GetAllAsync();
+            var uidStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(uidStr, out var uid))
+            {
+                var p = profiles.FirstOrDefault(x => x.UserId == uid);
+                isVerifiedLawyer = p?.VerificationStatus == MuktoAin.Domain.Enums.VerificationStatus.Approved;
+            }
+        }
+        catch { /* nav falls back to unverified state — safe */ }
+    }
+
     var brandController = isAdmin ? "Admin" : isLawyer ? "Lawyer" : "Home";
-    var brandAction = isAdmin ? "Dashboard" : isLawyer ? "Queue" : "Index";
+    var brandAction = isAdmin ? "Dashboard" : isLawyer ? (isVerifiedLawyer ? "Queue" : "Status") : "Index";
 
     var userDisplayName = User.FindFirst("FullName")?.Value;
     if (string.IsNullOrWhiteSpace(userDisplayName))
@@ -55,26 +74,31 @@
             <nav class="nav-links" aria-label="প্রধান মেনু">
                 @if (isAdmin)
                 {
-                    <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i>ড্যাশবোর্ড</a>
-                    <a asp-controller="Admin" asp-action="Analytics"><i data-lucide="bar-chart-3"></i>অ্যানালিটিক্স</a>
-                    <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>রিভিউ কিউ</a>
-                    <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i>আইন ও করপাস</a>
+                    <a asp-controller="Admin" asp-action="Dashboard" aria-current="page"><i data-lucide="shield"></i>Overview</a>
                 }
                 else if (isLawyer)
                 {
-                    <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>রিভিউ কিউ</a>
-                    <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i>আইন অনুসন্ধান</a>
-                    <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i>বিভাগসমূহ</a>
-                    <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i>মামলা ট্র্যাকিং</a>
+                    @if (isVerifiedLawyer)
+                    {
+                        <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>রিভিউ কিউ</a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Lawyer" asp-action="Status"><i data-lucide="badge-check"></i>ভেরিফিকেশন</a>
+                    }
+                    <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i>আইন খুঁজুন</a>
+                    <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i>বিষয়সমূহ</a>
                     <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i>পরিচিতি</a>
                 }
                 else
                 {
-                    <a asp-controller="Home" asp-action="Index"><i data-lucide="message-square"></i>আইনি সেবা</a>
-                    <a asp-controller="Case" asp-action="Submit"><i data-lucide="edit-3"></i>সমস্যা জমা দিন</a>
-                    <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i>মামলা ট্র্যাকিং</a>
+                    <a asp-controller="Home" asp-action="Index"><i data-lucide="message-circle"></i>চ্যাট</a>
+                    <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i>বিষয়সমূহ</a>
                     <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i>আইন খুঁজুন</a>
-                    <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i>বিভাগসমূহ</a>
+                    @if (isAuthenticated)
+                    {
+                        <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-open"></i>আমার মামলা</a>
+                    }
                     <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i>পরিচিতি</a>
                 }
             </nav>
@@ -117,6 +141,20 @@
         </div>
     </header>
 
+    @if (isAdmin)
+    {
+        <nav class="nav-adminbar" aria-label="Admin sections">
+            <a asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+            <a asp-controller="Admin" asp-action="Users">Users</a>
+            <a asp-controller="Admin" asp-action="Lawyers">Lawyers</a>
+            <a asp-controller="Admin" asp-action="Corpus">Corpus</a>
+            <a asp-controller="Admin" asp-action="Scenarios">Scenario Mappings</a>
+            <a asp-controller="Admin" asp-action="Categories">Categories</a>
+            <a asp-controller="Admin" asp-action="AiLogs">AI Logs</a>
+            <a asp-controller="Admin" asp-action="Transactions">Transactions</a>
+        </nav>
+    }
+
     <!-- Surface 1 Non-Dismissible Legal Disclaimer -->
     <partial name="_DisclaimerBanner" />
 
@@ -134,29 +172,32 @@
         <nav>
             @if (isAdmin)
             {
-                <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i> অ্যাডমিন ড্যাশবোর্ড</a>
-                <a asp-controller="Admin" asp-action="Analytics"><i data-lucide="bar-chart-3"></i> অ্যানালিটিক্স ও রিপোর্ট</a>
-                <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i> আইনজীবী রিভিউ কিউ</a>
-                <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i> আইন ও করপাস</a>
-                <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i> আইনি বিভাগসমূহ</a>
-                <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i> পরিচিতি ও দাবিত্যাগ</a>
+                <a asp-controller="Admin" asp-action="Dashboard"><i data-lucide="shield"></i> Overview</a>
             }
             else if (isLawyer)
             {
-                <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i> আইনজীবী রিভিউ কিউ</a>
-                <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i> আইন অনুসন্ধান ও রেফারেন্স</a>
-                <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i> আইনি বিষয় ও বিভাগ</a>
-                <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i> মামলা ট্র্যাকিং</a>
-                <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i> পরিচিতি ও দাবিত্যাগ</a>
+                @if (isVerifiedLawyer)
+                {
+                    <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i> রিভিউ কিউ</a>
+                }
+                else
+                {
+                    <a asp-controller="Lawyer" asp-action="Status"><i data-lucide="badge-check"></i> ভেরিফিকেশন</a>
+                }
+                <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i> আইন খুঁজুন</a>
+                <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i> বিষয়সমূহ</a>
+                <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i> পরিচিতি</a>
             }
             else
             {
-                <a asp-controller="Home" asp-action="Index"><i data-lucide="message-square"></i> আইনি সেবা ও চ্যাট</a>
-                <a asp-controller="Case" asp-action="Submit"><i data-lucide="edit-3"></i> সমস্যা জমা দিন (Intake)</a>
-                <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-clock"></i> মামলা ট্র্যাকিং</a>
+                <a asp-controller="Home" asp-action="Index"><i data-lucide="message-circle"></i> চ্যাট</a>
+                <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i> বিষয়সমূহ</a>
                 <a asp-controller="Search" asp-action="Index"><i data-lucide="search"></i> আইন খুঁজুন</a>
-                <a asp-controller="Category" asp-action="Index"><i data-lucide="layout-grid"></i> আইনি বিভাগসমূহ</a>
-                <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i> পরিচিতি ও দাবিত্যাগ</a>
+                @if (isAuthenticated)
+                {
+                    <a asp-controller="Case" asp-action="Track"><i data-lucide="folder-open"></i> আমার মামলা</a>
+                }
+                <a asp-controller="Home" asp-action="About"><i data-lucide="info"></i> পরিচিতি</a>
             }
             
             <hr class="divider" style="margin:8px 0" />
@@ -221,7 +262,7 @@
                 <ul>
                     <li><a asp-controller="Account" asp-action="Login">নাগরিক সাইন ইন</a></li>
                     <li><a asp-controller="Account" asp-action="Register">নতুন নিবন্ধন</a></li>
-                    <li><a asp-controller="Lawyer" asp-action="Queue">আইনজীবী রিভিউ পোর্টাল</a></li>
+                    <li><a asp-controller="Lawyer" asp-action="Status">আইনজীবী যাচাইকরণ পোর্টাল / Lawyer Verification</a></li>
                     <li><a asp-controller="Admin" asp-action="Dashboard">অ্যাডমিন ওভারভিউ</a></li>
                 </ul>
             </div>

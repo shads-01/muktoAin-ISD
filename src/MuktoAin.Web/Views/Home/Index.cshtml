@@ -1,171 +1,171 @@
 @{
     ViewData["Title"] = "মুক্ত আইন — AI-সহায়ক আইনি তথ্য ও পরামর্শ";
+    var prefill = Context.Request.Query["prefill"].ToString();
 }
 
-<main class="container" id="main">
-    <!-- Hero Section -->
-    <section class="page-head" style="text-align: center; margin: 1.5rem 0 2rem;">
-        <span class="kicker">
-            <i data-lucide="scale" aria-hidden="true"></i> AI-Augmented Legal Aid for Bangladesh
-        </span>
-        <h1 class="page-title" style="max-width: 820px; margin: 0 auto 0.75rem;">
-            সহজ ভাষায় আপনার অধিকার জানুন,<br />আইনি দলিলের খসড়া তৈরি করুন
-        </h1>
-        <p class="page-sub" style="margin: 0 auto 1.5rem; font-size: 16.5px;">
-            বাংলা, English বা Banglish-এ আপনার আইনি সমস্যা বলুন — আমরা প্রয়োজনীয় ধারা উদ্ধৃতিসহ অধিকার ব্যাখ্যা করব এবং আইনজীবী-যাচাইকৃত খসড়া প্রস্তুত করব।
-        </p>
+<main class="chat-shell" id="main" data-prefill="@prefill">
+    <div class="chat-scroll">
+        <div class="chat-inner">
 
-        <!-- Interactive Quick Composer -->
-        <div class="composer" style="text-align: left; margin: 1.5rem auto 1rem; max-width: 760px;">
-            <div class="composer-mode" id="composer-mode">
-                <button type="button" class="chip active"><i data-lucide="message-square"></i> আইনি অধিকার জানুন</button>
-                <button type="button" class="chip"><i data-lucide="search"></i> ধারা খুঁজুন</button>
+            <!-- Recent in-progress chats (resumable) -->
+            <div class="recent-chats" id="recent-chats" hidden>
+                <span class="tiny muted" data-bn="সাম্প্রতিক আলোচনা" data-en="Recent chats">সাম্প্রতিক আলোচনা</span>
+                <div class="chip-row" id="recent-chats-row"></div>
             </div>
-            <form asp-controller="Case" asp-action="Submit" method="get">
-                <div class="composer-row">
-                    <textarea name="q" class="autogrow" rows="2" placeholder="আপনার সমস্যা লিখুন... (যেমন: ৩ মাস বেতন পাইনি, জিডি করব কীভাবে?)" required></textarea>
-                    <button type="submit" class="send-btn" aria-label="সমস্যা জমা দিন">
-                        <i data-lucide="arrow-right"></i>
-                    </button>
-                </div>
-            </form>
-        </div>
 
-        <div class="row wrap" style="justify-content: center; gap: 10px; margin-top: 1.25rem;">
-            <span class="tiny muted">উদাহরণ:</span>
-            <a class="chip chip-sm" asp-controller="Case" asp-action="Submit">বকেয়া মজুরি দাবি</a>
-            <a class="chip chip-sm" asp-controller="Case" asp-action="Submit">হারানো দলিলের জিডি</a>
-            <a class="chip chip-sm" asp-controller="Case" asp-action="Submit">তথ্য অধিকার আবেদন (RTI)</a>
-            <a class="chip chip-sm" asp-controller="Case" asp-action="Submit">ভোক্তা অধিকার প্রতারণা</a>
-        </div>
-    </section>
-
-    <!-- 3-Step Process -->
-    <section style="margin: 3rem 0;">
-        <div class="row spread wrap" style="margin-bottom: 1rem; align-items: flex-end;">
-            <div>
-                <span class="kicker"><i data-lucide="workflow"></i> Workflow</span>
-                <h2 class="section-h" style="margin:0">এটি যেভাবে কাজ করে</h2>
-            </div>
-            <a class="tiny muted" asp-controller="Home" asp-action="About">পদ্ধতি সম্পর্কে বিস্তারিত →</a>
-        </div>
-
-        <div class="grid grid-3">
-            <div class="card">
-                <div class="row spread" style="margin-bottom: 12px;">
-                    <span class="step-num">১</span>
-                    <span class="cat-icon"><i data-lucide="message-circle"></i></span>
-                </div>
-                <b>সমস্যা বর্ণনা করুন</b>
-                <span class="cat-en">Describe Problem</span>
-                <p class="muted" style="margin-top: 8px;">
-                    বাংলা, English বা Banglish-এ যেকোনো ঘটনা বা অভিযোগ লিখুন — নাম প্রকাশ না করেও সম্পূর্ণ বেনামে জমা দেওয়া যায়।
+            <!-- Welcome / empty state -->
+            <div class="chat-welcome" id="chat-welcome">
+                <h1 data-bn="আপনার সমস্যা বলুন — আইনটা আমরা খুঁজে দেব" data-en="Tell us your problem — we'll find the law">আপনার সমস্যা বলুন — আইনটা আমরা খুঁজে দেব</h1>
+                <p data-bn="বাংলা, English বা Banglish-এ লিখুন। আমি প্রাসঙ্গিক আইন খুঁজে আপনার অধিকার সহজ ভাষায় ব্যাখ্যা করব, আর দরকার হলে আইনজীবী-যাচাইকৃত দলিল তৈরি করব।"
+                   data-en="Write in Bangla, English, or Banglish. I'll find the relevant laws, explain your rights in plain language, and draft a lawyer-verified document when needed.">
+                    বাংলা, English বা Banglish-এ লিখুন। আমি প্রাসঙ্গিক আইন খুঁজে আপনার অধিকার সহজ ভাষায় ব্যাখ্যা করব, আর দরকার হলে আইনজীবী-যাচাইকৃত দলিল তৈরি করব।
                 </p>
             </div>
-
-            <div class="card">
-                <div class="row spread" style="margin-bottom: 12px;">
-                    <span class="step-num">২</span>
-                    <span class="cat-icon"><i data-lucide="book-open"></i></span>
-                </div>
-                <b>অধিকার ও ধারা জানুন</b>
-                <span class="cat-en">Know Your Rights</span>
-                <p class="muted" style="margin-top: 8px;">
-                    বাংলাদেশের সংকলিত আইনসমূহ (২৪টি আইন · ৩,৮০০+ ধারা) থেকে প্রাসঙ্গিক ধারা উদ্ধৃতিসহ সহজ ভাষায় আপনার অধিকার দেখানো হয়।
-                </p>
+            <div class="chip-row" style="justify-content:center">
+                <button class="chip" type="button" data-prefill="আমি একটি সাধারণ ডায়েরি (GD) করতে চাই।"><i data-lucide="file-text"></i> সাধারণ ডায়েরি (GD)</button>
+                <button class="chip" type="button" data-prefill="আমি কোনো সরকারি অফিসের কাছে তথ্য চাই।"><i data-lucide="megaphone"></i> তথ্য অধিকার (RTI)</button>
+                <button class="chip" type="button" data-prefill="আমার বেতন দিচ্ছে না।"><i data-lucide="factory"></i> শ্রম অভিযোগ</button>
+                <button class="chip" type="button" data-prefill="কেনা পণ্যটি ত্রুটিপূর্ণ।"><i data-lucide="shopping-cart"></i> ভোক্তা অভিযোগ</button>
             </div>
+            <p class="tiny" style="text-align:center">
+                <span data-bn="উদাহরণ:" data-en="Examples:">উদাহরণ:</span>
+                “গার্মেন্টসে ৩ মাস বেতন পাইনি” · “জমির দলিল নিয়ে বিরোধ”
+            </p>
 
-            <div class="card">
-                <div class="row spread" style="margin-bottom: 12px;">
-                    <span class="step-num">৩</span>
-                    <span class="cat-icon"><i data-lucide="file-check-2"></i></span>
-                </div>
-                <b>আইনজীবী-যাচাইকৃত দলিল পান</b>
-                <span class="cat-en">Lawyer-Reviewed Document</span>
-                <p class="muted" style="margin-top: 8px;">
-                    AI আবেদনের উপযুক্ত খসড়া তৈরি করে; সনদপ্রাপ্ত আইনজীবী পর্যালোচনা ও অনুমোদন করার পরই সুরক্ষিত PDF ডাউনলোড আনলক হয়।
-                </p>
-            </div>
+            <!-- Thread (messages injected by chat.js) -->
+            <div id="chat-thread"></div>
         </div>
-    </section>
+    </div>
 
-    <hr class="divider" />
-
-    <!-- Legal Categories -->
-    <section id="categories" style="margin: 3rem 0; scroll-margin-top: 130px;">
-        <div class="row spread wrap" style="margin-bottom: 1rem; align-items: flex-end;">
-            <div>
-                <span class="kicker"><i data-lucide="layers"></i> Categories</span>
-                <h2 class="section-h" style="margin:0">আইনি বিভাগসমূহ ও সেবাসমূহ</h2>
+    <!-- Composer -->
+    <div class="composer-wrap">
+        <div class="composer">
+            <div class="composer-mode chip-row" id="composer-mode" data-chip-group="">
+                <button class="chip active" type="button" data-mode="rights"><i data-lucide="message-circle"></i> <span data-bn="আইনি অধিকার জানুন" data-en="Know my rights">আইনি অধিকার জানুন</span></button>
+                <button class="chip" type="button" data-mode="search"><i data-lucide="search"></i> <span data-bn="ধারা খুঁজুন" data-en="Find sections">ধারা খুঁজুন</span></button>
             </div>
-            <a class="btn btn-quiet btn-sm" asp-controller="Category" asp-action="Index">সকল বিভাগ দেখুন →</a>
-        </div>
-
-        <div class="grid grid-4">
-            <a class="card click cat-card" asp-controller="Category" asp-action="Details" asp-route-id="1">
-                <i data-lucide="arrow-up-right" class="go-arrow" aria-hidden="true"></i>
-                <span class="cat-icon"><i data-lucide="briefcase"></i></span>
-                <b>শ্রম অধিকার ও অভিযোগ</b>
-                <span class="cat-en">Labour Complaints</span>
-                <p class="muted tiny">বকেয়া বেতন, অন্যায় বরখাস্ত, মাতৃত্বকালীন সুবিধা ও ক্ষতিপূরণ দাবি</p>
-                <div class="cat-meta">
-                    <span class="badge badge-neutral">শ্রম আইন ২০০৬</span>
-                </div>
-            </a>
-
-            <a class="card click cat-card" asp-controller="Category" asp-action="Details" asp-route-id="2">
-                <i data-lucide="arrow-up-right" class="go-arrow" aria-hidden="true"></i>
-                <span class="cat-icon"><i data-lucide="shield"></i></span>
-                <b>সাধারণ ডায়েরি (GD)</b>
-                <span class="cat-en">General Diary</span>
-                <p class="muted tiny">ডকুমেন্ট হারানো, নিরাপত্তা হুমকি, অপরাধ ও থানায় জিডি সংক্রান্ত আবেদন</p>
-                <div class="cat-meta">
-                    <span class="badge badge-neutral">দণ্ডবিধি ১৮৬০</span>
-                </div>
-            </a>
-
-            <a class="card click cat-card" asp-controller="Category" asp-action="Details" asp-route-id="3">
-                <i data-lucide="arrow-up-right" class="go-arrow" aria-hidden="true"></i>
-                <span class="cat-icon"><i data-lucide="file-text"></i></span>
-                <b>তথ্য অধিকার আবেদন</b>
-                <span class="cat-en">Right to Information</span>
-                <p class="muted tiny">সরকারি ও স্বায়ত্তশাসিত প্রতিষ্ঠানের জনগুরুত্বপূর্ণ তথ্য চেয়ে ফর্ম ‘ক’ আবেদন</p>
-                <div class="cat-meta">
-                    <span class="badge badge-neutral">তথ্য অধিকার ২০০৯</span>
-                </div>
-            </a>
-
-            <a class="card click cat-card" asp-controller="Category" asp-action="Details" asp-route-id="4">
-                <i data-lucide="arrow-up-right" class="go-arrow" aria-hidden="true"></i>
-                <span class="cat-icon"><i data-lucide="shopping-bag"></i></span>
-                <b>ভোক্তা অধিকার সংরক্ষণ</b>
-                <span class="cat-en">Consumer Protection</span>
-                <p class="muted tiny">ত্রুটিপূর্ণ পণ্য, অতিরিক্ত মূল্য, নকল ঔষধ ও সেবায় প্রতারণার ক্ষতিপূরণ</p>
-                <div class="cat-meta">
-                    <span class="badge badge-neutral">ভোক্তা অধিকার ২০০৯</span>
-                </div>
-            </a>
-        </div>
-    </section>
-
-    <!-- Trust & Open Highlight -->
-    <section class="card card-pad-lg" style="background: var(--surface-2); margin-bottom: 2rem;">
-        <div class="row spread wrap" style="align-items: center; gap: 20px;">
-            <div style="max-width: 680px;">
-                <span class="kicker"><i data-lucide="lock"></i> নিরাপত্তা ও মানব সুরক্ষা</span>
-                <h3 style="font-size: 22px; margin: 6px 0;">সম্পূর্ণ বিনামূল্যে, নাগরিক সুরক্ষায় নিবেদিত</h3>
-                <p class="muted" style="margin-bottom: 0;">
-                    মুক্ত আইন কোনো বাণিজ্যিক সংস্থা বা আইন ফার্ম নয়। এটি একটি উন্মুক্ত একাডেমিক প্রকল্প — আপনার সকল তথ্য সুরক্ষিত থাকে এবং কোনো মধ্যস্বত্বভোগী ফি নেই।
-                </p>
+            <div class="composer-row">
+                <textarea id="chat-input" rows="1" maxlength="5000"
+                          placeholder="আপনার সমস্যা লিখুন... (বাংলা / English / Banglish)"
+                          aria-label="আপনার বার্তা লিখুন"></textarea>
+                <button class="send-btn" id="chat-send" type="button" aria-label="পাঠান"><i data-lucide="arrow-up"></i></button>
             </div>
-            <div class="row wrap" style="gap:10px;">
-                <a class="btn btn-primary" asp-controller="Case" asp-action="Submit">
-                    <i data-lucide="plus-circle"></i> নতুন মামলা দাখিল করুন
-                </a>
-                <a class="btn btn-outline" asp-controller="Home" asp-action="About">
-                    <i data-lucide="info"></i> আরও জানুন
-                </a>
-            </div>
+            <div class="quota-note tiny muted" id="quota-note"></div>
         </div>
-    </section>
+    </div>
+
+    <footer class="mini-footer">
+        ⚠ <span data-bn="মুক্ত আইন সাধারণ আইনি তথ্য দেয়" data-en="MuktoAin provides general legal information">মুক্ত আইন সাধারণ আইনি তথ্য দেয়</span> ·
+        <a asp-controller="Home" asp-action="About"><span data-bn="পরিচিতি ও ডেটাসেট কৃতজ্ঞতা" data-en="About & dataset attribution">পরিচিতি ও ডেটাসেট কৃতজ্ঞতা</span></a>
+    </footer>
 </main>
+
+<!-- Citation modal (filled by chat.js) -->
+<div class="modal-backdrop" id="citation-modal" role="dialog" aria-modal="true" aria-labelledby="cite-title">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <div>
+                <span class="kicker" data-bn="আইনের ধারা" data-en="Statutory section">আইনের ধারা</span>
+                <h3 id="cite-title">—</h3>
+            </div>
+            <button class="icon-btn" type="button" data-close-modal aria-label="বন্ধ করুন"><i data-lucide="x"></i></button>
+        </div>
+        <p class="serif" id="cite-text" style="line-height:2; color:var(--ink)"></p>
+        <div class="row wrap" style="margin-top:16px">
+            <button class="btn btn-outline btn-sm" type="button" data-close-modal data-bn="বন্ধ করুন" data-en="Close">বন্ধ করুন</button>
+            <a class="btn btn-ghost btn-sm" asp-controller="Search" asp-action="Index" data-bn="আইনে আরও খুঁজুন →" data-en="Search more laws →">আইনে আরও খুঁজুন →</a>
+        </div>
+    </div>
+</div>
+
+<!-- Generate Draft confirm modal -->
+<div class="modal-backdrop" id="draft-modal" role="dialog" aria-modal="true" aria-labelledby="draft-modal-title">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <div>
+                <span class="kicker"><i data-lucide="file-check-2"></i> FR-5 · FR-19</span>
+                <h3 id="draft-modal-title" data-bn="আপনার মামলার খসড়া প্রস্তুত করুন" data-en="Prepare your case draft">আপনার মামলার খসড়া প্রস্তুত করুন</h3>
+            </div>
+            <button class="icon-btn" type="button" data-close-modal aria-label="বন্ধ করুন"><i data-lucide="x"></i></button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:14px">
+            <div>
+                <label class="form-label" for="draft-doc-type" data-bn="দলিলের ধরন" data-en="Document type">দলিলের ধরন</label>
+                <select id="draft-doc-type" class="input">
+                    <option value="LabourComplaint" selected>শ্রম অভিযোগ পত্র / Labour complaint</option>
+                    <option value="GeneralDiary">সাধারণ ডায়েরি (GD)</option>
+                    <option value="RtiRequest">তথ্য অধিকার আবেদন (RTI)</option>
+                    <option value="ConsumerComplaint">ভোক্তা অভিযোগ</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label" for="draft-category" data-bn="বিভাগ" data-en="Category">বিভাগ</label>
+                <select id="draft-category" class="input">
+                    <option value="1">শ্রম অধিকার ও অভিযোগ</option>
+                    <option value="2">সাধারণ ডায়েরি (GD)</option>
+                    <option value="3">তথ্য অধিকার</option>
+                    <option value="4">ভোক্তা অধিকার</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label" for="draft-district" data-bn="জেলা" data-en="District">জেলা</label>
+                <select id="draft-district" class="input"></select>
+            </div>
+            <div>
+                <label class="form-label" for="draft-title-input" data-bn="মামলার শিরোনাম" data-en="Case title">মামলার শিরোনাম</label>
+                <input id="draft-title-input" class="input" type="text" maxlength="250" placeholder="যেমন: ৩ মাসের বকেয়া বেতন" />
+            </div>
+            <div>
+                <label class="form-label" for="draft-email" data-bn="ইমেইল (ঐচ্ছিক — শুধু আপডেট জানাতে)" data-en="Email (optional — notifications only)">ইমেইল (ঐচ্ছিক — শুধু আপডেট জানাতে)</label>
+                <input id="draft-email" class="input" type="email" placeholder="you@example.com" />
+                <small class="muted tiny" data-bn="কোনো অ্যাকাউন্ট তৈরি হবে না।" data-en="No account is created.">কোনো অ্যাকাউন্ট তৈরি হবে না।</small>
+            </div>
+            <label class="row" style="gap:10px; align-items:flex-start">
+                <input type="checkbox" id="draft-anonymous" checked style="margin-top:4px" />
+                <span class="tiny" data-bn="বেনামে জমা দিন — একটি ট্র্যাকিং কোড পাবেন যা দিয়ে মামলা দেখতে পারবেন" data-en="Submit anonymously — you'll get a tracking code to view the case">বেনামে জমা দিন — একটি ট্র্যাকিং কোড পাবেন যা দিয়ে মামলা দেখতে পারবেন</span>
+            </label>
+            <div class="alert alert-warn tiny">
+                <i data-lucide="lock"></i>
+                <span data-bn="ডাউনলোডের আগে একজন যাচাইকৃত আইনজীবীর অনুমোদন প্রয়োজন।" data-en="A verified lawyer's approval is required before download.">ডাউনলোডের আগে একজন যাচাইকৃত আইনজীবীর অনুমোদন প্রয়োজন।</span>
+            </div>
+            <button class="btn btn-gold btn-block" id="draft-submit" type="button">
+                <i data-lucide="sparkles"></i> <span data-bn="নথি তৈরি করুন" data-en="Generate document">নথি তৈরি করুন</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Top-up Modal (FR-24 sandbox stub) -->
+<div class="modal-backdrop" id="topup-modal" role="dialog" aria-modal="true" aria-labelledby="topup-modal-title">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <div>
+                <span class="kicker"><i data-lucide="zap"></i> FR-24</span>
+                <h3 id="topup-modal-title" data-bn="AI কোটা টপ-আপ" data-en="Top-Up AI Quota">AI কোটা টপ-আপ</h3>
+            </div>
+            <button class="icon-btn" type="button" data-close-modal aria-label="বন্ধ করুন"><i data-lucide="x"></i></button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:14px; padding: 10px 0;">
+            <p class="muted tiny" data-bn="দৈনিক AI সীমা শেষ হলে অতিরিক্ত ক্রেডিট টপ-আপ করুন (স্যান্ডবক্স স্টাব)।"
+               data-en="Top up additional credits when daily limit is reached (sandbox stub).">
+                দৈনিক AI সীমা শেষ হলে অতিরিক্ত ক্রেডিট টপ-আপ করুন (স্যান্ডবক্স স্টাব)।
+            </p>
+            <div>
+                <label for="topup-amount" class="form-label" data-bn="টাকার পরিমাণ (৳):" data-en="Amount (BDT):">টাকার পরিমাণ (৳):</label>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-weight:700; font-size:16px;">৳</span>
+                    <input type="number" id="topup-amount" class="input" style="flex:1;" value="100" min="50" step="50" placeholder="100" />
+                </div>
+            </div>
+            <div id="topup-feedback" style="display:none;"></div>
+            <button id="btn-submit-topup" class="btn btn-gold btn-block" type="button">
+                <i data-lucide="credit-card"></i> <span data-bn="টপ-আপ করুন (স্যান্ডবক্স)" data-en="Top Up (Sandbox)">টপ-আপ করুন (স্যান্ডবক্স)</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="~/assets/js/chat.js" asp-append-version="true" defer></script>

@@ -1,165 +1,330 @@
-@model MuktoAin.Web.ViewModels.CaseResultViewModel
+@model CaseResultViewModel
+@using MuktoAin.Web.Controllers
 @{
-    ViewData["Title"] = $"মামলা #{Model.CaseId} ফলাফল — MuktoAin";
+    ViewData["Title"] = "মামলা #" + Model.CaseId + " — মুক্ত আইন";
+    var displayCode = string.IsNullOrEmpty(Model.TrackingCode) ? "" : "MKT-" + Model.TrackingCode.Substring(0, Math.Min(6, Model.TrackingCode.Length)).ToUpper();
 }
 
 <main class="container" id="main">
     <nav class="breadcrumbs" aria-label="Breadcrumb">
-        <a asp-controller="Home" asp-action="Index">Home</a>
+        <a asp-controller="Home" asp-action="Index" data-bn="হোম" data-en="Home">হোম</a>
         <span class="sep">/</span>
-        <a asp-controller="Case" asp-action="Track" data-bn="মামলাসমূহ" data-en="Cases">মামলাসমূহ</a>
+        <a asp-controller="Case" asp-action="Track" data-bn="আমার মামলা" data-en="My Cases">আমার মামলা</a>
         <span class="sep">/</span>
-        <span data-bn="মামলা #@Model.CaseId" data-en="Case #@Model.CaseId">মামলা #@Model.CaseId</span>
+        <span>#@Model.CaseId</span>
     </nav>
 
-    <!-- Page Header & Status -->
-    <div class="row spread wrap page-head" style="align-items: flex-start; gap: 14px;">
-        <div>
-            <span class="kicker"><i data-lucide="folder-check"></i> Analysis & Draft · Case #@Model.CaseId</span>
-            <h1 class="page-title">@Model.Title</h1>
-            <p class="page-sub">
-                <span data-bn="বিভাগ:" data-en="Category:">বিভাগ:</span> <b>@Model.CategoryName</b> · <span data-bn="জেলা:" data-en="District:">জেলা:</span> <b>@Model.DistrictName</b> · <span data-bn="দাখিলের তারিখ:" data-en="Submitted:">দাখিলের তারিখ:</span> <b>@Model.CreatedAt.ToString("dd MMMM, yyyy")</b>
-            </p>
-        </div>
-        <div class="row" style="gap: 10px;">
-            <span class="badge badge-@Model.Status.ToLower()">
-                <span data-bn="স্ট্যাটাস:" data-en="Status:">স্ট্যাটাস:</span> <span data-bn="@StatusText.Bn(Model.Status)" data-en="@StatusText.En(Model.Status)">@StatusText.Bn(Model.Status)</span>
-            </span>
-            <button class="btn btn-outline btn-sm" type="button" data-copy="https://muktoain.bd/Case/Result/@Model.CaseId" data-copy-msg="মামলার লিংক কপি হয়েছে ✓" data-copy-msg-en="Case link copied ✓">
-                <i data-lucide="share-2"></i> <span data-bn="শেয়ার" data-en="Share">শেয়ার</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- Case Progress Timeline -->
-    <div class="card" style="margin-bottom: 24px; padding: 18px 24px;">
-        <div class="timeline">
-            <div class="t-step done">
-                <div class="dot"><i data-lucide="check"></i></div>
-                <span data-bn="দাখিল সম্পন্ন" data-en="Submitted">দাখিল সম্পন্ন</span>
-                <small>@Model.CreatedAt.ToString("dd MMM")</small>
-            </div>
-            <div class="t-step done">
-                <div class="dot"><i data-lucide="check"></i></div>
-                <span data-bn="AI অধিকার বিশ্লেষণ" data-en="AI Rights Analysis">AI অধিকার বিশ্লেষণ</span>
-                <small data-bn="সম্পন্ন" data-en="Done">সম্পন্ন</small>
-            </div>
-            <div class="t-step current">
-                <div class="dot">৩</div>
-                <span data-bn="আইনজীবী পর্যালোচনা" data-en="Lawyer Review">আইনজীবী পর্যালোচনা</span>
-                <small data-bn="প্রক্রিয়াধীন" data-en="In Progress">প্রক্রিয়াধীন</small>
-            </div>
-            <div class="t-step">
-                <div class="dot">৪</div>
-                <span data-bn="চূড়ান্ত PDF" data-en="Final PDF">চূড়ান্ত PDF</span>
-                <small data-bn="লকড" data-en="Locked">লকড</small>
-            </div>
-        </div>
-    </div>
-
-    <!-- Rights Explanation Section -->
-    <div class="card card-pad-lg" style="margin-bottom: 24px;">
-        <div class="row spread wrap" style="margin-bottom: 12px;">
-            <h2 class="section-h" style="margin: 0;"><i data-lucide="scale"></i> <span data-bn="আপনার আইনি অধিকার" data-en="Your Legal Rights">আপনার আইনি অধিকার</span></h2>
-            <button class="read-aloud" type="button" onclick="showToast('পাঠ করে শোনানো হচ্ছে (TTS ডেমো)...', 'info')">
-                <i data-lucide="volume-2"></i> <span data-bn="পাঠ শুনুন" data-en="Read Aloud">পাঠ শুনুন</span>
-            </button>
-        </div>
-        <div style="font-size: 16.5px; line-height: 1.85;">
-            @if (!string.IsNullOrEmpty(Model.RightsExplanation))
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="folder-open"></i> CASE-@Model.CaseId · @Model.CategoryName</span>
+        <h1 class="page-title">@Model.Title</h1>
+        <p class="page-sub">
+            @Model.DistrictName · @Model.CreatedAt.ToString("d MMM yyyy")
+            <span class="badge badge-@(Model.TimelineCurrent.ToLower())">@StatusText.Bn(Model.TimelineCurrent) / @StatusText.En(Model.TimelineCurrent)</span>
+            @if (!string.IsNullOrEmpty(displayCode))
             {
-                @Html.Raw(Model.RightsExplanation)
+                <span class="chip chip-sm mono">@displayCode
+                    <button type="button" class="icon-btn" data-copy="@Model.TrackingCode" aria-label="কোড কপি করুন"><i data-lucide="copy"></i></button>
+                </span>
             }
-            else
-            {
-                <p class="muted" style="margin-bottom: 0;">
-                    <span data-bn="আপনার মামলাটি গ্রহণ করা হয়েছে। AI অধিকার বিশ্লেষণ (FR-3) শীঘ্রই এখানে প্রদর্শিত হবে।" data-en="Your case has been received — the AI rights analysis will appear here once generated.">আপনার মামলাটি গ্রহণ করা হয়েছে। AI অধিকার বিশ্লেষণ (FR-3) শীঘ্রই এখানে প্রদর্শিত হবে।</span>
-                    <em data-bn="" data-en=""></em>
-                </p>
-            }
-        </div>
+        </p>
     </div>
 
-    <!-- Cited Legal Provisions -->
-    <div class="card card-pad-lg" style="margin-bottom: 24px;">
-        <h2 class="section-h" style="margin-top: 0;"><i data-lucide="book-open"></i> <span data-bn="সংশ্লিষ্ট আইনের ধারা" data-en="Cited Legal Provisions (FR-7)">সংশ্লিষ্ট আইনের ধারা</span></h2>
-        <div class="stack" style="gap: 14px;">
-            @foreach (var sec in Model.CitedSections)
+    <!-- Real status timeline (driven by actual status) -->
+    <div class="timeline" aria-label="Case timeline">
+        @{
+            var steps = new[] {
+                ("DraftReady", "খসড়া প্রস্তুত", "Draft ready"),
+                ("UnderReview", "আইনজীবী পর্যালোচনায়", "Under review"),
+                ("Approved", "অনুমোদিত", "Approved"),
+                ("Withdrawn", "প্রত্যাহৃত", "Withdrawn")
+            };
+            if (Model.TimelineCurrent == "Rejected")
             {
-                <div style="background: var(--surface-2); padding: 16px 18px; border-radius: var(--radius); border: 1px solid var(--border);">
-                    <div class="row spread wrap" style="margin-bottom: 8px;">
-                        <b style="font-size: 16px; color: var(--ink);">@sec.ActTitle</b>
-                        <span class="citation-chip"><span data-bn="সাদৃশ্য স্কোর:" data-en="Relevance:">সাদৃশ্য স্কোর:</span> @sec.RelevanceScore</span>
-                    </div>
-                    <div class="serif" style="font-weight: 700; color: var(--gold); margin-bottom: 6px; font-size: 15px;">
-                        <i data-lucide="bookmark"></i> @sec.SectionNumber
-                    </div>
-                    <p class="muted" style="margin-bottom: 0; line-height: 1.75; font-size: 14.5px;">@sec.SectionText</p>
-                </div>
+                steps = new[] {
+                    ("DraftReady", "খসড়া প্রস্তুত", "Draft ready"),
+                    ("UnderReview", "আইনজীবী পর্যালোচনায়", "Under review"),
+                    ("Rejected", "প্রত্যাখ্যাত", "Rejected"),
+                    ("Withdrawn", "প্রত্যাহৃত", "Withdrawn")
+                };
             }
-        </div>
+            var curIndex = Array.FindIndex(steps, s => s.Item1 == Model.TimelineCurrent);
+            if (Model.TimelineCurrent == "Withdrawn") { curIndex = 3; }
+        }
+        @for (var i = 0; i < steps.Length; i++)
+        {
+            var isRejectedStep = Model.TimelineCurrent == "Rejected" && steps[i].Item1 == "Rejected";
+            var cls = isRejectedStep ? "current rejected"
+                : i < curIndex ? "done"
+                : i == curIndex ? "current" : "";
+            <div class="t-step @cls">
+                <span class="t-dot"></span>
+                <span>@steps[i].Item2 <small class="muted">/ @steps[i].Item3</small></span>
+            </div>
+        }
     </div>
 
-    <!-- Generated Document Preview inside Parchment Paper Sheet -->
-    @if (!string.IsNullOrEmpty(Model.DocumentContent))
+    @if (Model.TimelineCurrent == "Rejected" && Model.RejectionReason != null)
     {
-        <div class="card card-pad-lg" style="margin-bottom: 3rem;">
-            <div class="row spread wrap" style="margin-bottom: 18px;">
-                <div>
-                    <span class="kicker"><i data-lucide="file-text"></i> Draft Document</span>
-                    <h2 class="section-h" style="margin: 0;" data-bn="প্রস্তুতকৃত আইনি খসড়া দলিল" data-en="Generated Legal Draft">প্রস্তুতকৃত আইনি খসড়া দলিল</h2>
-                </div>
-                <span class="badge badge-review" data-bn="পর্যালোচনাধীন (Under Review)" data-en="Under Review">পর্যালোচনাধীন (Under Review)</span>
+        <div class="alert alert-danger" style="margin: 16px 0">
+            <i data-lucide="x-circle"></i>
+            <div>
+                <b data-bn="আইনজীবীর মতামত:" data-en="Lawyer's reason:">আইনজীবীর মতামত:</b> @Model.RejectionReason
             </div>
+        </div>
+        <div class="row wrap" style="gap: 10px; margin-bottom: 16px">
+            <a class="btn btn-primary btn-sm" asp-controller="Home" asp-action="Index"
+               asp-route-prefill="আমার মামলাটি প্রত্যাখ্যাত হয়েছিল। কারণ: @Model.RejectionReason। এটি কি ঠিক করা সম্ভব?">
+                <i data-lucide="message-circle"></i> <span data-bn="চ্যাটে ফিরে যান (কারণসহ)" data-en="Return to chat (with reason)">চ্যাটে ফিরে যান (কারণসহ)</span>
+            </a>
+        </div>
+    }
 
-            <!-- Vintage Parchment Document Sheet -->
-            <div class="paper-sheet" style="margin-bottom: 20px;">
-                @if (!Model.CanDownloadPdf)
-                {
-                    <div class="paper-watermark" aria-hidden="true">
-                        <span>খসড়া · DRAFT</span>
-                    </div>
-                }
-
-                <h2>অভিযোগ পত্র / আবেদনপত্র</h2>
-                <div class="doc-meta">
-                    নথি নং: MKT-DOC-@Model.DocumentId · তারিখ: @DateTime.UtcNow.ToString("dd MMMM, yyyy") · জেলা: @Model.DistrictName
+    <!-- Lawyer block (visible after claim/decision) -->
+    @if (Model.LawyerName != null)
+    {
+        <div class="card" style="margin: 16px 0">
+            <div class="row" style="gap: 12px; align-items: center">
+                <div class="item-ico"><i data-lucide="user-check"></i></div>
+                <div style="flex: 1">
+                    <b>অ্যাডভোকেট @Model.LawyerName</b>
+                    @if (Model.LawyerBarNumber != null)
+                    {
+                        <small class="muted"> · Bar #@Model.LawyerBarNumber</small>
+                    }
+                    @if (Model.LawyerDecision != null)
+                    {
+                        <br />
+                        <span class="badge badge-@(Model.LawyerDecision == "Rejected" ? "rejected" : "final")">@Model.LawyerDecision</span>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.LawyerComments) && Model.DocumentStatus != "Rejected")
+                    {
+                        <p class="muted tiny" style="margin: 6px 0 0">@Model.LawyerComments</p>
+                    }
                 </div>
-
-                <div style="white-space: pre-wrap; font-family: var(--font-doc); line-height: 2; font-size: 15px;">@Model.DocumentContent</div>
-
-                <!-- Surface 3 Disclaimer Stamp -->
-                <div class="doc-stamp">
-                    <b>⚠️ আইনি সতর্কবার্তা (Surface 3 Mandatory Disclaimer):</b>
-                    এই দলিলটি মুক্ত আইন প্ল্যাটফর্মের কৃত্রিম বুদ্ধিমত্তা (AI) দ্বারা প্রস্তুতকৃত প্রাথমিক খসড়া। বাংলাদেশ বার কাউন্সিলের সনদপ্রাপ্ত একজন আইনজীবী কর্তৃক ধারা যাচাই ও চূড়ান্ত অনুমোদনের পূর্বে এটি আদালতে বা সরকারি দপ্তরে কার্যকর প্রমাণ হিসেবে গ্রহণযোগ্য নয়।
-                </div>
-            </div>
-
-            <!-- Lawyer Review Gate Alert -->
-            <div class="alert alert-warn" style="align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-                <div class="row" style="gap: 10px; flex: 1; min-width: 260px;">
-                    <i data-lucide="shield-alert" style="color: var(--warn-text);"></i>
-                    <div>
-                        <b data-bn="আইনজীবী পর্যালোচনা সুরক্ষা (Mandatory Review Gate · FR-14):" data-en="Mandatory Lawyer Review Gate (FR-14):">আইনজীবী পর্যালোচনা সুরক্ষা (Mandatory Review Gate · FR-14):</b>
-                        <div class="tiny" style="color: inherit; opacity: 0.9;">
-                            <span data-bn="আইনজীবী এই খসড়াটি আইনের ধারার সাথে মিলিয়ে সত্যায়িত করার পর নিরাপদ অফিশিয়াল PDF ডাউনলোড বাটন স্বয়ংক্রিয়ভাবে সক্রিয় হবে।" data-en="Once a lawyer verifies this draft against the statutes, the secure official PDF download button unlocks automatically.">আইনজীবী এই খসড়াটি আইনের ধারার সাথে মিলিয়ে সত্যায়িত করার পর নিরাপদ অফিশিয়াল PDF ডাউনলোড বাটন স্বয়ংক্রিয়ভাবে সক্রিয় হবে।</span>
-                        </div>
-                    </div>
-                </div>
-
-                @if (Model.CanDownloadPdf)
-                {
-                    <a class="btn btn-primary" href="#">
-                        <i data-lucide="download"></i> <span data-bn="অফিসিয়াল PDF ডাউনলোড" data-en="Download Official PDF">অফিসিয়াল PDF ডাউনলোড</span>
-                    </a>
-                }
-                else
-                {
-                    <button class="btn btn-outline" disabled style="opacity: 0.7; cursor: not-allowed;" title="আইনজীবী অনুমোদনের অপেক্ষায়" data-bn-title="আইনজীবী অনুমোদনের অপেক্ষায়" data-en-title="Awaiting lawyer approval">
-                        <i data-lucide="lock"></i> <span data-bn="PDF ডাউনলোড লক রয়েছে" data-en="PDF Download Locked">PDF ডাউনলোড লক রয়েছে</span>
-                    </button>
-                }
             </div>
         </div>
     }
+
+    <!-- Rights explanation -->
+    <div class="card" style="margin: 16px 0">
+        <h2 class="section-h"><i data-lucide="scale"></i> <span data-bn="আপনার অধিকার" data-en="Your rights">আপনার অধিকার</span></h2>
+        <p class="serif" style="white-space: pre-wrap; line-height: 2">@Model.RightsExplanation</p>
+    </div>
+
+    <!-- Cited sections -->
+    @if (Model.CitedSections.Any())
+    {
+        <div class="card" style="margin: 16px 0">
+            <h2 class="section-h"><i data-lucide="book-open"></i> <span data-bn="উদ্ধৃত ধারাসমূহ" data-en="Cited sections">উদ্ধৃত ধারাসমূহ</span></h2>
+            @foreach (var s in Model.CitedSections)
+            {
+                <details class="acc">
+                    <summary>
+                        <span class="badge badge-neutral">@s.ActTitle @s.SectionNumber</span>
+                        <small class="muted">@s.RelevanceScore</small>
+                    </summary>
+                    <p class="serif" style="line-height: 2; white-space: pre-wrap">@s.SectionText</p>
+                </details>
+            }
+        </div>
+    }
+
+    <!-- Embedded paper draft -->
+    @if (Model.DocumentId.HasValue)
+    {
+        <div class="card" style="margin: 16px 0">
+            <div class="row spread wrap" style="margin-bottom: 12px; align-items: center; gap: 10px">
+                <h2 class="section-h" style="margin: 0">
+                    <i data-lucide="file-text"></i>
+                    <span data-bn="তৈরি হওয়া দলিল" data-en="Generated document">তৈরি হওয়া দলিল</span>
+                    <span class="badge badge-neutral">v@(Model.VersionNo)</span>
+                    @if (Model.CitizenEdited)
+                    {
+                        <span class="badge badge-review" data-bn="আপনি সম্পাদনা করেছেন" data-en="Citizen edited">আপনি সম্পাদনা করেছেন</span>
+                    }
+                </h2>
+                <div class="row" style="gap: 8px">
+                    @if (Model.CanEdit)
+                    {
+                        <button class="btn btn-outline btn-sm" type="button" data-open-modal="#edit-modal">
+                            <i data-lucide="edit-3"></i> <span data-bn="সম্পাদনা" data-en="Edit">সম্পাদনা</span>
+                        </button>
+                    }
+                    @if (Model.TimelineCurrent is "DraftReady" or "Rejected")
+                    {
+                        <form asp-action="SendToLawyer" asp-route-id="@Model.CaseId" method="post"
+                              asp-route-code="@Model.TrackingCode" style="display:inline">
+                            @Html.AntiForgeryToken()
+                            <button class="btn btn-primary btn-sm" type="submit"
+                                    data-confirm="আইনজীবীর কাছে পাঠাবেন? / Send to the lawyer pool?">
+                                <i data-lucide="send"></i> <span data-bn="আইনজীবীর কাছে পাঠান" data-en="Send to lawyer">আইনজীবীর কাছে পাঠান</span>
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+
+            <div class="paper-sheet @(Model.CanDownloadPdf ? "" : "paper-watermark")">
+                <div class="doc-meta">গণপ্রজাতন্ত্রী বাংলাদেশ · @StatusText.Bn(Model.DocumentStatus) · DOC-@Model.DocumentId</div>
+                <pre style="white-space: pre-wrap; font-family: var(--font-doc); font-size: 15px; line-height: 2; margin: 0">@(Model.ContentFinal ?? Model.DocumentContent)</pre>
+                <div class="doc-stamp">
+                    ⚠ এই দলিলটি AI সহায়তায় প্রস্তুত — যাচাইকৃত আইনজীবীর অনুমোদন ছাড়া চূড়ান্ত নয়।
+                    MuktoAin provides general legal information, not formal legal advice.
+                </div>
+            </div>
+
+            @if (Model.CanDownloadPdf)
+            {
+                <a class="btn btn-gold btn-block" style="margin-top: 12px"
+                   asp-controller="Document" asp-action="Download" asp-route-id="@Model.DocumentId">
+                    <i data-lucide="download"></i> <span data-bn="চূড়ান্ত PDF ডাউনলোড করুন" data-en="Download final PDF">চূড়ান্ত PDF ডাউনলোড করুন</span>
+                </a>
+
+                @if (Model.HonorariumPaid)
+                {
+                    <div class="alert alert-success tiny" style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="check-circle-2"></i>
+                        <span data-bn="আইনজীবীর স্বেচ্ছাসেবী সম্মানী প্রদান করা হয়েছে। ধন্যবাদ!" data-en="Lawyer honorarium has been paid. Thank you!">আইনজীবীর স্বেচ্ছাসেবী সম্মানী প্রদান করা হয়েছে। ধন্যবাদ!</span>
+                    </div>
+                }
+                else
+                {
+                    <button class="btn btn-quiet btn-block" type="button" data-open-modal="#honorarium-modal" style="margin-top: 10px">
+                        <i data-lucide="gift"></i> <span data-bn="আইনজীবীকে সম্মানী দিন (ঐচ্ছিক)" data-en="Send Lawyer Honorarium (Optional)">আইনজীবীকে সম্মানী দিন (ঐচ্ছিক)</span>
+                    </button>
+                }
+            }
+            else
+            {
+                <div class="alert alert-warn tiny" style="margin-top: 12px">
+                    <i data-lucide="lock"></i>
+                    <span data-bn="PDF ডাউনলোড আইনজীবী অনুমোদনের পরে আনলক হবে।" data-en="PDF download unlocks after lawyer approval.">PDF ডাউনলোড আইনজীবী অনুমোদনের পরে আনলক হবে।</span>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Withdraw (only when not in lawyer's hands and not already final) -->
+    @if (Model.TimelineCurrent is "DraftReady" or "Rejected")
+    {
+        <form asp-action="Withdraw" asp-route-id="@Model.CaseId" method="post" asp-route-code="@Model.TrackingCode"
+              data-confirm="মামলাটি প্রত্যাহার করবেন? আর পাঠানো যাবে না / Withdraw this case? This cannot be undone.">
+            @Html.AntiForgeryToken()
+            <button class="btn btn-quiet btn-sm" type="submit">
+                <i data-lucide="archive"></i> <span data-bn="মামলা প্রত্যাহার" data-en="Withdraw case">মামলা প্রত্যাহার</span>
+            </button>
+        </form>
+    }
 </main>
+
+<!-- Edit modal (citizen draft editing — FR-21) -->
+<div class="modal-backdrop" id="edit-modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <div>
+                <span class="kicker"><i data-lucide="edit-3"></i> FR-21</span>
+                <h3 id="edit-modal-title" data-bn="খসড়া সম্পাদনা করুন" data-en="Edit draft">খসড়া সম্পাদনা করুন</h3>
+            </div>
+            <button class="icon-btn" type="button" data-close-modal aria-label="বন্ধ করুন"><i data-lucide="x"></i></button>
+        </div>
+        <form asp-action="SaveDraft" asp-route-id="@Model.CaseId" method="post" asp-route-code="@Model.TrackingCode">
+            @Html.AntiForgeryToken()
+            <textarea name="editedContent" class="input" rows="14"
+                      style="width:100%; font-family: var(--font-doc)"
+                      data-counter="#edit-counter">@(Model.ContentFinal ?? Model.DocumentContent)</textarea>
+            <small class="muted tiny" id="edit-counter"></small>
+            <button class="btn btn-primary btn-block" style="margin-top: 12px" type="submit">
+                <i data-lucide="save"></i> <span data-bn="সংরক্ষণ করুন" data-en="Save">সংরক্ষণ করুন</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Honorarium Modal (FR-24) -->
+<div class="modal-backdrop" id="honorarium-modal" role="dialog" aria-modal="true" aria-labelledby="honorarium-modal-title">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <div>
+                <span class="kicker"><i data-lucide="gift"></i> FR-24</span>
+                <h3 id="honorarium-modal-title" data-bn="আইনজীবীকে সম্মানী প্রদান" data-en="Send Lawyer Honorarium">আইনজীবীকে সম্মানী প্রদান</h3>
+            </div>
+            <button class="icon-btn" type="button" data-close-modal aria-label="বন্ধ করুন"><i data-lucide="x"></i></button>
+        </div>
+        <div style="padding: 10px 0;">
+            <p class="muted tiny" data-bn="আপনার দলিলটি পর্যালোচনাকারী আইনজীবীকে ঐচ্ছিক স্বেচ্ছাসেবী সম্মানী পাঠিয়ে কৃতজ্ঞতা প্রকাশ করতে পারেন (স্যান্ডবক্স পেমেন্ট)।"
+               data-en="You may express gratitude to the reviewing advocate by sending an optional voluntary honorarium (sandbox payment).">
+                আপনার দলিলটি পর্যালোচনাকারী আইনজীবীকে ঐচ্ছিক স্বেচ্ছাসেবী সম্মানী পাঠিয়ে কৃতজ্ঞতা প্রকাশ করতে পারেন (স্যান্ডবক্স পেমেন্ট)।
+            </p>
+            <div style="margin: 16px 0;">
+                <label for="honorarium-amount" style="font-weight:600; font-size:13px; display:block; margin-bottom:6px" data-bn="সম্মানীর পরিমাণ (টাকা):" data-en="Honorarium Amount (BDT):">সম্মানীর পরিমাণ (টাকা):</label>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-weight:700; font-size:16px;">৳</span>
+                    <input type="number" id="honorarium-amount" class="input" style="flex:1;" value="500" min="50" step="50" placeholder="500" />
+                </div>
+            </div>
+            <div id="honorarium-feedback" style="display:none; margin-bottom: 12px;"></div>
+            <button id="btn-submit-honorarium" class="btn btn-gold btn-block" type="button">
+                <i data-lucide="credit-card"></i> <span data-bn="সম্মানী পাঠান (স্যান্ডবক্স)" data-en="Pay Honorarium (Sandbox)">সম্মানী পাঠান (স্যান্ডবক্স)</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var btn = document.getElementById("btn-submit-honorarium");
+    if (!btn) return;
+    btn.addEventListener("click", async function () {
+        var input = document.getElementById("honorarium-amount");
+        var amount = parseFloat(input ? input.value : 0);
+        var feedback = document.getElementById("honorarium-feedback");
+        if (!amount || amount <= 0) {
+            if (feedback) {
+                feedback.style.display = "block";
+                feedback.className = "alert alert-error tiny";
+                feedback.textContent = "অনুগ্রহ করে একটি সঠিক টাকার পরিমাণ লিখুন / Please enter a valid amount.";
+            }
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader"></i> প্রসেসিং হচ্ছে... / Processing...';
+        if (window.lucide) lucide.createIcons();
+
+        try {
+            var res = await fetch("/Payment/Honorarium", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ caseId: @Model.CaseId, amount: amount })
+            });
+            var data = await res.json();
+            if (data.success) {
+                if (window.showToast) {
+                    showToast(data.message || "সম্মানী প্রদান সম্পন্ন হয়েছে! / Payment successful!", "success");
+                }
+                setTimeout(function () { location.reload(); }, 1200);
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="credit-card"></i> সম্মানী পাঠান (স্যান্ডবক্স)';
+                if (window.lucide) lucide.createIcons();
+                if (feedback) {
+                    feedback.style.display = "block";
+                    feedback.className = "alert alert-error tiny";
+                    feedback.textContent = data.message || "পেমেন্ট ব্যর্থ হয়েছে / Payment failed.";
+                }
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="credit-card"></i> সম্মানী পাঠান (স্যান্ডবক্স)';
+            if (window.lucide) lucide.createIcons();
+            if (feedback) {
+                feedback.style.display = "block";
+                feedback.className = "alert alert-error tiny";
+                feedback.textContent = "সার্ভারের সাথে সংযোগ করা যায়নি / Could not connect to server.";
+            }
+        }
+    });
+});
+</script>
