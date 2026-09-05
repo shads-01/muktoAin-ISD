@@ -203,6 +203,19 @@ builder.Services.AddScoped<DocumentGenerator>();
 // A-2.4: Document lifecycle service
 builder.Services.AddScoped<DocumentService>();
 
+// A-2.5: QuestPDF export (Bangla font). Fonts live in wwwroot/fonts (E-1.3);
+// registered once per process inside PdfExportService (idempotent).
+builder.Services.AddSingleton(sp =>
+{
+    var env = sp.GetRequiredService<IWebHostEnvironment>();
+    var fontsDir = Path.Combine(env.WebRootPath ?? env.ContentRootPath, "fonts");
+    return new MuktoAin.Infrastructure.Documents.PdfExportService(
+        Path.Combine(fontsDir, "NotoSansBengali-Regular.ttf"),
+        Path.Combine(fontsDir, "NotoSansBengali-Bold.ttf"));
+});
+builder.Services.AddSingleton<MuktoAin.Domain.Interfaces.Services.IPdfExporter>(
+    sp => sp.GetRequiredService<MuktoAin.Infrastructure.Documents.PdfExportService>());
+
 // A-2.6: Lawyer verification service
 builder.Services.AddScoped<LawyerVerificationService>();
 

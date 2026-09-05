@@ -16,6 +16,7 @@
     <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
     <PackageReference Include="Polly.Core" Version="8.4.2" />
     <PackageReference Include="Qdrant.Client" Version="1.19.0" />
+    <PackageReference Include="QuestPDF" Version="2026.8.0" />
   </ItemGroup>
 
   <PropertyGroup>
