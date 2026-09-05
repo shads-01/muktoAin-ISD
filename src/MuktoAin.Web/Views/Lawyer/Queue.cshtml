@@ -1,83 +1,122 @@
-@model List<MuktoAin.Web.ViewModels.CaseListItemViewModel>
+@model LawyerQueueViewModel
+@using MuktoAin.Web.Controllers
 @{
-    ViewData["Title"] = "আইনজীবী রিভিউ কিউ — Lawyer Review Queue";
+    ViewData["Title"] = "রিভিউ কিউ — মুক্ত আইন";
 }
 
 <main class="container" id="main">
     <nav class="breadcrumbs" aria-label="Breadcrumb">
-        <a asp-controller="Home" asp-action="Index">Home</a>
+        <a asp-controller="Home" asp-action="Index" data-bn="হোম" data-en="Home">হোম</a>
         <span class="sep">/</span>
-        <span>Lawyer Portal · Queue</span>
+        <span data-bn="রিভিউ কিউ" data-en="Review Queue">রিভিউ কিউ</span>
     </nav>
 
-    <div class="row spread wrap page-head" style="align-items: center; gap: 14px;">
-        <div>
-            <span class="kicker"><i data-lucide="award"></i> Verified Advocate Portal · FR-13</span>
-            <h1 class="page-title" data-bn="দলিল পর্যালোচনা কিউ" data-en="Document Review Queue">দলিল পর্যালোচনা কিউ (Review Queue)</h1>
-            <p class="page-sub" data-bn="AI দ্বারা প্রস্তুতকৃত খসড়া দলিল পর্যালোচনা ও সত্যায়ন করে নাগরিকের জন্য চূড়ান্ত PDF অনুমোদন করুন।" data-en="Review and certify AI-generated drafts to approve final official documents for citizens.">AI দ্বারা প্রস্তুতকৃত খসড়া দলিল পর্যালোচনা ও সত্যায়ন করে নাগরিকের জন্য চূড়ান্ত PDF অনুমোদন করুন।</p>
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="file-check-2"></i> FR-13 · FR-23</span>
+        <h1 class="page-title" data-bn="পর্যালোচনা কিউ" data-en="Review Queue">পর্যালোচনা কিউ</h1>
+        <p class="page-sub">
+            @Model.LawyerName · Bar #@Model.BarRegistrationNumber · @Model.Specialization
+        </p>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="grid grid-3" style="margin-bottom: 20px">
+        <div class="card">
+            <span class="kicker"><i data-lucide="inbox"></i> Pending</span>
+            <div style="font-size: 32px; font-weight: 700">@Model.PendingCount</div>
         </div>
-        <div class="row wrap" style="gap: 8px;">
-            <span class="badge badge-final"><i data-lucide="check-circle-2"></i> <span data-bn="বার সনদ যাচাইকৃত: DHA-1187" data-en="Bar Verified: DHA-1187">বার সনদ যাচাইকৃত: DHA-1187</span></span>
+        <div class="card">
+            <span class="kicker"><i data-lucide="badge-check"></i> Bar Verified</span>
+            <div style="font-size: 18px; font-weight: 700; margin-top: 8px">@Model.BarRegistrationNumber</div>
+        </div>
+        <div class="card">
+            <span class="kicker"><i data-lucide="layers"></i> Specialization</span>
+            <div style="font-size: 18px; font-weight: 700; margin-top: 8px">@Model.Specialization</div>
         </div>
     </div>
 
-    <!-- Stat Strip -->
-    <div class="stat-strip" style="margin-bottom: 20px;">
-        <div class="card kpi">
-            <span class="k-label"><i data-lucide="clock"></i><span data-bn="অপেক্ষমাণ কিউ" data-en="Pending in Queue">অপেক্ষমাণ কিউ</span></span>
-            <span class="k-num">৩টি</span>
-            <span class="k-sub" data-bn="গড় পর্যালোচনা সময়: ২ ঘণ্টা" data-en="Avg Review Time: 2 hours">গড় পর্যালোচনা সময়: ২ ঘণ্টা</span>
-        </div>
-        <div class="card kpi">
-            <span class="k-label"><i data-lucide="check-check"></i><span data-bn="আপনার পর্যালোচনাসমূহ" data-en="Your Reviews">আপনার পর্যালোচনাসমূহ</span></span>
-            <span class="k-num">২৮টি</span>
-            <span class="k-sub" data-bn="এই মাসে সম্পন্ন" data-en="Completed this month">এই মাসে সম্পন্ন</span>
-        </div>
-        <div class="card kpi">
-            <span class="k-label"><i data-lucide="star"></i><span data-bn="প্রো-বোনো ঘণ্টা" data-en="Pro-Bono Hours">প্রো-বোনো ঘণ্টা</span></span>
-            <span class="k-num">১৪.৫</span>
-            <span class="k-sub" data-bn="আইনি সহায়তা অবদান" data-en="Legal aid contribution">আইনি সহায়তা অবদান</span>
-        </div>
+    <!-- Filter chips: All · Unclaimed · Mine -->
+    <div class="chip-row" style="margin-bottom: 16px">
+        @foreach (var f in new[] { "All", "Unclaimed", "Mine" })
+        {
+            <a class="chip chip-sm @(Model.ActiveFilter == f ? "active" : "")"
+               asp-action="Queue" asp-route-filter="@f">
+                @(f == "All" ? "সকল / All" : f == "Unclaimed" ? "অনাবৃত / Unclaimed" : "আমার নেওয়া / Mine")
+            </a>
+        }
     </div>
 
-    <!-- Review Queue Table -->
-    <div class="card" style="margin-bottom: 3rem;">
-        <div class="table-wrap">
-            <div class="table-scroll">
-                <table class="min-w-table">
-                    <thead>
+    @if (!Model.Items.Any())
+    {
+        <div class="empty-state">
+            <div class="item-ico"><i data-lucide="coffee"></i></div>
+            <h3 data-bn="কিউ খালি — ধন্যবাদ!" data-en="Queue empty — thank you!">কিউ খালি — ধন্যবাদ!</h3>
+            <p class="muted" data-bn="এই মুহূর্তে অপেক্ষমাণ কোনো নথি নেই।" data-en="No documents awaiting review right now.">এই মুহূর্তে অপেক্ষমাণ কোনো নথি নেই।</p>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Doc</th>
+                        <th>Category</th>
+                        <th>District</th>
+                        <th>Waiting (SLA)</th>
+                        <th>Version</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var q in Model.Items)
+                    {
                         <tr>
-                            <th data-bn="মামলা ট্র্যাকিং" data-en="Case Tracking">মামলা ট্র্যাকিং</th>
-                            <th data-bn="শিরোনাম ও বিবরণ" data-en="Title & Description">শিরোনাম ও বিবরণ</th>
-                            <th data-bn="আইনি বিভাগ" data-en="Legal Category">আইনি বিভাগ</th>
-                            <th data-bn="দাখিলের সময়" data-en="Submitted At">দাখিলের সময়</th>
-                            <th data-bn="বর্তমান অবস্থা" data-en="Status">বর্তমান অবস্থা</th>
-                            <th style="text-align: right;" data-bn="অ্যাকশন" data-en="Action">অ্যাকশন</th>
+                            <td class="mono">DOC-@q.DocumentId<br /><small class="muted">@q.CaseTitle</small></td>
+                            <td>@q.CategoryName</td>
+                            <td>@q.DistrictName</td>
+                            <td>
+                                <span class="badge badge-@(q.WaitingHours >= 24 ? "rejected" : "neutral")">@q.WaitingHours h</span>
+                            </td>
+                            <td>v@(q.VersionNo) @(q.CitizenEdited ? "· edited" : "")</td>
+                            <td>
+                                @if (q.IsMine)
+                                {
+                                    <span class="badge badge-final" title="Claimed by you">আমার নেওয়া / Mine</span>
+                                }
+                                else if (q.ClaimedBy != null)
+                                {
+                                    <span class="badge badge-review" title="Claimed">Claimed · @q.ClaimedBy</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-draft">Unclaimed</span>
+                                }
+                            </td>
+                            <td>
+                                @if (q.CanOpen)
+                                {
+                                    <form asp-action="Claim" asp-route-documentId="@q.DocumentId" method="post" style="display:inline">
+                                        @Html.AntiForgeryToken()
+                                        <button class="btn @(q.IsMine ? "btn-outline" : "btn-primary") btn-sm" type="submit">
+                                            <i data-lucide="eye"></i> @(q.IsMine ? "Continue" : "Review")
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-outline btn-sm" type="button" disabled
+                                            title="Claimed by another lawyer / অন্য আইনজীবীর নিয়ন্ত্রণে">
+                                        Locked
+                                    </button>
+                                }
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model)
-                        {
-                            <tr>
-                                <td class="mono"><b>@item.TrackingCode</b></td>
-                                <td>
-                                    <b>@item.Title</b>
-                                </td>
-                                <td>@item.CategoryName</td>
-                                <td class="tiny muted">@item.CreatedAt.ToString("dd MMM, hh:mm tt")</td>
-                                <td>
-                                    <span class="badge badge-@item.Status.ToLower()" data-bn="@StatusText.Bn(item.Status)" data-en="@StatusText.En(item.Status)">@StatusText.Bn(item.Status)</span>
-                                </td>
-                                <td style="text-align: right;">
-                                    <a class="btn btn-primary btn-sm" asp-action="Review" asp-route-id="@item.CaseId">
-                                        <i data-lucide="file-edit"></i> <span data-bn="পর্যালোচনা করুন" data-en="Review Draft">পর্যালোচনা করুন</span> →
-                                    </a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                    }
+                </tbody>
+            </table>
+            <p class="muted tiny" style="margin: 12px 0 0" data-bn="নথি খুললেই সেটি আপনার নামে লক হয় (একসময়ে একটি পর্যালোচনা)।" data-en="Opening a document claims it for you (one active review at a time).">নথি খুললেই সেটি আপনার নামে লক হয় (একসময়ে একটি পর্যালোচনা)।</p>
         </div>
-    </div>
+    }
 </main>

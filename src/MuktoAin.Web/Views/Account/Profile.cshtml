@@ -229,7 +229,55 @@
                         <i data-lucide="shield-check"></i> পাসওয়ার্ড আপডেট করুন
                     </button>
                 </form>
+
+                <form asp-action="LogoutEverywhere" method="post" style="margin-top: 12px">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-quiet btn-sm" type="submit" data-confirm="সব ডিভাইস থেকে লগ আউট হবে — নিশ্চিত? / Sign out everywhere?">
+                        <i data-lucide="log-out"></i> <span data-bn="সব ডিভাইস থেকে লগ আউট" data-en="Log out everywhere">সব ডিভাইস থেকে লগ আউট</span>
+                    </button>
+                </form>
             </div>
+
+            @if (Model.EarningsBalance.HasValue)
+            {
+                <div class="card" style="margin-top: 16px">
+                    <div class="row spread wrap" style="align-items: center; gap: 10px">
+                        <div>
+                            <h2 class="section-h" style="margin:0"><i data-lucide="wallet"></i> <span data-bn="আয় (স্যান্ডবক্স)" data-en="Earnings (sandbox)">আয় (স্যান্ডবক্স)</span></h2>
+                            <span class="badge badge-warn sandbox-badge tiny">ডেমো মোড — স্যান্ডবক্স পেমেন্ট</span>
+                        </div>
+                        <div style="font-size: 32px; font-weight: 700">৳@Model.EarningsBalance</div>
+                    </div>
+                    @if (Model.EarningsHistory is { Count: > 0 })
+                    {
+                        <table style="margin-top: 12px">
+                            <thead><tr><th>Case</th><th>Gross</th><th>Commission</th><th>Net</th><th>Paid</th></tr></thead>
+                            <tbody>
+                                @foreach (var e in Model.EarningsHistory)
+                                {
+                                    <tr>
+                                        <td class="mono">CASE-@e.CaseId</td>
+                                        <td>৳@e.Gross</td>
+                                        <td>৳@e.Commission</td>
+                                        <td><b>৳@e.Net</b></td>
+                                        <td class="tiny muted">@e.PaidAt.ToString("d MMM")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p class="muted tiny" style="margin-top: 8px" data-bn="এখনো কোনো সম্মানী নেই।" data-en="No honoraria yet.">এখনো কোনো সম্মানী নেই।</p>
+                    }
+                    <form asp-controller="Account" asp-action="RequestPayout" method="post" style="margin-top: 12px">
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-outline btn-sm" type="submit">
+                            <i data-lucide="banknote"></i> <span data-bn="পরিশোধ চান" data-en="Request payout">পরিশোধ চান</span>
+                        </button>
+                    </form>
+                </div>
+            }
         </div>
     </div>
 </main>

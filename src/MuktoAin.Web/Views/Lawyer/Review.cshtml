@@ -1,110 +1,173 @@
-@model MuktoAin.Web.ViewModels.LawyerReviewViewModel
+@model LawyerReviewViewModel
 @{
-    ViewData["Title"] = $"দলিল #{Model.DocumentId} পর্যালোচনা — Lawyer Redline Review";
+    ViewData["Title"] = "পর্যালোচনা — DOC-" + Model.DocumentId + " — মুক্ত আইন";
+    var citations = (IReadOnlyList<MuktoAin.Application.DTOs.CitedSectionDto>?)ViewData["Citations"]
+        ?? new List<MuktoAin.Application.DTOs.CitedSectionDto>();
+    var narrative = (string?)ViewData["CitizenNarrative"] ?? "";
+    var district = (string?)ViewData["DistrictName"] ?? "";
+    var versionNo = (int?)ViewData["VersionNo"] ?? 1;
+    var citizenEdited = (bool?)ViewData["CitizenEdited"] ?? false;
 }
 
 <main class="container" id="main">
     <nav class="breadcrumbs" aria-label="Breadcrumb">
-        <a asp-controller="Home" asp-action="Index">Home</a>
+        <a asp-controller="Home" asp-action="Index" data-bn="হোম" data-en="Home">হোম</a>
         <span class="sep">/</span>
         <a asp-controller="Lawyer" asp-action="Queue" data-bn="রিভিউ কিউ" data-en="Review Queue">রিভিউ কিউ</a>
         <span class="sep">/</span>
-        <span data-bn="দলিল #@Model.DocumentId" data-en="Document #@Model.DocumentId">দলিল #@Model.DocumentId</span>
+        <span>DOC-@Model.DocumentId</span>
     </nav>
 
-    <div class="row spread wrap page-head" style="align-items: flex-start; gap: 14px;">
-        <div>
-            <span class="kicker"><i data-lucide="file-check-2"></i> Mandatory Review Gate · FR-14</span>
-            <h1 class="page-title" data-bn="দলিল পর্যালোচনা ও সম্পাদন" data-en="Review & Edit Document">দলিল পর্যালোচনা ও সম্পাদন</h1>
-            <p class="page-sub">
-                <span data-bn="মামলা:" data-en="Case:">মামলা:</span> <b>@Model.CaseTitle</b> · <span data-bn="বিভাগ:" data-en="Category:">বিভাগ:</span> <b>@Model.CategoryName</b>
-            </p>
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="file-diff"></i> FR-14</span>
+        <h1 class="page-title">@Model.CaseTitle</h1>
+        <p class="page-sub">
+            DOC-@Model.DocumentId · CASE-@Model.CaseId · @Model.CategoryName · @district · v@(versionNo)
+            @if (citizenEdited)
+            {
+                <span class="badge badge-review" data-bn="নাগরিক সম্পাদিত" data-en="Citizen edited">নাগরিক সম্পাদিত</span>
+            }
+        </p>
+    </div>
+
+    <!-- Case context (PII session note) -->
+    <details class="acc card" open>
+        <summary><b data-bn="নাগরিকের বিবরণ (এই সেশনের জন্য ডিক্রিপ্টকৃত)" data-en="Citizen narrative (decrypted for this review session)">নাগরিকের বিবরণ (এই সেশনের জন্য ডিক্রিপ্টকৃত)</b></summary>
+        <div class="alert alert-warn tiny">
+            <i data-lucide="shield-alert"></i>
+            <span data-bn="PII — শুধুমাত্র এই পর্যালোচনা সেশনের জন্য দৃশ্যমান; লগে সংরক্ষিত হয় না।" data-en="PII — visible for this review session only; never stored in logs.">PII — শুধুমাত্র এই পর্যালোচনা সেশনের জন্য দৃশ্যমান; লগে সংরক্ষিত হয় না।</span>
         </div>
-        <a class="btn btn-outline btn-sm" asp-action="Queue">
-            <i data-lucide="arrow-left"></i> <span data-bn="কিউতে ফিরুন" data-en="Back to Queue">কিউতে ফিরুন</span>
-        </a>
-    </div>
+        <p class="serif" style="white-space: pre-wrap; line-height: 2">@narrative</p>
+        @if (citations.Any())
+        {
+            <div class="chip-row">
+                @foreach (var c in citations)
+                {
+                    <span class="citation-chip">@c.ActTitle @(string.IsNullOrWhiteSpace(c.SectionNumber) ? "" : "· ধারা " + c.SectionNumber)</span>
+                }
+            </div>
+        }
+    </details>
 
-    <!-- Mobile Comparison Tabs (shown only on small screens) -->
-    <div class="compare-tabs" id="compare-mobile-tabs">
-        <button type="button" class="active" id="btn-show-draft" data-bn="মূল AI খসড়া" data-en="Original AI Draft">মূল AI খসড়া</button>
-        <button type="button" id="btn-show-edit" data-bn="আইনজীবী সম্পাদিত রূপ" data-en="Lawyer Edited Version">আইনজীবী সম্পাদিত রূপ</button>
-    </div>
-
-    <form method="post" asp-action="SubmitReview">
+    <form asp-action="SubmitReview" method="post">
         @Html.AntiForgeryToken()
         <input type="hidden" asp-for="DocumentId" />
         <input type="hidden" asp-for="CaseId" />
+        <input type="hidden" asp-for="CaseTitle" />
+        <input type="hidden" asp-for="CategoryName" />
 
-        <!-- Side-by-Side Comparison Panes -->
-        <div class="compare" style="margin-bottom: 24px;">
-            <!-- Left: Original AI Draft (Read-only) -->
-            <div class="pane" id="pane-draft">
-                <div class="pane-head red">
-                    <i data-lucide="file-text"></i>
-                    <span data-bn="মূল AI খসড়া (Original AI Generated Draft)" data-en="Original AI Generated Draft">মূল AI খসড়া (Original AI Generated Draft)</span>
+        <!-- Compare: tabs on mobile (main.js data-tabs), side-by-side >=900px -->
+        <div class="card" style="margin: 16px 0">
+            <div data-tabs>
+                <div class="tab-btns row" style="gap: 8px; margin-bottom: 12px">
+                    <button class="chip active" type="button" data-tab="original"><i data-lucide="file-lock"></i> Original AI Draft (read-only)</button>
+                    <button class="chip" type="button" data-tab="editable"><i data-lucide="file-pen"></i> Editable (final)</button>
                 </div>
-                <div class="pane-body">@Model.ContentDraft</div>
+
+                <div class="tab-panel" data-tab-panel="original">
+                    <div class="compare-pane compare-original">
+                        <div class="paper-sheet paper-watermark" style="margin: 0">
+                            <pre style="white-space: pre-wrap; font-family: var(--font-doc); font-size: 15px; line-height: 2; margin: 0">@Model.ContentDraft</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-panel" data-tab-panel="editable" hidden>
+                    <label class="form-label" data-bn="চূড়ান্ত সংস্করণ (সম্পাদনা করুন)" data-en="Final version (edit)">চূড়ান্ত সংস্করণ (সম্পাদনা করুন)</label>
+                    <textarea class="input" id="EditedContentMobile" name="EditedContent" rows="16"
+                              style="width: 100%; font-family: var(--font-doc)"
+                              data-counter="#review-counter">@Model.EditedContent</textarea>
+                    <small class="muted tiny" id="review-counter"></small>
+                </div>
             </div>
 
-            <!-- Right: Lawyer Editable Pane -->
-            <div class="pane" id="pane-edit">
-                <div class="pane-head green">
-                    <i data-lucide="edit-3"></i>
-                    <span data-bn="আইনজীবী সত্যায়ন ও সম্পাদনা (Lawyer Editable Version)" data-en="Lawyer Editable Version">আইনজীবী সত্যায়ন ও সম্পাদনা (Lawyer Editable Version)</span>
+            <!-- Desktop side-by-side (hidden on mobile by main.css breakpoint) -->
+            <div class="compare-grid-desktop" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px">
+                <div class="compare-pane compare-original">
+                    <h3 class="section-h"><i data-lucide="file-lock"></i> Original</h3>
+                    <div class="paper-sheet paper-watermark" style="margin: 0">
+                        <pre style="white-space: pre-wrap; font-family: var(--font-doc); font-size: 14px; line-height: 1.9; margin: 0">@Model.ContentDraft</pre>
+                    </div>
                 </div>
-                <textarea asp-for="EditedContent" class="pane-body editable" rows="18" placeholder="প্রয়োজনে আইনের ধারা সংশোধন বা তথ্য পরিমার্জন করুন...">@Model.EditedContent</textarea>
+                <div class="compare-pane compare-edit">
+                    <h3 class="section-h"><i data-lucide="file-pen"></i> Editable (final)</h3>
+                    <textarea class="input" id="EditedContentDesktop" name="EditedContent" rows="18"
+                              style="width: 100%; font-family: var(--font-doc)">@Model.EditedContent</textarea>
+                </div>
             </div>
         </div>
 
-        <!-- Decision & Comments Box -->
-        <div class="card card-pad-lg" style="margin-bottom: 3rem;">
-            <h3 style="font-size: 18px; margin-bottom: 14px;"><i data-lucide="check-square"></i> <span data-bn="আইনজীবী সিদ্ধান্ত ও মন্তব্য (Lawyer Decision)" data-en="Lawyer Decision & Comments">আইনজীবী সিদ্ধান্ত ও মন্তব্য (Lawyer Decision)</span></h3>
-
-            <div class="field" style="margin-bottom: 16px;">
-                <label asp-for="Decision">সিদ্ধান্ত / Decision</label>
-                <select asp-for="Decision" class="input" required>
-                    <option value="Approved">✅ যথাযথ রয়েছে — অনুমোদন করুন (Approve without changes)</option>
-                    <option value="EditedApproved" selected>✏️ সম্পাদিত রূপ অনুমোদন করুন (Approve with lawyer edits)</option>
-                    <option value="Rejected">❌ ত্রুটিপূর্ণ বা অপ্রযোজ্য — বাতিল করুন (Reject)</option>
-                </select>
-            </div>
-
-            <div class="field" style="margin-bottom: 20px;">
-                <label asp-for="Comments"><span data-bn="নাগরিকের জন্য আইনি পরামর্শ বা পর্যালোচনার নোট" data-en="Legal advice or review notes for the citizen">নাগরিকের জন্য আইনি পরামর্শ বা পর্যালোচনার নোট</span></label>
-                <textarea asp-for="Comments" class="textarea autogrow" rows="3" placeholder="যেমন: ধারা ১২৩ ও ২৮৯ অনুযায়ী বকেয়া মজুরির লিখিত অভিযোগপত্র সম্পূর্ণ হয়েছে..."></textarea>
-            </div>
-
-            <div class="row spread wrap" style="gap: 12px;">
-                <span class="tiny muted" data-bn="অনুমোদনের সাথে সাথে নাগরিকের জন্য PDF ডাউনলোড সক্রিয় হয়ে যাবে।" data-en="On approval, the citizen's PDF download unlocks immediately.">অনুমোদনের সাথে সাথে নাগরিকের জন্য PDF ডাউনলোড সক্রিয় হয়ে যাবে।</span>
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i data-lucide="check-circle-2"></i> <span data-bn="পর্যালোচনা সাবমিট করুন" data-en="Submit Review">পর্যালোচনা সাবমিট করুন</span>
-                </button>
-            </div>
+        <!-- Mandatory comments -->
+        <div class="card" style="margin: 16px 0">
+            <label class="form-label" asp-for="Comments">
+                <i data-lucide="message-square"></i>
+                <span data-bn="পর্যালোচনা মন্তব্য (আবশ্যক — নাগরিক দেখবেন)" data-en="Review comments (required — visible to the citizen)">পর্যালোচনা মন্তব্য (আবশ্যক — নাগরিক দেখবেন)</span>
+            </label>
+            <textarea class="input" asp-for="Comments" rows="3" maxlength="1000"
+                      placeholder="আপনার সিদ্ধান্তের কারণ ব্যাখ্যা করুন…"
+                      data-counter="#comments-counter"></textarea>
+            <small class="muted tiny" id="comments-counter"></small>
         </div>
+
+        <!-- Decision bar -->
+        <div class="sticky-action-bar row wrap" style="gap: 10px; padding: 14px 0">
+            <label class="tiny muted" style="margin-right: 6px" data-bn="সিদ্ধান্ত:" data-en="Decision:">সিদ্ধান্ত:</label>
+
+            <button class="btn btn-outline btn-sm" type="submit" name="Decision" value="Approved"
+                    data-confirm="মূল খসড়া কোনো পরিবর্তন ছাড়া অনুমোদন করবেন? / Approve the original without changes?">
+                <i data-lucide="check"></i> <span data-bn="অনুমোদন" data-en="Approve">অনুমোদন</span>
+            </button>
+
+            <button class="btn btn-primary btn-sm" type="submit" name="Decision" value="EditedApproved">
+                <i data-lucide="check-check"></i> <span data-bn="সম্পাদনাসহ অনুমোদন" data-en="Approve with Edits">সম্পাদনাসহ অনুমোদন</span>
+            </button>
+
+            <button class="btn btn-danger-outline btn-sm" type="button" data-open-modal="#reject-modal">
+                <i data-lucide="x"></i> <span data-bn="প্রত্যাখ্যান" data-en="Reject">প্রত্যাখ্যান</span>
+            </button>
+        </div>
+
+        <script>
+          // keep mobile tab and desktop pane in sync so whichever the lawyer edits
+          // posts the correct value (single name="EditedContent" posts last-wins;
+          // this sync makes both always identical).
+          document.addEventListener("DOMContentLoaded", function () {
+            var a = document.getElementById("EditedContentMobile");
+            var b = document.getElementById("EditedContentDesktop");
+            if (!a || !b) return;
+            a.addEventListener("input", function () { b.value = a.value; });
+            b.addEventListener("input", function () { a.value = b.value; });
+          });
+        </script>
     </form>
 </main>
 
-@section Scripts {
-    <script>
-        var btnDraft = document.getElementById('btn-show-draft');
-        var btnEdit = document.getElementById('btn-show-edit');
-        var paneDraft = document.getElementById('pane-draft');
-        var paneEdit = document.getElementById('pane-edit');
-
-        if (btnDraft && btnEdit && paneDraft && paneEdit) {
-            btnDraft.addEventListener('click', function() {
-                btnDraft.classList.add('active');
-                btnEdit.classList.remove('active');
-                paneDraft.classList.remove('mobile-hidden');
-                paneEdit.classList.add('mobile-hidden');
-            });
-            btnEdit.addEventListener('click', function() {
-                btnEdit.classList.add('active');
-                btnDraft.classList.remove('active');
-                paneEdit.classList.remove('mobile-hidden');
-                paneDraft.classList.add('mobile-hidden');
-            });
-        }
-    </script>
-}
+<!-- Reject modal: reason MANDATORY, shown to citizen, injected into their chat on return -->
+<div class="modal-backdrop" id="reject-modal" role="dialog" aria-modal="true" aria-labelledby="reject-title">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <div>
+                <span class="kicker" style="color: var(--danger)">FR-14</span>
+                <h3 id="reject-title" data-bn="প্রত্যাখ্যানের কারণ (বাধ্যতামূলক)" data-en="Rejection reason (mandatory)">প্রত্যাখ্যানের কারণ (বাধ্যতামূলক)</h3>
+            </div>
+            <button class="icon-btn" type="button" data-close-modal aria-label="বন্ধ করুন"><i data-lucide="x"></i></button>
+        </div>
+        <form asp-action="SubmitReview" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="DocumentId" />
+            <input type="hidden" asp-for="CaseId" />
+            <input type="hidden" asp-for="CaseTitle" />
+            <input type="hidden" asp-for="CategoryName" />
+            <input type="hidden" name="Decision" value="Rejected" />
+            <input type="hidden" asp-for="EditedContent" />
+            <p class="muted tiny" data-bn="কারণটি নাগরিকের কাছে দেখানো হবে এবং তাদের চ্যাটে যুক্ত হবে।" data-en="The reason is shown to the citizen and injected into their chat.">কারণটি নাগরিকের কাছে দেখানো হবে এবং তাদের চ্যাটে যুক্ত হবে।</p>
+            <textarea class="input" asp-for="Comments" rows="4" maxlength="1000"
+                      placeholder="যেমন: উদ্ধৃত ধারা প্রযোজ্য নয় — §123 যাচাই করুন…"></textarea>
+            <div class="row" style="justify-content: flex-end; gap: 10px; margin-top: 14px">
+                <button class="btn btn-outline btn-sm" type="button" data-close-modal data-bn="বাতিল" data-en="Cancel">বাতিল</button>
+                <button class="btn btn-danger-outline btn-sm" type="submit" data-bn="নথি প্রত্যাখ্যান করুন" data-en="Reject document">নথি প্রত্যাখ্যান করুন</button>
+            </div>
+        </form>
+    </div>
+</div>
