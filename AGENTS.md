@@ -73,7 +73,14 @@ Detailed project knowledge is maintained in the `.agent/spec/` directory:
 
 1. **Check Prerequisite Dependencies:** Before starting any implementation task, consult [`plans/Dependency_plan.md`](file:///d:/Projects/muktoAin-ISD/plans/Dependency_plan.md) to verify that all preceding dependencies (`[Blocked by: ...]`) are marked completed (`[x]`).
 2. **Auto-Update on Completion:** The moment you implement, verify, or complete ANY task defined in the execution plans:
-   - You **MUST automatically update [`plans/Dependency_plan.md`](file:///d:/Projects/muktoAin-ISD/plans/Dependency_plan.md)**.
+   - You **MUST automatically update [`plans/Dependency_plan.md`](file:///d:/Projects/muktoAin-ISD/plans/Dependency_plan.md)`**.
    - Change the corresponding task checkbox from `- [ ]` to `- [x]`.
    - If completing the task satisfies a checkpoint exit gate, mark the corresponding exit gate `[x]` as well.
 3. **No Unrecorded Work:** Never end a conversation or complete a prompt without recording your completed task progress in [`plans/Dependency_plan.md`](file:///d:/Projects/muktoAin-ISD/plans/Dependency_plan.md).
+
+## 6. Git Commit Policy (SUPERSEDES skill defaults)
+
+**NEVER commit, stage, push, or amend — ever.** All plan/skill "commit after every step" instructions are **disabled for AI agents** on this repository. **Shads (the human) is the sole committer** and performs all git operations manually.
+
+- If a plan document contains `git commit` steps, **skip them** — leave changes in the working tree for Shads to review and commit.
+- `plans/Dependency_plan.md` progress updates (rule 5 above) remain mandatory; only the git operations are delegated to the human.
