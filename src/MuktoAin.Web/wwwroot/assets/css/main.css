@@ -175,6 +175,29 @@ i[data-lucide], svg.lucide { width: 20px; height: 20px; flex: none; }
 }
 .section-h:first-child { margin-top: 0; }
 
+/* AI-generated markdown (rights explanations, chat answers) rendered to
+   real HTML via MarkdownText.ToHtml — headings/lists/bold need their own
+   rhythm since they arrive as one long string, not authored markup. */
+.md-content { line-height: 2; }
+.md-content > *:first-child { margin-top: 0; }
+.md-content > *:last-child { margin-bottom: 0; }
+.md-content h1, .md-content h2, .md-content h3, .md-content h4 {
+  font-family: var(--font-display); line-height: 1.4; margin: 22px 0 8px;
+}
+.md-content h1 { font-size: 22px; }
+.md-content h2 { font-size: 19px; }
+.md-content h3, .md-content h4 { font-size: 16.5px; }
+.md-content p { margin: 0 0 14px; }
+.md-content ul, .md-content ol { margin: 0 0 14px; padding-left: 26px; }
+.md-content li { margin-bottom: 6px; }
+.md-content strong { font-weight: 700; }
+.md-content hr { border: 0; border-top: 1px solid var(--border); margin: 18px 0; }
+.md-content blockquote {
+  margin: 0 0 14px; padding: 4px 16px; border-left: 3px solid var(--gold);
+  color: var(--ink-2); background: var(--surface-2); border-radius: 0 8px 8px 0;
+}
+.md-content code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .92em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+
 /* ---------- Navbar (Option H exact) ---------- */
 .nav {
   position: sticky; top: 0; z-index: 80;
