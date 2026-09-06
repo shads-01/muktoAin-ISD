@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Moq;
 using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
@@ -16,6 +17,15 @@ public class RagRetrievalSmokeTests
     private readonly Mock<IVectorStore> _vectorStoreMock = new();
     private readonly Mock<IActSectionRepository> _sectionRepoMock = new();
     private readonly Mock<IKeywordSectionSearch> _keywordSearchMock = new();
+    private readonly Mock<IScenarioMappingRepository> _scenarioMappingRepoMock = new();
+    private readonly Mock<IActRepository> _actRepoMock = new();
+
+    public RagRetrievalSmokeTests()
+    {
+        // No curated scenario priors in these smoke tests -- the merge step is a no-op.
+        _scenarioMappingRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<ScenarioMapping>());
+        _actRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Act>());
+    }
 
     [Fact]
     public async Task Labour_Query_Returns_Labour_Act_Sections_Via_Vector_Pipeline()
@@ -70,7 +80,13 @@ public class RagRetrievalSmokeTests
             _vectorStoreMock.Object,
             _sectionRepoMock.Object);
 
-        var ragContextBuilder = new RagContextBuilder(similaritySearch, _keywordSearchMock.Object);
+        var ragContextBuilder = new RagContextBuilder(
+            similaritySearch,
+            _keywordSearchMock.Object,
+            _scenarioMappingRepoMock.Object,
+            _sectionRepoMock.Object,
+            _actRepoMock.Object,
+            Mock.Of<ILogger<RagContextBuilder>>());
 
         // 2. Act: Execute RAG retrieval
         var retrievedSections = (await ragContextBuilder.RetrieveContextAsync(query, topK: 5)).ToList();
@@ -123,7 +139,13 @@ public class RagRetrievalSmokeTests
             _vectorStoreMock.Object,
             _sectionRepoMock.Object);
 
-        var ragContextBuilder = new RagContextBuilder(similaritySearch, _keywordSearchMock.Object);
+        var ragContextBuilder = new RagContextBuilder(
+            similaritySearch,
+            _keywordSearchMock.Object,
+            _scenarioMappingRepoMock.Object,
+            _sectionRepoMock.Object,
+            _actRepoMock.Object,
+            Mock.Of<ILogger<RagContextBuilder>>());
 
         var results = (await ragContextBuilder.RetrieveContextAsync(query, topK: 5)).ToList();
 
