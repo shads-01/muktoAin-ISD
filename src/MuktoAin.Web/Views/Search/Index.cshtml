@@ -29,10 +29,39 @@
 
         <form method="get" asp-action="Index" class="search-bar">
             <div class="row wrap" style="gap: 8px;">
-                <input name="q" value="@Model.Query" class="input" style="flex: 2; min-width: 240px;" placeholder="কীওয়ার্ড লিখুন... (যেমন: মজুরি, ক্ষতিপূরণ, ধারা ১২৩, ট্রেড ইউনিয়ন)" autofocus required />
-                <select class="input" name="actId" asp-for="ActId" asp-items="(List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)ViewBag.Acts" style="flex: 1; min-width: 180px;">
-                    <option value="">সব আইন / All acts</option>
-                </select>
+                @* Not required -- selecting only an Act below and searching browses that
+                   Act's sections directly; a keyword is optional, not mandatory. *@
+                <input name="q" value="@Model.Query" class="input" style="flex: 2; min-width: 240px;" placeholder="কীওয়ার্ড লিখুন... (যেমন: মজুরি, ক্ষতিপূরণ, ধারা ১২৩, ট্রেড ইউনিয়ন)" autofocus />
+                @{
+                    var selectedAct = ((List<MuktoAin.Domain.Entities.Act>)ViewBag.Acts)
+                        .FirstOrDefault(a => a.ActId == Model.ActId);
+                    var selectedLabel = selectedAct == null ? "সব আইন / All acts" : $"{selectedAct.Title} ({selectedAct.Year})";
+                }
+                <!-- Native <select> with 1400+ acts opens a popup that runs edge-to-edge
+                     with no breathing room and no way to search -- a custom, height-capped
+                     combobox (act-filter) replaces it. The hidden input is what actually
+                     submits; JS below (act-filter.js) drives the panel/filtering and degrades
+                     to "no filter applied" if JS fails to load, same as any progressive form. -->
+                <div class="act-filter" data-act-filter style="flex: 1; min-width: 180px;">
+                    <input type="hidden" name="actId" id="actId-value" value="@Model.ActId" />
+                    <button type="button" class="input act-filter-btn" id="actId-btn" aria-haspopup="listbox" aria-expanded="false">
+                        <span id="actId-label">@selectedLabel</span>
+                        <i data-lucide="chevron-down"></i>
+                    </button>
+                    <div class="act-filter-panel" id="actId-panel" hidden>
+                        <input type="text" class="input act-filter-search" id="actId-search"
+                               placeholder="আইন খুঁজুন... / Search acts..." autocomplete="off" />
+                        <div class="act-filter-list" id="actId-list" role="listbox" tabindex="-1">
+                            <div class="act-filter-item" role="option" data-value="" data-full="সব আইন all acts">সব আইন / All acts</div>
+                            @foreach (var act in (List<MuktoAin.Domain.Entities.Act>)ViewBag.Acts)
+                            {
+                                var label = $"{act.Title} ({act.Year})";
+                                var display = label.Length > 70 ? label.Substring(0, 67) + "…" : label;
+                                <div class="act-filter-item" role="option" data-value="@act.ActId" data-full="@label.ToLowerInvariant()" title="@label">@display</div>
+                            }
+                        </div>
+                    </div>
+                </div>
                 <button type="submit" class="btn btn-primary search-submit btn-lg">
                     <i data-lucide="search"></i> খুঁজুন
                 </button>
@@ -51,14 +80,22 @@
         </form>
     </div>
 
-    @if (!string.IsNullOrEmpty(Model.Query))
+    @if (Model.HasSearched)
     {
         <div class="with-rail" style="margin-top: 2rem;">
             <!-- Main Results Column -->
             <div class="stack" style="gap: 16px;">
                 <div class="row spread wrap" style="padding-bottom: 8px; border-bottom: 1px solid var(--border);">
                     <span class="tiny muted">
-                        “<b>@Model.Query</b>”-এর জন্য প্রায় <b>@Model.TotalResults টি ফলাফল</b> পাওয়া গেছে (পৃষ্ঠা @Model.Page)
+                        @if (!string.IsNullOrEmpty(Model.Query))
+                        {
+                            <text>“<b>@Model.Query</b>”-এর জন্য প্রায় <b>@Model.TotalResults টি ফলাফল</b> পাওয়া গেছে (পৃষ্ঠা @Model.Page)</text>
+                        }
+                        else
+                        {
+                            @* Act-only browse: no keyword was searched, so phrase the count around the Act instead of a quoted query. *@
+                            <text>নির্বাচিত আইনে মোট <b>@Model.TotalResults টি ধারা</b> পাওয়া গেছে (পৃষ্ঠা @Model.Page)</text>
+                        }
                     </span>
                 </div>
 
@@ -85,7 +122,16 @@
                                     @res.ActTitle
                                 </div>
                                 <div class="r-snippet">
-                                    @Html.Raw(res.SectionTextSnippet.Replace(Model.Query, $"<mark>{Model.Query}</mark>"))
+                                    @* Act-only browse has no keyword to highlight -- String.Replace throws on
+                                       an empty oldValue, so skip highlighting entirely in that case. *@
+                                    @if (string.IsNullOrEmpty(Model.Query))
+                                    {
+                                        @res.SectionTextSnippet
+                                    }
+                                    else
+                                    {
+                                        @Html.Raw(res.SectionTextSnippet.Replace(Model.Query, $"<mark>{Model.Query}</mark>"))
+                                    }
                                 </div>
                                 <div class="row spread wrap" style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border);">
                                     <div class="row" style="gap: 14px;">
@@ -231,3 +277,81 @@
         </div>
     }
 </main>
+
+<script>
+// Act filter combobox (see .act-filter in main.css for why this replaced a
+// native <select>): open/close the panel, filter ~1400 items by substring
+// against the full untruncated title, and write the picked id into the
+// hidden input the form actually submits.
+document.addEventListener("DOMContentLoaded", function () {
+    var root = document.querySelector("[data-act-filter]");
+    if (!root) return;
+    var btn = document.getElementById("actId-btn");
+    var label = document.getElementById("actId-label");
+    var valueInput = document.getElementById("actId-value");
+    var panel = document.getElementById("actId-panel");
+    var search = document.getElementById("actId-search");
+    var list = document.getElementById("actId-list");
+    var items = Array.prototype.slice.call(list.querySelectorAll(".act-filter-item"));
+
+    function markSelected() {
+        items.forEach(function (it) {
+            it.classList.toggle("selected", it.dataset.value === valueInput.value);
+        });
+    }
+    markSelected();
+
+    function open() {
+        panel.hidden = false;
+        root.classList.add("open");
+        btn.setAttribute("aria-expanded", "true");
+        search.value = "";
+        filter("");
+        search.focus();
+    }
+    function close() {
+        panel.hidden = true;
+        root.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+    }
+    function filter(term) {
+        var q = term.trim().toLowerCase();
+        var visible = 0;
+        items.forEach(function (it) {
+            var show = !q || it.dataset.full.indexOf(q) !== -1;
+            it.hidden = !show;
+            if (show) visible++;
+        });
+        var empty = list.querySelector(".act-filter-empty");
+        if (visible === 0) {
+            if (!empty) {
+                empty = document.createElement("div");
+                empty.className = "act-filter-empty";
+                empty.textContent = "কোনো আইন পাওয়া যায়নি / No acts found";
+                list.appendChild(empty);
+            }
+        } else if (empty) {
+            empty.remove();
+        }
+    }
+
+    btn.addEventListener("click", function () {
+        if (panel.hidden) open(); else close();
+    });
+    search.addEventListener("input", function () { filter(search.value); });
+    list.addEventListener("click", function (e) {
+        var item = e.target.closest(".act-filter-item");
+        if (!item) return;
+        valueInput.value = item.dataset.value;
+        label.textContent = item.textContent;
+        markSelected();
+        close();
+    });
+    document.addEventListener("click", function (e) {
+        if (!root.contains(e.target)) close();
+    });
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && !panel.hidden) { close(); btn.focus(); }
+    });
+});
+</script>

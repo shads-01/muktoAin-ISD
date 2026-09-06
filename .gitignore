@@ -424,6 +424,9 @@ autom4te.cache/
 tarballs/
 test-results/
 
+# Page snapshots written by the Playwright MCP server during agent sessions
+.playwright-mcp/
+
 # content below from: https://github.com/github/gitignore/blob/main/Global/macOS.gitignore
 # General
 .DS_Store

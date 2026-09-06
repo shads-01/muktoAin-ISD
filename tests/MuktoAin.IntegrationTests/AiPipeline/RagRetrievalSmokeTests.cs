@@ -20,6 +20,13 @@ public class RagRetrievalSmokeTests
     private readonly Mock<IScenarioMappingRepository> _scenarioMappingRepoMock = new();
     private readonly Mock<IActRepository> _actRepoMock = new();
 
+    public RagRetrievalSmokeTests()
+    {
+        // No curated scenario priors in these smoke tests -- the merge step is a no-op.
+        _scenarioMappingRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<ScenarioMapping>());
+        _actRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Act>());
+    }
+
     // RagContextBuilder gained scenario-prior merging (FR-18) after this test was
     // written — empty mappings keep the pure vector/FTS assertions unchanged.
     private RagContextBuilder CreateRagContextBuilder(SimilaritySearchService similaritySearch) =>

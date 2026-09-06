@@ -784,7 +784,10 @@
       var searchInp = document.querySelector('.search-bar input[name="q"], .search-bar input[type="search"], .search-bar input[type="text"]');
       if (searchInp) searchInp.placeholder = dict["search-placeholder"];
 
-      var searchBtn = document.querySelector(".search-bar button");
+      // type="submit" -- .act-filter-btn (the Act picker) is also a <button> in
+      // .search-bar and comes first in the DOM, so a bare "button" selector here
+      // used to grab it by accident and stomp its label with the search icon/text.
+      var searchBtn = document.querySelector(".search-bar button[type=\"submit\"]");
       if (searchBtn) searchBtn.innerHTML = '<i data-lucide="search"></i> ' + dict["search-btn"];
 
       var popLabel = document.querySelector(".search-bar .row.wrap .tiny.muted");

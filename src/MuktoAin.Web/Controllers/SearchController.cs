@@ -39,22 +39,29 @@ public class SearchController : Controller
     [HttpGet]
     public async Task<IActionResult> Index(string? q, int page = 1, int? actId = null)
     {
-        // Act filter dropdown data (always, so the filter renders on empty state too)
+        // Act filter dropdown data (always, so the filter renders on empty state too).
+        // Some act titles run 100-190+ chars — a native <select> sizes its popup to
+        // the longest untruncated option, which pushes the flyout past the viewport
+        // edge. The view truncates the visible label and keeps the full title as the
+        // option's title="" tooltip, so ViewBag carries full titles, not SelectListItems.
         var acts = await _actRepo.GetAllAsync();
-        ViewBag.Acts = acts.OrderBy(a => a.Title).Select(a => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
-        {
-            Value = a.ActId.ToString(),
-            Text = $"{a.Title} ({a.Year})"
-        }).ToList();
+        ViewBag.Acts = acts.OrderBy(a => a.Title).ToList();
 
-        if (string.IsNullOrWhiteSpace(q))
+        // No keyword and no Act filter -- nothing to search, show the initial prompt.
+        if (string.IsNullOrWhiteSpace(q) && actId is null)
         {
             return View(new SearchViewModel());
         }
 
-        var result = await _searchService.SearchActsAsync(q, page, PageSize, actId);
+        // Keyword blank but an Act is selected -- browse that Act's sections directly
+        // rather than treating the dropdown as inert until a keyword is also typed.
+        var result = string.IsNullOrWhiteSpace(q)
+            ? await _searchService.BrowseActAsync(actId!.Value, page, PageSize)
+            : await _searchService.SearchActsAsync(q, page, PageSize, actId);
+
         var vm = ToViewModel(result);
         vm.ActId = actId;
+        vm.HasSearched = true;
         return View(vm);
     }
 

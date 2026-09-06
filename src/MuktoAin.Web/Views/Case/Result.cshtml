@@ -108,7 +108,7 @@
     <!-- Rights explanation -->
     <div class="card" style="margin: 16px 0">
         <h2 class="section-h"><i data-lucide="scale"></i> <span data-bn="আপনার অধিকার" data-en="Your rights">আপনার অধিকার</span></h2>
-        <p class="serif" style="white-space: pre-wrap; line-height: 2">@Model.RightsExplanation</p>
+        <div class="serif md-content">@MarkdownText.ToHtml(Model.RightsExplanation)</div>
     </div>
 
     <!-- Cited sections -->
@@ -164,7 +164,11 @@
                 </div>
             </div>
 
-            <div class="paper-sheet @(Model.CanDownloadPdf ? "" : "paper-watermark")">
+            <div class="paper-sheet">
+                @if (!Model.CanDownloadPdf)
+                {
+                    <div class="paper-watermark"><span data-bn="খসড়া" data-en="DRAFT">খসড়া</span></div>
+                }
                 <div class="doc-meta">গণপ্রজাতন্ত্রী বাংলাদেশ · @StatusText.Bn(Model.DocumentStatus) · DOC-@Model.DocumentId</div>
                 <pre style="white-space: pre-wrap; font-family: var(--font-doc); font-size: 15px; line-height: 2; margin: 0">@(Model.ContentFinal ?? Model.DocumentContent)</pre>
                 <div class="doc-stamp">
