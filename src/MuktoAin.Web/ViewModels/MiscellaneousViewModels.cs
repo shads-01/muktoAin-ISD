@@ -7,6 +7,10 @@ public class SearchViewModel
     public int PageSize { get; set; } = 10;
     public int TotalResults { get; set; }
     public int? ActId { get; set; }
+    // True once a search/browse has actually run -- distinct from Query being
+    // non-empty, since selecting only the Act dropdown (no keyword) is a valid
+    // search too and still needs to render the results panel.
+    public bool HasSearched { get; set; }
     public List<SearchResultItemViewModel> Results { get; set; } = new();
 }
 
