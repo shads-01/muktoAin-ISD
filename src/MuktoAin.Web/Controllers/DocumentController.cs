@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
@@ -9,14 +10,17 @@ namespace MuktoAin.Web.Controllers;
 public class DocumentController : Controller
 {
     private readonly IRepository<GeneratedDocument>? _docRepo;
+    private readonly DocumentService? _documentService;
     private readonly ILogger<DocumentController> _logger;
 
     public DocumentController(
         ILogger<DocumentController> logger,
-        IRepository<GeneratedDocument>? docRepo = null)
+        IRepository<GeneratedDocument>? docRepo = null,
+        DocumentService? documentService = null)
     {
         _logger = logger;
         _docRepo = docRepo;
+        _documentService = documentService;
     }
 
     [HttpGet]
@@ -96,9 +100,36 @@ public class DocumentController : Controller
             return RedirectToAction(nameof(Preview), new { id });
         }
 
-        // TODO: [Arpita] Wire PdfExportService.GeneratePdf() for byte[] stream
-        TempData["Success"] = "পিডিএফ তৈরি হচ্ছে... / PDF export initiated.";
-        return RedirectToAction(nameof(Preview), new { id });
+        // A-2.5: real QuestPDF export via the approval-gated DocumentService path.
+        // _documentService is optional purely for mock-mode compatibility.
+        if (_documentService == null)
+        {
+            TempData["Error"] = "পিডিএফ পরিষেবা উপলব্ধ নেই। / PDF export service is unavailable.";
+            return RedirectToAction(nameof(Preview), new { id });
+        }
+
+        try
+        {
+            var pdf = await _documentService.GetPdfIfApprovedAsync(id);
+            if (pdf == null || pdf.Length == 0)
+            {
+                TempData["Error"] = "পিডিএফ তৈরি করা যায়নি। / PDF could not be generated.";
+                return RedirectToAction(nameof(Preview), new { id });
+            }
+
+            // Document type + id make a stable, meaningful filename; the type
+            // name is ASCII so no UTF-8 Content-Disposition gymnastics needed.
+            var fileName = $"MuktoAin-{id}-{DateTime.UtcNow:yyyyMMdd}.pdf";
+            Response.Headers["Content-Disposition"] =
+                $"attachment; filename=\"{fileName}\"";
+            return File(pdf, "application/pdf");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "PDF export failed for document {DocumentId}", id);
+            TempData["Error"] = "পিডিএফ তৈরি করতে সমস্যা হয়েছে। / An error occurred while generating the PDF.";
+            return RedirectToAction(nameof(Preview), new { id });
+        }
     }
 
     private static DocumentPreviewViewModel GetMockDocument(int id)

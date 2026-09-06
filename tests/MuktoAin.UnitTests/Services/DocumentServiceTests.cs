@@ -5,6 +5,7 @@ using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
+using MuktoAin.Domain.Interfaces.Services;
 using Xunit;
 
 namespace MuktoAin.UnitTests.Services;
@@ -17,6 +18,7 @@ public class DocumentServiceTests
     private readonly Mock<ICaseRepository> _mockCaseRepo;
     private readonly Mock<IRepository<District>> _mockDistrictRepo;
     private readonly Mock<IRepository<CaseCategory>> _mockCategoryRepo;
+    private readonly Mock<IPdfExporter> _mockPdfExporter;
     private readonly DocumentService _service;
 
     public DocumentServiceTests()
@@ -31,13 +33,15 @@ public class DocumentServiceTests
         _mockCaseRepo = new Mock<ICaseRepository>();
         _mockDistrictRepo = new Mock<IRepository<District>>();
         _mockCategoryRepo = new Mock<IRepository<CaseCategory>>();
+        _mockPdfExporter = new Mock<IPdfExporter>();
 
         _service = new DocumentService(
             _generator,
             _mockDocRepo.Object,
             _mockCaseRepo.Object,
             _mockDistrictRepo.Object,
-            _mockCategoryRepo.Object);
+            _mockCategoryRepo.Object,
+            _mockPdfExporter.Object);
     }
 
     [Fact]
@@ -188,4 +192,97 @@ public class DocumentServiceTests
         Assert.Null(doc.ContentFinal);
         _mockDocRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
     }
+
+    // ── A-2.5: PDF download gate (GetPdfIfApprovedAsync) ────────────────
+
+    [Fact]
+    public async Task GetPdfIfApprovedAsync_Draft_ReturnsNull_NeverCallsExporter()
+    {
+        var doc = NewDoc(status: DocumentStatus.Draft);
+        _mockDocRepo.Setup(r => r.GetByIdAsync(doc.DocumentId)).ReturnsAsync(doc);
+
+        var result = await _service.GetPdfIfApprovedAsync(doc.DocumentId);
+
+        Assert.Null(result);
+        _mockPdfExporter.Verify(p => p.GeneratePdf(It.IsAny<GeneratedDocument>(), It.IsAny<Case>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetPdfIfApprovedAsync_UnderReview_ReturnsNull_NeverCallsExporter()
+    {
+        var doc = NewDoc(status: DocumentStatus.UnderReview);
+        _mockDocRepo.Setup(r => r.GetByIdAsync(doc.DocumentId)).ReturnsAsync(doc);
+
+        var result = await _service.GetPdfIfApprovedAsync(doc.DocumentId);
+
+        Assert.Null(result);
+        _mockPdfExporter.Verify(p => p.GeneratePdf(It.IsAny<GeneratedDocument>(), It.IsAny<Case>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetPdfIfApprovedAsync_Rejected_ReturnsNull_NeverCallsExporter()
+    {
+        var doc = NewDoc(status: DocumentStatus.Rejected);
+        _mockDocRepo.Setup(r => r.GetByIdAsync(doc.DocumentId)).ReturnsAsync(doc);
+
+        var result = await _service.GetPdfIfApprovedAsync(doc.DocumentId);
+
+        Assert.Null(result);
+        _mockPdfExporter.Verify(p => p.GeneratePdf(It.IsAny<GeneratedDocument>(), It.IsAny<Case>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetPdfIfApprovedAsync_Approved_ReturnsPdfBytes()
+    {
+        var doc = NewDoc(status: DocumentStatus.Approved);
+        var caseEntity = new Case { CaseId = doc.CaseId };
+        var pdfBytes = new byte[] { 1, 2, 3, 4 };
+
+        _mockDocRepo.Setup(r => r.GetByIdAsync(doc.DocumentId)).ReturnsAsync(doc);
+        _mockCaseRepo.Setup(r => r.GetByIdAsync(doc.CaseId)).ReturnsAsync(caseEntity);
+        _mockPdfExporter
+            .Setup(p => p.GeneratePdf(doc, caseEntity))
+            .Returns(pdfBytes);
+
+        var result = await _service.GetPdfIfApprovedAsync(doc.DocumentId);
+
+        Assert.NotNull(result);
+        Assert.Equal(pdfBytes, result);
+        _mockPdfExporter.Verify(p => p.GeneratePdf(doc, caseEntity), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetPdfIfApprovedAsync_ApprovedButCaseMissing_ReturnsNull()
+    {
+        var doc = NewDoc(status: DocumentStatus.Approved);
+        _mockDocRepo.Setup(r => r.GetByIdAsync(doc.DocumentId)).ReturnsAsync(doc);
+        _mockCaseRepo.Setup(r => r.GetByIdAsync(doc.CaseId)).ReturnsAsync((Case?)null);
+
+        var result = await _service.GetPdfIfApprovedAsync(doc.DocumentId);
+
+        Assert.Null(result);
+        _mockPdfExporter.Verify(p => p.GeneratePdf(It.IsAny<GeneratedDocument>(), It.IsAny<Case>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetPdfIfApprovedAsync_DocumentNotFound_ReturnsNull()
+    {
+        _mockDocRepo.Setup(r => r.GetByIdAsync(404)).ReturnsAsync((GeneratedDocument?)null);
+
+        var result = await _service.GetPdfIfApprovedAsync(404);
+
+        Assert.Null(result);
+        _mockPdfExporter.Verify(p => p.GeneratePdf(It.IsAny<GeneratedDocument>(), It.IsAny<Case>()), Times.Never);
+    }
+
+    private static GeneratedDocument NewDoc(DocumentStatus status) => new()
+    {
+        DocumentId = 77,
+        CaseId = 42,
+        DocumentType = DocumentType.LabourComplaint,
+        ContentDraft = "AI draft",
+        ContentFinal = status == DocumentStatus.Approved ? "Lawyer approved content" : null,
+        Status = status,
+        CreatedAt = DateTime.UtcNow
+    };
 }
