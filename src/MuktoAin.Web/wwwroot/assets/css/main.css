@@ -632,8 +632,10 @@ tbody tr:hover { background: var(--surface-2); }
   content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px;
   height: 3px; border-radius: 3px 3px 0 0; background: var(--gold);
 }
-.tab-panel { display: none; animation: rise .25s var(--ease) both; }
-.tab-panel.active { display: block; }
+/* visibility is driven by the native [hidden] attribute (see main.js's
+   data-tabs handler), not a class, so a panel's default display (block)
+   applies whenever it isn't hidden. */
+.tab-panel { animation: rise .25s var(--ease) both; }
 
 /* ---------- Accordion ---------- */
 details.acc { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
@@ -1150,18 +1152,39 @@ body:has(.chat-shell) .site-footer { display: none; }
 .compare-pane { border: 1px solid var(--border); border-radius: 14px; padding: 12px; min-width: 0; }
 .compare-original { border-left: 3px solid var(--danger-soft); background: var(--surface-2); }
 .compare-edit { border-left: 3px solid var(--success-soft); }
+/* main.js autosizes this to its scrollHeight on load/input so the entire
+   document is visible with no inner scrollbar, instead of clipping to a
+   bare rows="18" -- min-height is just the floor for a short document, and
+   resize:none stops a manual drag from re-introducing an inner scrollbar. */
+.compare-edit textarea { min-height: 320px; overflow: hidden; resize: none; }
+/* long unbreakable runs in the AI draft (rules-of-thumb dashed dividers,
+   unspaced tokens) would otherwise overflow the fixed-width paper sheet
+   instead of wrapping like the rest of the pre-wrapped text. */
+.paper-sheet pre { overflow-wrap: anywhere; }
 .compare-grid-desktop { display: none; }
 @media (min-width: 900px) {
   .compare-grid-desktop { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
   .compare-grid-desktop + * { margin-top: 0; }
-  /* on desktop, the mobile tab copy of the editable textarea is redundant —
-     both textareas bind asp-for="EditedContent"; only ONE may post.
-     Hide the tab-panel version's textarea (values stay identical because
-     JS syncs is unnecessary: user edits on desktop pane). */
-  .tab-panel[data-tab-panel="editable"] textarea { display: none; }
+  /* the mobile tab-panel content (a single full-width pane) is redundant with
+     the side-by-side grid below it on desktop — without this it renders
+     twice, pushing the real compare grid off-screen. The button row above
+     (.tab-btns) stays visible: it now drives the grid's focus-original /
+     focus-editable state instead of these panels. It also owns the only
+     posted EditedContent textarea on mobile; the desktop pane has the other,
+     so hiding this panel here avoids two inputs with the same name. */
+  [data-tabs] .tab-panel { display: none; }
+  /* the top Original/Editable buttons (main.js data-tabs handler) drive this
+     focus mode so either pane can expand to the full window width. */
+  .compare-grid-desktop.focus-original,
+  .compare-grid-desktop.focus-editable { grid-template-columns: 1fr; }
+  .compare-grid-desktop.focus-original .compare-edit,
+  .compare-grid-desktop.focus-editable .compare-original { display: none; }
 }
 @media (max-width: 899px) {
   .compare-grid-desktop { display: none !important; }
+  /* "Split View" only means anything for the desktop grid above; mobile
+     tabs already show one pane at a time. */
+  [data-tab="both"] { display: none !important; }
 }
 .btn-danger-outline {
   border: 1px solid var(--danger); color: var(--danger);

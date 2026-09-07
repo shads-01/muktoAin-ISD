@@ -1524,17 +1524,64 @@
       });
     });
 
+    /* Grows a textarea to fit all of its content so the whole document is
+       visible with no inner scrollbar -- used by the Lawyer Review compare
+       card below, where a fixed rows="" height would clip long drafts. */
+    function autosizeTextarea(el) {
+      if (!el) return;
+      el.style.height = "auto";
+      // +2px: border-box rounding can leave scrollHeight a hair taller than
+      // the exact content, which would otherwise show a 1px inner scrollbar.
+      el.style.height = (el.scrollHeight + 2) + "px";
+    }
+    document.querySelectorAll(".compare-pane textarea, .tab-panel textarea").forEach(function (ta) {
+      autosizeTextarea(ta);
+      ta.addEventListener("input", function () { autosizeTextarea(ta); });
+    });
+    // Re-measure on resize too: crossing the 900px breakpoint swaps which
+    // pane is visible (mobile tab vs. desktop grid), and it was 0-height
+    // (hidden) the last time it was measured.
+    var resizeRaf = null;
+    window.addEventListener("resize", function () {
+      if (resizeRaf) return;
+      resizeRaf = requestAnimationFrame(function () {
+        resizeRaf = null;
+        document.querySelectorAll(".compare-pane textarea, .tab-panel textarea").forEach(autosizeTextarea);
+      });
+    });
+
     /* underline tabs */
     document.querySelectorAll("[data-tabs]").forEach(function (tabsEl) {
-      var buttons = tabsEl.querySelectorAll("button");
+      var buttons = tabsEl.querySelectorAll("[data-tab]");
+      var panels = tabsEl.querySelectorAll("[data-tab-panel]");
+      // Lawyer Review's compare card reuses this same button row to drive its
+      // desktop side-by-side grid: Original/Editable expand that pane to the
+      // full window width, and Split View (desktop-only -- hidden on
+      // mobile, where tabs already show one pane at a time) returns to the
+      // split view.
+      var grid = tabsEl.closest(".card") && tabsEl.closest(".card").querySelector(".compare-grid-desktop");
       buttons.forEach(function (btn) {
         btn.addEventListener("click", function () {
+          var name = btn.dataset.tab;
+
           buttons.forEach(function (b) { b.classList.remove("active"); });
           btn.classList.add("active");
-          var scope = document.querySelector(tabsEl.dataset.tabs) || document;
-          scope.querySelectorAll(":scope > .tab-panel, :scope .tab-panel").forEach(function (p) {
-            p.classList.toggle("active", p.id === btn.dataset.panel);
-          });
+
+          var panel = tabsEl.querySelector('[data-tab-panel="' + name + '"]');
+          if (panel) {
+            panels.forEach(function (p) { p.hidden = p !== panel; });
+          }
+
+          if (grid) {
+            grid.classList.remove("focus-original", "focus-editable");
+            if (name === "original" || name === "editable") grid.classList.add("focus-" + name);
+          }
+
+          // A pane hidden a moment ago measured 0 scrollHeight; now that it's
+          // visible again, size it for real.
+          tabsEl.querySelectorAll("textarea").forEach(autosizeTextarea);
+          if (grid) { var gta = grid.querySelector("textarea"); if (gta) autosizeTextarea(gta); }
+
           renderIcons();
         });
       });
