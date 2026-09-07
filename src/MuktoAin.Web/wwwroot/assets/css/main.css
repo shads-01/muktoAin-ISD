@@ -602,6 +602,7 @@ select.input, .form-select { appearance: none; background-image: linear-gradient
 .alert-warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
 .alert-info { background: var(--info-soft); border-color: color-mix(in srgb, var(--info) 30%, transparent); color: var(--info); }
 .alert-success { background: var(--success-soft); border-color: color-mix(in srgb, var(--success) 30%, transparent); color: var(--success); }
+.alert-danger, .alert-error { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 30%, transparent); color: var(--danger); }
 
 /* ---------- Tables ---------- */
 .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
@@ -648,19 +649,34 @@ details.acc summary .chev { margin-left: auto; color: var(--ink-3); transition: 
 details.acc[open] summary .chev { transform: rotate(180deg); }
 details.acc .acc-body { padding: 2px 18px 16px; font-size: 14.5px; color: var(--ink-2); }
 
+/* Cited legal sections (Case/Result) -- relevance as a small tinted pill
+   instead of plain muted text, and the expanded statute text set off with
+   the same gold-accent treatment as .verdict-quote/.draft-preview so it
+   reads as quoted source material rather than a plain paragraph. */
+.acc-relevance {
+  display: inline-flex; align-items: center; padding: 2px 9px;
+  border-radius: 999px; font-size: 11.5px; font-weight: 700;
+  background: var(--gold-soft); color: var(--gold);
+}
+details.acc .acc-body.cited-body {
+  margin: 0 18px 16px; padding: 12px 16px; border-radius: 0 8px 8px 0;
+  background: var(--surface-2); border-left: 3px solid var(--gold);
+}
+
 /* ---------- Timeline ---------- */
 .timeline { display: flex; margin: 8px 0 4px; }
 .t-step { flex: 1; text-align: center; position: relative; }
-.t-step .dot {
+.t-step .t-dot {
   width: 28px; height: 28px; border-radius: 50%; margin: 0 auto 6px;
   display: flex; align-items: center; justify-content: center;
   background: var(--surface); border: 2px solid var(--border-strong); color: var(--ink-3);
   font-size: 12.5px; font-weight: 700;
 }
-.t-step.done .dot { background: var(--gold); border-color: var(--gold); color: #fffdf4; }
-[data-theme="dark"] .t-step.done .dot { color: #211a10; }
-.t-step.current .dot { background: var(--surface); border-color: var(--primary); color: var(--primary); box-shadow: 0 0 0 4px var(--primary-soft); }
-.t-step.rejected .dot { background: var(--danger); border-color: var(--danger); color: #fff; }
+.t-step.done .t-dot { background: var(--gold); border-color: var(--gold); color: #fffdf4; }
+[data-theme="dark"] .t-step.done .t-dot { color: #211a10; }
+.t-step.current .t-dot { background: var(--surface); border-color: var(--primary); color: var(--primary); box-shadow: 0 0 0 4px var(--primary-soft); }
+.t-step.rejected .t-dot { background: var(--danger); border-color: var(--danger); color: #fff; }
+.t-step.withdrawn .t-dot { background: var(--ink-3); border-color: var(--ink-3); color: #fff; }
 .t-step span { font-size: 12px; color: var(--ink-2); font-weight: 600; display: block; line-height: 1.35; }
 .t-step small { font-size: 10.5px; color: var(--ink-3); display: block; }
 .t-step:not(:last-child)::after {
@@ -935,6 +951,55 @@ details.acc .acc-body { padding: 2px 18px 16px; font-size: 14.5px; color: var(--
 }
 [data-theme="dark"] .paper-watermark span { color: rgba(248, 113, 113, 0.06); }
 
+/* ---------- Case Result: verdict card, sticky actions, doc preview ---------- */
+/* Lawyer's decision + comments used to render as .muted.tiny (12px, the
+   lightest ink token) -- this promotes it to the visual weight the citizen's
+   actual answer deserves. The decision itself is already carried by the
+   badge inside the card, so the card no longer needs its own colored
+   left-border accent (that treatment stays on .verdict-quote below). */
+.verdict-quote {
+  font-family: var(--font-doc); font-style: italic; font-size: 15px; line-height: 1.8; color: var(--ink);
+  background: var(--surface-2); border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0;
+  padding: 12px 16px; margin: 12px 0 0;
+}
+
+/* Bounded preview for the generated document -- only clamps and shows the
+   expand toggle when content actually overflows (see main.js). A short
+   document renders plainly with no dead fade over empty space. */
+.doc-preview { position: relative; max-height: 480px; overflow: hidden; }
+.doc-preview.overflowing::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 70px;
+  background: linear-gradient(transparent, #fffef9);
+}
+[data-theme="dark"] .doc-preview.overflowing::after { background: linear-gradient(transparent, #161e22); }
+.doc-preview.expanded { max-height: none; overflow: visible; }
+.doc-expand-btn {
+  display: flex; margin: 12px auto 0; padding: 9px 18px; border-radius: var(--radius-btn);
+  border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink);
+  font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+  align-items: center; gap: 6px;
+}
+/* The unconditional display:flex above otherwise beats the browser's own
+   [hidden] default (same specificity, but author styles win) -- main.js only
+   un-hides this once it confirms the paired preview actually overflows. */
+.doc-expand-btn[hidden] { display: none; }
+.doc-expand-btn:hover { background: var(--surface-2); border-color: #92743a; }
+
+/* Same clamp+fade+expand mechanic as .doc-preview above, sized for a few
+   lines of prose (e.g. Case/Result's rights explanation) instead of a full
+   document. */
+.text-preview { position: relative; max-height: 130px; overflow: hidden; }
+.text-preview.overflowing::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 50px;
+  background: linear-gradient(transparent, var(--surface));
+}
+.text-preview.expanded { max-height: none; overflow: visible; }
+
+/* Mobile always gets the one action that matters most within thumb's reach,
+   without waiting on the full scroll to reach the actions card in .rail. */
+.mobile-cta-bar { margin-top: 16px; }
+@media (min-width: 1024px) { .mobile-cta-bar { display: none; } }
+
 /* ---------- Auth layout ---------- */
 .auth-split { display: grid; min-height: calc(100dvh - 96px); }
 .auth-side { display: none; padding: 48px 40px; flex-direction: column; justify-content: center; gap: 18px; }
@@ -996,6 +1061,10 @@ details.acc .acc-body { padding: 2px 18px 16px; font-size: 14.5px; color: var(--
   .with-rail { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
   .rail { position: sticky; top: 128px; display: flex; flex-direction: column; gap: 16px; }
 }
+/* Rail buttons carry long bilingual labels (e.g. "Send Lawyer Honorarium
+   (Optional)") that don't fit .btn's global nowrap in a 300px column --
+   let them wrap to a second line instead of overflowing the card. */
+.rail .btn { white-space: normal; text-align: center; line-height: 1.3; }
 
 /* ---------- Stat strip (lawyer) ---------- */
 .stat-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }

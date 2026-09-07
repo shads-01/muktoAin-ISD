@@ -1650,6 +1650,28 @@
       update();
     });
 
+    /* Long content preview (Case/Result: generated document, rights
+       explanation): clamp + fade + the expand toggle only kick in when the
+       content actually overflows the box, so a short block renders plainly
+       with no dead space under a fake control. The button carries its own
+       expand/collapse wording via its data-more-en/data-more-bn and
+       data-less-en/data-less-bn attributes, so this one mechanism serves
+       callers with different labels (e.g. "Show full document" vs.
+       "Read more"). */
+    document.querySelectorAll("[data-clamp-preview]").forEach(function (box) {
+      var btn = document.querySelector('[data-clamp-expand-for="' + box.id + '"]');
+      if (!btn || box.scrollHeight <= box.clientHeight + 2) return;
+      box.classList.add("overflowing");
+      btn.hidden = false;
+      btn.addEventListener("click", function () {
+        var open = box.classList.toggle("expanded");
+        box.classList.toggle("overflowing", !open);
+        btn.querySelector("span").textContent = open
+          ? (currentLang === "en" ? btn.dataset.lessEn : btn.dataset.lessBn)
+          : (currentLang === "en" ? btn.dataset.moreEn : btn.dataset.moreBn);
+      });
+    });
+
     /* demo confirm dialogs [data-confirm] */
     document.querySelectorAll("[data-confirm]").forEach(function (el) {
       el.addEventListener("click", function (e) {
