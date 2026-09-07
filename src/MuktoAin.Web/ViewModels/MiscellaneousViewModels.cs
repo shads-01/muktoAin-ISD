@@ -37,6 +37,7 @@ public class CategoryViewModel
     public string DescriptionBn { get; set; } = string.Empty;
     public string DescriptionEn { get; set; } = string.Empty;
     public string Icon { get; set; } = "folder";
+    public string Accent { get; set; } = "gold";
     public List<string> CommonActions { get; set; } = new();
     public List<string> CommonActionsEn { get; set; } = new();
 }

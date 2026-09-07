@@ -451,11 +451,57 @@ a.card.click { color: var(--ink); }
 }
 .cat-card b { font-size: 16px; }
 .cat-card .cat-en { font-size: 12.5px; color: var(--ink-3); font-weight: 600; margin-top: -8px; }
-.cat-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; padding-top: 8px; }
+/* nowrap on purpose -- these two badges read as one status line and should
+   never break across two rows. min-width: 0 overrides the flex-item default
+   of min-width: auto (which for nowrap text resolves to the full unwrapped
+   text width), so each badge can actually shrink and ellipsize instead of
+   forcing the row past the card's edge -- "Applicable Statutes & Rules" in
+   English is long enough that nowrap alone still overflowed. */
+.cat-meta { display: flex; gap: 6px; flex-wrap: nowrap; margin-top: auto; padding-top: 8px; overflow: hidden; }
+.cat-meta .badge { font-size: 11px; padding: 3px 8px; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* Per-category accent (CategoryController's IconsByCategoryId map now carries
+   a color key alongside the icon) -- gold is the .cat-icon default above, so
+   only the other three semantic tokens need an override here, both for the
+   grid card's icon chip and, via .cat-icon-lg, the Details page header. */
+.cat-card[data-accent="primary"] .cat-icon,
+.cat-icon-lg[data-accent="primary"] { background: var(--primary-soft); color: var(--primary); }
+.cat-card[data-accent="info"] .cat-icon,
+.cat-icon-lg[data-accent="info"] { background: var(--info-soft); color: var(--info); }
+.cat-card[data-accent="success"] .cat-icon,
+.cat-icon-lg[data-accent="success"] { background: var(--success-soft); color: var(--success); }
+.card.click.cat-card[data-accent="primary"]:hover { border-color: var(--primary); }
+.card.click.cat-card[data-accent="info"]:hover { border-color: var(--info); }
+.card.click.cat-card[data-accent="success"]:hover { border-color: var(--success); }
 
 /* Large category icon (detail headers) */
 .cat-icon-lg { width: 64px; height: 64px; border-radius: 15px; }
 .cat-icon-lg i[data-lucide], .cat-icon-lg svg.lucide { width: 30px; height: 30px; }
+
+/* Category browse grid -- auto-fill instead of a fixed 2-column grid, so it
+   renders identically at today's 4 seeded categories but reflows to 3-4
+   columns once more are added (CP3 admin CRUD) instead of needing a redesign. */
+/* 480px measured, not guessed: the two English badge labels ("Applicable
+   Statutes & Rules" + "Standard Legal Templates") need ~410px to render
+   un-truncated (207 + 6 gap + 197, measured live via Playwright), plus the
+   card's 56-58px of horizontal padding -- anything narrower forces the
+   ellipsis fallback in .cat-meta .badge to actually trigger. At the site's
+   1140px container this settles to 2 columns most of the time (matching
+   the original fixed grid-2) rather than 3-4; still auto-reflows to 1
+   column on narrow viewports and grows to more rows, not a redesign, once
+   more categories are added. */
+.cat-browse-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 20px; margin-bottom: 3rem; }
+
+/* Category search -- filters .cat-browse-grid client-side (see main.js);
+   reuses .input as the base field, same as every other text input on the
+   site, with room on the left for the icon. display: block because <label>
+   is inline by default, and margin-bottom on an inline element is dropped
+   from layout -- that's why the gap below the field wasn't rendering. */
+.cat-search { display: block; position: relative; max-width: 420px; margin-bottom: 32px; }
+.cat-search svg { position: absolute; top: 50%; left: 14px; width: 17px; height: 17px; color: var(--ink-3); transform: translateY(-50%); pointer-events: none; }
+.cat-search .input { padding-left: 40px; }
+.cat-no-results { display: none; padding: 30px 0; text-align: center; color: var(--ink-3); font-size: 14px; }
+.cat-no-results.show { display: block; }
 
 /* Gold step numerals */
 .step-num { font-family: var(--font-display); font-size: 34px; font-weight: 700; line-height: 1; color: var(--gold); }
