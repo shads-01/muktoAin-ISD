@@ -1,3 +1,4 @@
+@using MuktoAin.Infrastructure.Data.Seeding
 @model MuktoAin.Web.ViewModels.LoginViewModel
 @{
     ViewData["Title"] = "সাইন ইন — Login";
@@ -61,7 +62,7 @@
                         <button type="button" class="btn btn-sm btn-outline demo-btn" onclick="fillDemo('lawyer@muktoain.bd', 'Lawyer@123', 'Lawyer')" style="font-size: 12.5px; padding: 7px 6px; justify-content: center;">
                             <i data-lucide="award" style="width: 13px; height: 13px;"></i> <span class="demo-role-lawyer">আইনজীবী</span>
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline demo-btn" onclick="fillDemo('admin@muktoain.bd', 'muktoAin@123', 'Admin')" style="font-size: 12.5px; padding: 7px 6px; justify-content: center;">
+                        <button type="button" class="btn btn-sm btn-outline demo-btn" onclick="fillDemo('@SeedAdminUser.DefaultEmail', '@SeedAdminUser.DefaultPassword', 'Admin')" style="font-size: 12.5px; padding: 7px 6px; justify-content: center;">
                             <i data-lucide="shield-check" style="width: 13px; height: 13px;"></i> <span class="demo-role-admin">অ্যাডমিন</span>
                         </button>
                     </div>

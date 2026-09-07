@@ -402,7 +402,8 @@ public class ChatService
         var parts = sections.Select(s =>
             "{\"sectionId\":" + s.SectionId +
             ",\"actTitle\":\"" + EscapeJson(s.ActTitle) +
-            "\",\"sectionNumber\":\"" + EscapeJson(s.SectionNumber) + "\"}");
+            "\",\"sectionNumber\":\"" + EscapeJson(s.SectionNumber) +
+            "\",\"relevanceScore\":" + s.RelevanceScore.ToString(System.Globalization.CultureInfo.InvariantCulture) + "}");
         return "[" + string.Join(",", parts) + "]";
     }
 
@@ -421,12 +422,17 @@ public class ChatService
             var result = new List<CitedSectionDto>();
             foreach (var el in doc.RootElement.EnumerateArray())
             {
+                // relevanceScore is absent on rows cached before this field existed --
+                // default to 0 rather than throw, so old cache entries keep working.
+                var relevanceScore = el.TryGetProperty("relevanceScore", out var rs)
+                    ? rs.GetSingle()
+                    : 0f;
                 result.Add(new CitedSectionDto(
                     el.GetProperty("sectionId").GetInt32(),
                     el.GetProperty("actTitle").GetString() ?? string.Empty,
                     el.GetProperty("sectionNumber").GetString() ?? string.Empty,
                     SectionText: string.Empty,
-                    RelevanceScore: 0,
+                    RelevanceScore: relevanceScore,
                     RetrievalMethod: "Cache",
                     ActNumber: string.Empty,
                     ActYear: 0));

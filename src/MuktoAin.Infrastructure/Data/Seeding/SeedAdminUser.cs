@@ -16,13 +16,21 @@ namespace MuktoAin.Infrastructure.Data.Seeding;
 // shape; CHANGE THE PASSWORD before any real deployment.
 public static class SeedAdminUser
 {
+    // Bootstrap defaults used only when SeedAdmin:Email / SeedAdmin:Password
+    // aren't configured. Views/Account/Login.cshtml's "Quick Demo Fill" admin
+    // button references these same constants (mirroring SeedDemoUsers'
+    // CitizenEmail/CitizenPassword pattern) so the demo button can never drift
+    // out of sync with the actual bootstrap password again.
+    public const string DefaultEmail = "admin@muktoain.bd";
+    public const string DefaultPassword = "Admin@123!";
+
     public static async Task SeedAsync(
         UserManager<User> userManager,
         IConfiguration configuration,
         ILogger logger)
     {
-        var email = configuration["SeedAdmin:Email"] ?? "admin@muktoain.bd";
-        var password = configuration["SeedAdmin:Password"] ?? "ChangeMe!2026";
+        var email = configuration["SeedAdmin:Email"] ?? DefaultEmail;
+        var password = configuration["SeedAdmin:Password"] ?? DefaultPassword;
 
         if (string.IsNullOrWhiteSpace(configuration["SeedAdmin:Password"]))
         {
