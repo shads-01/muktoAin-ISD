@@ -2,6 +2,18 @@
 @using MuktoAin.Web.Controllers
 @{
     ViewData["Title"] = "আমার মামলা — মুক্ত আইন";
+
+    // Display-only Bengali numeral rendering (page numbers stay real ints in
+    // the querystring/asp-route-page -- only the rendered label switches
+    // script). Same convention as Search/Index.cshtml's pagination.
+    static string ToBn(int n) => n.ToString()
+        .Select(c => char.IsDigit(c) ? (char)(c - '0' + '০') : c)
+        .Aggregate(new System.Text.StringBuilder(), (sb, c) => sb.Append(c))
+        .ToString();
+
+    var totalPages = Model.PageSize > 0
+        ? (int)Math.Ceiling(Model.TotalCount / (double)Model.PageSize)
+        : 1;
 }
 
 <main class="container" id="main">
@@ -35,7 +47,8 @@
         @foreach (var f in new[] { "All", "Submitted", "UnderReview", "Approved", "Rejected" })
         {
             <a class="chip chip-sm @(Model.ActiveStatusFilter == f ? "active" : "")"
-               asp-action="Track" asp-route-status="@f">@StatusText.Bn(f)</a>
+               asp-action="Track" asp-route-status="@f"
+               data-bn="@StatusText.Bn(f)" data-en="@StatusText.En(f)">@StatusText.Bn(f)</a>
         }
     </div>
 
@@ -67,10 +80,46 @@
                         <b>@c.Title</b><br />
                         <small class="muted">@c.CategoryName · @c.CreatedAt.ToString("d MMM yyyy")</small>
                     </div>
-                    <span class="badge badge-@c.Status.ToLower()">@StatusText.Bn(c.Status)</span>
+                    <span class="badge badge-@c.Status.ToLower()" data-bn="@StatusText.Bn(c.Status)" data-en="@StatusText.En(c.Status)">@StatusText.Bn(c.Status)</span>
                 </a>
             }
         </div>
+
+        <!-- Pagination (same convention as Search/Index.cshtml) -->
+        @if (totalPages > 1)
+        {
+            <div class="pagination">
+                @if (Model.Page > 1)
+                {
+                    <a asp-action="Track" asp-route-status="@Model.ActiveStatusFilter" asp-route-page="@(Model.Page - 1)"><i data-lucide="chevron-left"></i></a>
+                }
+                else
+                {
+                    <button type="button" disabled><i data-lucide="chevron-left"></i></button>
+                }
+
+                @for (var p = 1; p <= totalPages; p++)
+                {
+                    @if (p == Model.Page)
+                    {
+                        <button type="button" class="active" data-page="@p">@ToBn(p)</button>
+                    }
+                    else
+                    {
+                        <a asp-action="Track" asp-route-status="@Model.ActiveStatusFilter" asp-route-page="@p" data-page="@p">@ToBn(p)</a>
+                    }
+                }
+
+                @if (Model.Page < totalPages)
+                {
+                    <a asp-action="Track" asp-route-status="@Model.ActiveStatusFilter" asp-route-page="@(Model.Page + 1)"><i data-lucide="chevron-right"></i></a>
+                }
+                else
+                {
+                    <button type="button" disabled><i data-lucide="chevron-right"></i></button>
+                }
+            </div>
+        }
     }
 
     <!-- Mobile FAB -->

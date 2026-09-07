@@ -356,8 +356,10 @@ public class CaseController : Controller
         return RedirectToAction(nameof(Result), new { id, code = trackingCode });
     }
 
+    private const int TrackPageSize = 10;
+
     [HttpGet]
-    public async Task<IActionResult> Track(string? status, string? code)
+    public async Task<IActionResult> Track(string? status, string? code, int page = 1)
     {
         var vm = new CaseTrackViewModel();
 
@@ -400,6 +402,12 @@ public class CaseController : Controller
         {
             vm.Cases = vm.Cases.Where(c => MatchesFilter(c.Status, status)).ToList();
         }
+
+        vm.TotalCount = vm.Cases.Count;
+        vm.PageSize = TrackPageSize;
+        var totalPages = vm.PageSize > 0 ? (int)Math.Ceiling(vm.TotalCount / (double)vm.PageSize) : 1;
+        vm.Page = Math.Max(1, Math.Min(page, Math.Max(totalPages, 1)));
+        vm.Cases = vm.Cases.Skip((vm.Page - 1) * vm.PageSize).Take(vm.PageSize).ToList();
 
         vm.ActiveStatusFilter = status ?? "All";
         vm.LookupCode = code ?? string.Empty;

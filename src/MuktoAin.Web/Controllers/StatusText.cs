@@ -14,6 +14,7 @@ public static class StatusText
 {
     private static readonly Dictionary<string, (string Bn, string En)> Map = new(StringComparer.OrdinalIgnoreCase)
     {
+        ["All"] = ("সব", "All"),
         ["Submitted"] = ("দাখিলকৃত", "Submitted"),
         ["UnderReview"] = ("পর্যালোচনাধীন", "Under Review"),
         ["Finalized"] = ("চূড়ান্ত অনুমোদিত", "Approved & Final"),

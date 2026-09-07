@@ -772,6 +772,15 @@
         ths[5].textContent = dict["track-th-action"];
       }
 
+      // Pagination page numbers render as real digits carried in data-page --
+      // reformat them into the active script (Bengali vs Latin) rather than
+      // leaving them permanently Bengali regardless of language (same
+      // convention as the Search page's pagination below).
+      document.querySelectorAll(".pagination [data-page]").forEach(function (el) {
+        var n = el.getAttribute("data-page");
+        el.textContent = currentLang === "en" ? n : toBengaliDigits(n);
+      });
+
     } else if (path.indexOf("/search") !== -1) {
       // Search Laws Page
       var kicker = document.querySelector(".search-hero .kicker");

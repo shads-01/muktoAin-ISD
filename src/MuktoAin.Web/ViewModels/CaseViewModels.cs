@@ -64,6 +64,9 @@ public class CaseTrackViewModel
     public List<CaseListItemViewModel> Cases { get; set; } = new();
     public string ActiveStatusFilter { get; set; } = "All";
     public string LookupCode { get; set; } = string.Empty;
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+    public int TotalCount { get; set; }
 }
 
 public class CaseListItemViewModel
