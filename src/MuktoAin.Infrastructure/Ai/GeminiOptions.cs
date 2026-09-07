@@ -49,4 +49,11 @@ public class GeminiOptions
     // tokens count toward the embedding TPM quota, this is also a 4x quota win.
     // MUST match Qdrant:VectorSize in appsettings.
     public int? EmbeddingOutputDimensionality { get; set; }
+
+    // Admin dashboard key-usage tracker: one fixed daily request quota assumed for
+    // EVERY configured key (all keys are free-tier AI Studio projects today — see
+    // GeminiClient's per-key striping comment). Default 1500 matches the Gemini
+    // free-tier flash-model daily request cap. Purely a display budget for
+    // GeminiClient.Snapshot() — does not affect striping/parking behavior.
+    public int DailyRequestLimitPerKey { get; set; } = 1500;
 }

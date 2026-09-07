@@ -365,6 +365,109 @@ public class GeminiClientTests
     }
 
     [Fact]
+    public void Snapshot_InitialState_AllKeysAtZeroAndAvailable()
+    {
+        var client = CreateClient(new Mock<HttpMessageHandler>().Object, apiKeys: ["key-1", "key-2"]);
+
+        var snapshot = client.Snapshot();
+
+        Assert.Equal(2, snapshot.Count);
+        Assert.All(snapshot, k =>
+        {
+            Assert.Equal(0, k.RequestsToday);
+            Assert.Equal(1500, k.DailyLimit); // GeminiOptions default
+            Assert.False(k.IsParked);
+            Assert.Null(k.ParkedUntilUtc);
+        });
+        Assert.Equal("Key 1", snapshot[0].Label);
+        Assert.Equal("Key 2", snapshot[1].Label);
+    }
+
+    [Fact]
+    public async Task Snapshot_AfterRequests_CountsOnlyTheKeyThatWasActuallyCalled()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    JsonSerializer.Serialize(new { embedding = new { values = new[] { 0.1f } } }),
+                    Encoding.UTF8, "application/json")
+            });
+
+        var client = CreateClient(handlerMock.Object, apiKeys: ["key-1", "key-2"]);
+
+        // Round-robin: 3 requests -> key-1, key-2, key-1.
+        await client.EmbedContentAsync("q1");
+        await client.EmbedContentAsync("q2");
+        await client.EmbedContentAsync("q3");
+
+        var snapshot = client.Snapshot();
+
+        Assert.Equal(2, snapshot.First(k => k.Label == "Key 1").RequestsToday);
+        Assert.Equal(1, snapshot.First(k => k.Label == "Key 2").RequestsToday);
+    }
+
+    [Fact]
+    public async Task Snapshot_WhenKeyIsParkedAfter429_ReflectsParkedStateAndUntilTime()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns<HttpRequestMessage, CancellationToken>((req, ct) =>
+            {
+                var key = System.Web.HttpUtility.ParseQueryString(req.RequestUri!.Query)["key"];
+                if (key == "key-1")
+                {
+                    var body = JsonSerializer.Serialize(new
+                    {
+                        error = new
+                        {
+                            code = 429,
+                            details = new object[]
+                            {
+                                new { @__type = "type.googleapis.com/google.rpc.RetryInfo", retryDelay = "30s" }
+                            }
+                        }
+                    }).Replace("__type", "@type");
+                    return Task.FromResult(new HttpResponseMessage((HttpStatusCode)429)
+                    {
+                        Content = new StringContent(body, Encoding.UTF8, "application/json")
+                    });
+                }
+
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        JsonSerializer.Serialize(new { embedding = new { values = new[] { 0.1f } } }),
+                        Encoding.UTF8, "application/json")
+                });
+            });
+
+        var client = CreateClient(handlerMock.Object, apiKeys: ["key-1", "key-2"]);
+
+        // key-1 429s and gets parked; key-2 serves the request.
+        await client.EmbedContentAsync("q1");
+
+        var snapshot = client.Snapshot();
+        var key1 = snapshot.First(k => k.Label == "Key 1");
+        var key2 = snapshot.First(k => k.Label == "Key 2");
+
+        Assert.True(key1.IsParked);
+        Assert.NotNull(key1.ParkedUntilUtc);
+        Assert.True(key1.ParkedUntilUtc!.Value > DateTime.UtcNow);
+        Assert.False(key2.IsParked);
+        Assert.Null(key2.ParkedUntilUtc);
+    }
+
+    [Fact]
     public async Task BatchEmbedContentAsync_WhenSuccessful_ReturnsParsedFloatArrays()
     {
         var handlerMock = new Mock<HttpMessageHandler>();

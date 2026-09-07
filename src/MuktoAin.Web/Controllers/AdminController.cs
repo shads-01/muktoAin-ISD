@@ -6,6 +6,7 @@ using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
+using MuktoAin.Infrastructure.Ai;
 using MuktoAin.Infrastructure.Data;
 using MuktoAin.Web.ViewModels;
 using Qdrant.Client;
@@ -29,6 +30,7 @@ public class AdminController : Controller
     private readonly IRepository<CaseCategory> _categoryRepo;
     private readonly IRepository<AiLog> _aiLogRepo;
     private readonly PaymentService _paymentService;
+    private readonly GeminiClient _geminiClient;
 
     public AdminController(
         ILogger<AdminController> logger,
@@ -44,7 +46,8 @@ public class AdminController : Controller
         IScenarioMappingRepository scenarioRepo,
         IRepository<CaseCategory> categoryRepo,
         IRepository<AiLog> aiLogRepo,
-        PaymentService paymentService)
+        PaymentService paymentService,
+        GeminiClient geminiClient)
     {
         _logger = logger;
         _dbContext = dbContext;
@@ -60,6 +63,7 @@ public class AdminController : Controller
         _categoryRepo = categoryRepo;
         _aiLogRepo = aiLogRepo;
         _paymentService = paymentService;
+        _geminiClient = geminiClient;
     }
 
     [HttpGet]
@@ -137,6 +141,36 @@ public class AdminController : Controller
             requestsPerMinuteBudget = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.RequestsPerMinuteBudget,
             estimatedCompletion = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.EstimatedCompletion,
             estimatedCompletionEn = MuktoAin.Infrastructure.VectorStore.EmbeddingProgressState.EstimatedCompletionEn
+        });
+    }
+
+    /// <summary>
+    /// Live endpoint for tracking Gemini API key usage/exhaustion — polled by the
+    /// Admin Dashboard, mirroring EmbeddingProgress()'s pattern above.
+    /// </summary>
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult GeminiKeyStatus()
+    {
+        var snapshot = _geminiClient.Snapshot();
+        var keys = snapshot.Select(k => new
+        {
+            label = k.Label,
+            requestsToday = k.RequestsToday,
+            dailyLimit = k.DailyLimit,
+            percentage = k.DailyLimit > 0
+                ? Math.Round(Math.Min(100.0, (double)k.RequestsToday / k.DailyLimit * 100.0), 1)
+                : 0,
+            isParked = k.IsParked,
+            parkedUntilUtc = k.ParkedUntilUtc
+        }).ToList();
+
+        return Json(new
+        {
+            totalKeys = snapshot.Count,
+            availableKeys = snapshot.Count(k => !k.IsParked),
+            exhaustedKeys = snapshot.Count(k => k.IsParked),
+            keys
         });
     }
 
