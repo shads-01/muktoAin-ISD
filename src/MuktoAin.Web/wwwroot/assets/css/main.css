@@ -880,6 +880,7 @@ details.acc .acc-body.cited-body {
   font-size: 16px; line-height: 1.85; color: var(--ink);
   background: var(--surface-2); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 16px 18px;
+  overflow-wrap: anywhere; /* same space-less corpus text as .r-snippet */
 }
 
 /* ---------- Charts (flat fills) ---------- */
@@ -1029,8 +1030,13 @@ details.acc .acc-body.cited-body {
 .act-filter-btn {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   text-align: left; cursor: pointer; font-family: var(--font-body);
+  overflow: hidden; /* clip anything the label span below can't shrink for in time */
 }
-.act-filter-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* min-width: 0 overrides the flex-item default of min-width: auto, which for
+   nowrap text resolves to the full unwrapped text width -- without it, long
+   act titles (50-190 chars, see .act-filter-panel comment below) never shrink
+   enough for text-overflow: ellipsis to engage, and spill past the button. */
+.act-filter-btn span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .act-filter-btn [data-lucide], .act-filter-btn svg { flex: none; color: var(--ink-3); transition: transform .15s var(--ease); }
 .act-filter.open .act-filter-btn [data-lucide], .act-filter.open .act-filter-btn svg { transform: rotate(180deg); }
 .act-filter-panel {
@@ -1057,7 +1063,11 @@ details.acc .acc-body.cited-body {
 .act-filter-empty { padding: 12px 10px; text-align: center; color: var(--ink-3); font-size: 13px; }
 .result-item { padding: 16px 18px; }
 .result-item .r-title { font-family: var(--font-doc); font-size: 16.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.result-item .r-snippet { font-size: 14px; color: var(--ink-2); margin-top: 6px; }
+/* overflow-wrap: some ingested statute text has no spaces at all between
+   words (a raw-corpus extraction artifact) -- one multi-hundred-char
+   "word" won't line-wrap on its own and forces the whole page wider than
+   the viewport instead of just this card. */
+.result-item .r-snippet { font-size: 14px; color: var(--ink-2); margin-top: 6px; overflow-wrap: anywhere; }
 .result-item mark { background: var(--gold-soft); color: inherit; border-bottom: 2px solid var(--gold); padding: 0 2px; }
 @media (min-width: 1024px) {
   .with-rail { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
