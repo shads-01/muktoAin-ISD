@@ -15,6 +15,9 @@
         if (sc) sc.scrollTop = sc.scrollHeight;
     }
     function renderIcons() { if (window.lucide) window.lucide.createIcons(); }
+    // AI answers use single newlines between list items rather than strict CommonMark
+    // blank-line separation — `breaks` makes marked treat those as intended.
+    if (window.marked) window.marked.setOptions({ breaks: true, gfm: true });
     // Current UI language, kept in sync with main.js's toggle (it sets <html lang>).
     function curLang() { return document.documentElement.lang === "en" ? "en" : "bn"; }
     // Sets both data-bn/data-en (so main.js's language-toggle handler can find and
@@ -45,9 +48,15 @@
         head.innerHTML = '<h3><span class="avatar"><i data-lucide="scale"></i></span> <span data-bn="আপনার অধিকার" data-en="Your rights">আপনার অধিকার</span></h3>';
         wrap.appendChild(head);
 
-        var p = document.createElement("p");
+        // A <div>, not a <p>: marked's output is itself block-level (<p>/<ol>/<ul>),
+        // which a <p> can't legally contain.
+        var p = document.createElement("div");
         p.className = "answer-text";
-        p.textContent = data.answer;
+        if (window.marked && window.DOMPurify) {
+            p.innerHTML = window.DOMPurify.sanitize(window.marked.parse(data.answer || ""));
+        } else {
+            p.textContent = data.answer;
+        }
         wrap.appendChild(p);
 
         if (data.citedSections && data.citedSections.length) {

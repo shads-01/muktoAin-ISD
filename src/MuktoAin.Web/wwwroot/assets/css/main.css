@@ -757,7 +757,18 @@ details.acc .acc-body.cited-body {
 }
 .answer-head .avatar i, .answer-head .avatar svg.lucide { width: 14px; height: 14px; }
 .answer-text {
-  font-family: var(--font-doc); font-size: 16px; line-height: 1.85; white-space: pre-wrap;
+  font-family: var(--font-doc); font-size: 16px; line-height: 1.85;
+}
+.answer-text > *:first-child { margin-top: 0; }
+.answer-text > *:last-child { margin-bottom: 0; }
+.answer-text p { margin: 0 0 10px; }
+.answer-text ol, .answer-text ul { margin: 0 0 10px; padding-left: 22px; }
+.answer-text li { margin-bottom: 4px; }
+.answer-text li > ul, .answer-text li > ol { margin-top: 4px; }
+.answer-text strong { color: var(--ink-heading); font-weight: 700; }
+.answer-text code {
+  background: var(--surface-2); padding: 1px 5px; border-radius: 4px;
+  font-family: var(--font-body); font-size: .92em;
 }
 .read-aloud {
   display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700;
