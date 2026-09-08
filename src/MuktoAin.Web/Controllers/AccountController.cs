@@ -171,6 +171,7 @@ public class AccountController : Controller
             Email = user.Email ?? string.Empty,
             FullName = user.FullName,
             PhoneNumber = user.PhoneNumber,
+            CurrentPhoneNumber = user.PhoneNumber,
             Role = user.Role.ToString(),
             AccountStatus = user.AccountStatus.ToString(),
             PreferredLanguage = user.PreferredLanguage ?? "bn",
@@ -230,6 +231,7 @@ public class AccountController : Controller
             model.Role = user.Role.ToString();
             model.AccountStatus = user.AccountStatus.ToString();
             model.CreatedAt = user.CreatedAt;
+            model.CurrentPhoneNumber = user.PhoneNumber;
             return View(model);
         }
 

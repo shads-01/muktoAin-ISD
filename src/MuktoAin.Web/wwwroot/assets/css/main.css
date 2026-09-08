@@ -579,6 +579,12 @@ a.card.click { color: var(--ink); }
   box-shadow: 0 0 0 3px var(--primary-soft);
 }
 .input::placeholder, .textarea::placeholder, .form-control::placeholder { color: var(--ink-3); }
+/* asp-validation-for's default span class (used on pages like Account/Profile
+   that don't follow the .field/.err convention above) and the class the
+   asp-for tag helper adds to the input itself on a failed server round-trip --
+   neither had a rule, so a rejected save looked identical to a saved one. */
+.text-danger { color: var(--danger); font-size: 12.5px; font-weight: 600; display: block; margin-top: 4px; }
+.input-validation-error { border-color: var(--danger) !important; }
 select.input, .form-select { appearance: none; background-image: linear-gradient(45deg, transparent 49%, var(--ink-3) 50%), linear-gradient(-45deg, transparent 49%, var(--ink-2) 50%); background-position: calc(100% - 20px) 55%, calc(100% - 14px) 55%; background-size: 6px 6px; background-repeat: no-repeat; padding-right: 38px; }
 .check-row, .form-check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
 .check-row input, .form-check-input { width: 18px; height: 18px; accent-color: var(--primary); margin: 0; flex: none; cursor: pointer; }

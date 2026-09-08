@@ -273,6 +273,38 @@ public class AccountControllerTests
     }
 
     [Fact]
+    public async Task Profile_Post_WhenInvalid_RedisplaysCurrentSavedPhoneNumber_NotTheRejectedSubmission()
+    {
+        // Bug found via live testing: on a rejected save, the hero-card summary
+        // and the form field both read Model.PhoneNumber -- the same rebound,
+        // never-persisted value the user just typed -- so an invalid, unsaved
+        // attempt looked identical to a successful update. CurrentPhoneNumber
+        // must always reflect what's actually in the DB, regardless of what
+        // was submitted.
+        var user = new User
+        {
+            Id = 12,
+            Email = "citizen@muktoain.bd",
+            FullName = "Sanjida Erin",
+            PhoneNumber = "01700000000",
+            Role = UserRole.Citizen
+        };
+        _userManager.Setup(m => m.GetUserAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>())).ReturnsAsync(user);
+
+        var model = new ProfileViewModel { FullName = "Sanjida Erin", PhoneNumber = "ZMARKERZ98765xyz" };
+        _controller.ModelState.AddModelError(nameof(ProfileViewModel.PhoneNumber), "invalid format");
+
+        var result = await _controller.Profile(model);
+
+        var view = Assert.IsType<ViewResult>(result);
+        var returnedModel = Assert.IsType<ProfileViewModel>(view.Model);
+        Assert.Equal("01700000000", returnedModel.CurrentPhoneNumber);
+        // The editable field still echoes the rejected attempt so the user can fix their typo.
+        Assert.Equal("ZMARKERZ98765xyz", returnedModel.PhoneNumber);
+        _userManager.Verify(m => m.UpdateAsync(It.IsAny<User>()), Times.Never);
+    }
+
+    [Fact]
     public async Task ChangePassword_Post_WhenValid_ChangesPasswordAndSetsSuccess()
     {
         var user = new User { Id = 20, Email = "user@muktoain.bd" };

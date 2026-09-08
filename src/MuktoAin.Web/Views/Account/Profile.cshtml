@@ -43,9 +43,9 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; color: var(--ink-2); font-size: 14px;">
                     <span><i data-lucide="mail" style="width: 15px; height: 15px; display: inline; vertical-align: text-bottom;"></i> @Model.Email</span>
-                    @if (!string.IsNullOrWhiteSpace(Model.PhoneNumber))
+                    @if (!string.IsNullOrWhiteSpace(Model.CurrentPhoneNumber))
                     {
-                        <span><i data-lucide="phone" style="width: 15px; height: 15px; display: inline; vertical-align: text-bottom;"></i> @Model.PhoneNumber</span>
+                        <span><i data-lucide="phone" style="width: 15px; height: 15px; display: inline; vertical-align: text-bottom;"></i> @Model.CurrentPhoneNumber</span>
                     }
                     <span><i data-lucide="calendar" style="width: 15px; height: 15px; display: inline; vertical-align: text-bottom;"></i> সদস্য পদ: @Model.CreatedAt.ToString("dd MMM yyyy")</span>
                     <span><span class="badge badge-success" style="font-size: 11px;">স্ট্যাটাস: @(Model.AccountStatus == "Active" ? "সক্রিয় / Active" : Model.AccountStatus)</span></span>
