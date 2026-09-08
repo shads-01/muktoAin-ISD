@@ -222,6 +222,57 @@ public class AccountControllerTests
     }
 
     [Fact]
+    public async Task Register_DuplicateEmail_AddsFieldErrorAndDoesNotCreateDuplicateUser()
+    {
+        // Mirrors Identity's real DuplicateUserName/DuplicateEmail IdentityError -- the
+        // store's UserValidator rejects a second CreateAsync for an email already on
+        // file, and AccountController's existing error-mapping loop is the only guard
+        // against a duplicate account. This exercises that path directly.
+        var model = new RegisterViewModel
+        {
+            FullName = "Second Citizen",
+            Email = "citizen@muktoain.bd",
+            Password = "Citizen@123",
+            ConfirmPassword = "Citizen@123",
+            Role = "Citizen"
+        };
+
+        _userManager.Setup(m => m.CreateAsync(It.IsAny<User>(), It.IsAny<string>()))
+            .ReturnsAsync(IdentityResult.Failed(
+                new IdentityError { Code = "DuplicateUserName", Description = "Username 'citizen@muktoain.bd' is already taken." }));
+
+        var result = await _controller.Register(model);
+
+        Assert.IsType<ViewResult>(result);
+        Assert.True(_controller.ModelState.ErrorCount > 0);
+        _userManager.Verify(m => m.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Once);
+        _lawyerProfileRepo.Verify(r => r.AddAsync(It.IsAny<LawyerProfile>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Register_MismatchedConfirmPassword_ReturnsViewWithoutCallingCreateAsync()
+    {
+        // [Compare] on ConfirmPassword only runs through MVC's model-binding pipeline,
+        // not by calling the action directly, so this simulates what that validation
+        // produces: an invalid ModelState the action must respect before touching
+        // Identity at all.
+        var model = new RegisterViewModel
+        {
+            FullName = "Test Citizen",
+            Email = "citizen4@muktoain.bd",
+            Password = "Citizen@123",
+            ConfirmPassword = "DoesNotMatch@123",
+            Role = "Citizen"
+        };
+        _controller.ModelState.AddModelError(nameof(RegisterViewModel.ConfirmPassword), "Passwords do not match.");
+
+        var result = await _controller.Register(model);
+
+        Assert.IsType<ViewResult>(result);
+        _userManager.Verify(m => m.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Profile_Get_WhenAuthenticatedCitizen_ReturnsViewWithCitizenData()
     {
         var user = new User
