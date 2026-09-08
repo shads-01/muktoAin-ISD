@@ -176,6 +176,21 @@ public class KeywordSearchServiceTests
         Assert.Equal("27", Assert.Single(results).SectionNumber);
     }
 
+    [Fact]
+    public async Task SearchAsync_SqlWildcardAndSpecialCharacters_QuotedLiterally_NoException()
+    {
+        // %, _ and ' are LIKE/T-SQL-string characters, not CONTAINSTABLE operators --
+        // SanitizeForFts only strips double quotes and AND-joins whitespace-split
+        // tokens, so these pass through as literal quoted terms. This asserts that
+        // behavior directly instead of assuming it's escaped somewhere.
+        _sectionRepo.Setup(r => r.FullTextSearchAsync(It.IsAny<string>(), 20))
+            .ReturnsAsync(Array.Empty<ActSection>());
+
+        await _service.SearchAsync("O'Brien 100%_rate");
+
+        _sectionRepo.Verify(r => r.FullTextSearchAsync("\"O'Brien\" AND \"100%_rate\"", 20), Times.Once);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("   ")]

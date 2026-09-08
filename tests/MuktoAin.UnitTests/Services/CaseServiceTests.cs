@@ -293,6 +293,26 @@ public class CaseServiceTests
         Assert.Null(await _service.GetCaseDetailAsync(14, null, UserRole.Citizen, "wrong"));
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task SubmitCaseAsync_NullOrEmptyDescription_IsAcceptedWithNoValidationGuard(string? description)
+    {
+        // FINDING (Lab 6 exceptional-input pass): CaseSubmitViewModel.Description carries
+        // no [Required], and CaseService.SubmitCaseAsync performs no null/empty check
+        // either -- an empty description is silently persisted and would reach the RAG
+        // pipeline downstream. This test documents the actual current behavior rather
+        // than an assumed one; see Testing_Plan.md CASE-04 and the Bugs & Issues section
+        // of the Lab 6 report for the fix recommendation (add a server-side guard).
+        var dto = new CaseSubmissionDto(1, 5, "Title", description!, "bn", IsAnonymous: false);
+
+        await _service.SubmitCaseAsync(dto, userId: 42);
+
+        _caseRepo.Verify(r => r.AddAsync(It.Is<Case>(c => c.Status == CaseStatus.Submitted)), Times.Once);
+        _caseRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
     private void SetupLookups(Case c)
     {
         _categoryRepo.Setup(r => r.GetByIdAsync(c.CategoryId))

@@ -43,9 +43,9 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; color: var(--ink-2); font-size: 14px;">
                     <span><i data-lucide="mail" style="width: 15px; height: 15px; display: inline; vertical-align: text-bottom;"></i> @Model.Email</span>
-                    @if (!string.IsNullOrWhiteSpace(Model.PhoneNumber))
+                    @if (!string.IsNullOrWhiteSpace(Model.CurrentPhoneNumber))
                     {
-                        <span><i data-lucide="phone" style="width: 15px; height: 15px; display: inline; vertical-align: text-bottom;"></i> @Model.PhoneNumber</span>
+                        <span><i data-lucide="phone" style="width: 15px; height: 15px; display: inline; vertical-align: text-bottom;"></i> @Model.CurrentPhoneNumber</span>
                     }
                     <span><i data-lucide="calendar" style="width: 15px; height: 15px; display: inline; vertical-align: text-bottom;"></i> সদস্য পদ: @Model.CreatedAt.ToString("dd MMM yyyy")</span>
                     <span><span class="badge badge-success" style="font-size: 11px;">স্ট্যাটাস: @(Model.AccountStatus == "Active" ? "সক্রিয় / Active" : Model.AccountStatus)</span></span>
@@ -146,10 +146,11 @@
                 <!-- Editable: Preferred Language -->
                 <div class="form-group" style="margin-bottom: 24px;">
                     <label asp-for="PreferredLanguage" class="form-label">পছন্দের ভাষা (Preferred Interface Language)</label>
-                    <select asp-for="PreferredLanguage" class="form-control">
+                    <select asp-for="PreferredLanguage" id="PreferredLanguage" class="form-control">
                         <option value="bn">বাংলা (Bengali)</option>
                         <option value="en">English (ইংরেজি)</option>
                     </select>
+                    <span class="muted tiny">নির্বাচন করলেই সাথে সাথে পুরো সাইটের ভাষা পরিবর্তন হবে / Switches the whole site's language immediately</span>
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
@@ -281,3 +282,21 @@
         </div>
     </div>
 </main>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var langSelect = document.getElementById("PreferredLanguage");
+        if (!langSelect || !window.mktLang) return;
+
+        // The saved DB value only reflects what was true at last Save; the page
+        // actually displayed can differ (e.g. switched via the header toggle
+        // since then), so sync the select to that instead of the model value.
+        langSelect.value = window.mktLang.get();
+
+        // Switch the whole site immediately, same as the header বাং/EN toggle.
+        // Saving the form still persists this value to PreferredLanguage as before.
+        langSelect.addEventListener("change", function () {
+            window.mktLang.set(langSelect.value);
+        });
+    });
+</script>

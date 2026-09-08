@@ -193,3 +193,7 @@
 - [x] **[R-14]** Admin Corpus DB-side aggregation — *Shads* (replaced 42K-entity in-memory load with EF Core aggregates in `AdminController.Corpus`).
 - [x] **[R-15]** Citizen Payment modals & endpoints (FR-24) — *Shads* (Honorarium modal on approved cases, Top-Up modal at quota wall, `PaymentController.cs` sandbox endpoints).
 - [x] **[R-16]** Dependency Plan Redesign Tracking Synchronization — *Shads* (synchronized all tasks with execution state).
+- [x] **[R-17]** Gemini API key usage tracker on admin dashboard — *Shads*.
+- [x] **[R-18]** Profile edit hardening and live language switch — *Hrittika*.
+- [x] **[R-19]** Chat thread UI overhaul with bilingual markdown bubbles — *Hrittika*.
+- [x] **[R-20]** Profile hero card showed rejected phone edits as if saved — *Hrittika* (added `CurrentPhoneNumber`, always the real DB value, separate from the editable field; confirmed via direct SQL check that invalid submissions were never persisted). 

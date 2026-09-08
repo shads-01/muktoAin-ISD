@@ -222,6 +222,57 @@ public class AccountControllerTests
     }
 
     [Fact]
+    public async Task Register_DuplicateEmail_AddsFieldErrorAndDoesNotCreateDuplicateUser()
+    {
+        // Mirrors Identity's real DuplicateUserName/DuplicateEmail IdentityError -- the
+        // store's UserValidator rejects a second CreateAsync for an email already on
+        // file, and AccountController's existing error-mapping loop is the only guard
+        // against a duplicate account. This exercises that path directly.
+        var model = new RegisterViewModel
+        {
+            FullName = "Second Citizen",
+            Email = "citizen@muktoain.bd",
+            Password = "Citizen@123",
+            ConfirmPassword = "Citizen@123",
+            Role = "Citizen"
+        };
+
+        _userManager.Setup(m => m.CreateAsync(It.IsAny<User>(), It.IsAny<string>()))
+            .ReturnsAsync(IdentityResult.Failed(
+                new IdentityError { Code = "DuplicateUserName", Description = "Username 'citizen@muktoain.bd' is already taken." }));
+
+        var result = await _controller.Register(model);
+
+        Assert.IsType<ViewResult>(result);
+        Assert.True(_controller.ModelState.ErrorCount > 0);
+        _userManager.Verify(m => m.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Once);
+        _lawyerProfileRepo.Verify(r => r.AddAsync(It.IsAny<LawyerProfile>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Register_MismatchedConfirmPassword_ReturnsViewWithoutCallingCreateAsync()
+    {
+        // [Compare] on ConfirmPassword only runs through MVC's model-binding pipeline,
+        // not by calling the action directly, so this simulates what that validation
+        // produces: an invalid ModelState the action must respect before touching
+        // Identity at all.
+        var model = new RegisterViewModel
+        {
+            FullName = "Test Citizen",
+            Email = "citizen4@muktoain.bd",
+            Password = "Citizen@123",
+            ConfirmPassword = "DoesNotMatch@123",
+            Role = "Citizen"
+        };
+        _controller.ModelState.AddModelError(nameof(RegisterViewModel.ConfirmPassword), "Passwords do not match.");
+
+        var result = await _controller.Register(model);
+
+        Assert.IsType<ViewResult>(result);
+        _userManager.Verify(m => m.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Profile_Get_WhenAuthenticatedCitizen_ReturnsViewWithCitizenData()
     {
         var user = new User
@@ -270,6 +321,38 @@ public class AccountControllerTests
         var redirect = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal(nameof(AccountController.Profile), redirect.ActionName);
         Assert.Equal("Adv. Shahadat Hasan", user.FullName);
+    }
+
+    [Fact]
+    public async Task Profile_Post_WhenInvalid_RedisplaysCurrentSavedPhoneNumber_NotTheRejectedSubmission()
+    {
+        // Bug found via live testing: on a rejected save, the hero-card summary
+        // and the form field both read Model.PhoneNumber -- the same rebound,
+        // never-persisted value the user just typed -- so an invalid, unsaved
+        // attempt looked identical to a successful update. CurrentPhoneNumber
+        // must always reflect what's actually in the DB, regardless of what
+        // was submitted.
+        var user = new User
+        {
+            Id = 12,
+            Email = "citizen@muktoain.bd",
+            FullName = "Sanjida Erin",
+            PhoneNumber = "01700000000",
+            Role = UserRole.Citizen
+        };
+        _userManager.Setup(m => m.GetUserAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>())).ReturnsAsync(user);
+
+        var model = new ProfileViewModel { FullName = "Sanjida Erin", PhoneNumber = "ZMARKERZ98765xyz" };
+        _controller.ModelState.AddModelError(nameof(ProfileViewModel.PhoneNumber), "invalid format");
+
+        var result = await _controller.Profile(model);
+
+        var view = Assert.IsType<ViewResult>(result);
+        var returnedModel = Assert.IsType<ProfileViewModel>(view.Model);
+        Assert.Equal("01700000000", returnedModel.CurrentPhoneNumber);
+        // The editable field still echoes the rejected attempt so the user can fix their typo.
+        Assert.Equal("ZMARKERZ98765xyz", returnedModel.PhoneNumber);
+        _userManager.Verify(m => m.UpdateAsync(It.IsAny<User>()), Times.Never);
     }
 
     [Fact]

@@ -1482,6 +1482,14 @@
     window.dispatchEvent(new CustomEvent("languagechange", { detail: { lang: currentLang } }));
   }
 
+  // Minimal public surface so a page-specific control (e.g. the Profile page's
+  // "Preferred Language" select) can read/drive the same toggle this file owns,
+  // without reaching into this closure's internals.
+  window.mktLang = {
+    get: function () { return currentLang; },
+    set: applyLanguage
+  };
+
   document.addEventListener("DOMContentLoaded", function () {
     /* theme toggle buttons */
     document.querySelectorAll(".theme-toggle").forEach(function (b) {

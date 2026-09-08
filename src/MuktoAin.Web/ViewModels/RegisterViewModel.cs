@@ -14,7 +14,11 @@ public class RegisterViewModel
     [Display(Name = "ইমেইল / Email")]
     public string Email { get; set; } = string.Empty;
 
-    [Phone(ErrorMessage = "সঠিক ফোন নম্বর দিন / Please enter a valid phone number")]
+    // Same issue as ProfileViewModel.PhoneNumber: [Phone] is too permissive
+    // (e.g. it accepts "017"), so this pins the real Bangladesh mobile format
+    // instead. Empty is allowed since the field is optional.
+    [RegularExpression(@"^$|^(?:\+?880|0)1[3-9]\d{8}$",
+        ErrorMessage = "সঠিক বাংলাদেশী মোবাইল নম্বর দিন (যেমন ০১XXXXXXXXX) / Please enter a valid Bangladeshi mobile number (e.g. 01XXXXXXXXX)")]
     [Display(Name = "ফোন নম্বর (ঐচ্ছিক) / Phone (Optional)")]
     public string? PhoneNumber { get; set; }
 
