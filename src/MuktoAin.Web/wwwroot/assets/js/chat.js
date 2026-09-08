@@ -15,6 +15,16 @@
         if (sc) sc.scrollTop = sc.scrollHeight;
     }
     function renderIcons() { if (window.lucide) window.lucide.createIcons(); }
+    // Current UI language, kept in sync with main.js's toggle (it sets <html lang>).
+    function curLang() { return document.documentElement.lang === "en" ? "en" : "bn"; }
+    // Sets both data-bn/data-en (so main.js's language-toggle handler can find and
+    // flip it later) and the correct initial text for whichever language is active now.
+    function bilingual(el, bn, en) {
+        el.setAttribute("data-bn", bn);
+        el.setAttribute("data-en", en);
+        el.textContent = curLang() === "en" ? en : bn;
+        return el;
+    }
 
     // ---------- rendering ----------
 
@@ -61,25 +71,21 @@
         if (data.fromCache) {
             var c = document.createElement("small");
             c.className = "answer-cached tiny";
-            c.style.display = "block";
-            c.style.marginTop = "6px";
-            c.setAttribute("data-bn", "এই প্রশ্নের উত্তর আগে দেওয়া হয়েছিল (ক্যাশ)।");
-            c.setAttribute("data-en", "This question was answered before (cached).");
-            c.textContent = "এই প্রশ্নের উত্তর আগে দেওয়া হয়েছিল (ক্যাশ)।";
+            bilingual(c, "এই প্রশ্নের উত্তর আগে দেওয়া হয়েছিল (ক্যাশ)।", "This question was answered before (cached).");
             wrap.appendChild(c);
         }
         if (data.retrievalOnly) {
             var ro = document.createElement("small");
             ro.className = "muted tiny";
-            ro.style.display = "block";
-            ro.style.marginTop = "6px";
-            ro.textContent = "⚙ AI ছাড়া কীওয়ার্ড-অনুসন্ধানের ফলাফল / retrieved without AI";
+            bilingual(ro, "⚙ AI ছাড়া কীওয়ার্ড-অনুসন্ধানের ফলাফল", "⚙ Retrieved without AI");
             wrap.appendChild(ro);
         }
 
+        // data.disclaimer already comes back in the requested language and already
+        // carries its own leading icon (see Disclaimers.cs) — don't prepend another.
         var disc = document.createElement("small");
         disc.className = "ai-disclaimer";
-        disc.textContent = "⚠ " + (data.disclaimer || "সাধারণ আইনি তথ্য, আনুষ্ঠানিক আইনি পরামর্শ নয়।");
+        disc.textContent = data.disclaimer || "⚠️ সাধারণ আইনি তথ্য, আনুষ্ঠানিক আইনি পরামর্শ নয়।";
         wrap.appendChild(disc);
 
         thread.appendChild(wrap);
@@ -92,15 +98,19 @@
     function quickReplies() {
         var qr = document.createElement("div");
         qr.className = "quick-replies";
-        [["নথি বানাতে চাই", "draft"], ["আরও প্রশ্ন আছে", "more"], ["না, ধন্যবাদ", "done"]].forEach(function (pair) {
+        [
+            ["নথি বানাতে চাই", "I want a document", "draft"],
+            ["আরও প্রশ্ন আছে", "I have more questions", "more"],
+            ["না, ধন্যবাদ", "No, thanks", "done"]
+        ].forEach(function (pair) {
             var b = document.createElement("button");
             b.className = "btn btn-outline btn-sm";
             b.type = "button";
-            b.textContent = pair[0];
+            bilingual(b, pair[0], pair[1]);
             b.addEventListener("click", function () {
-                if (pair[1] === "draft") openDraftModal();
-                else if (pair[1] === "more") input.focus();
-                else showToast("ধন্যবাদ! যেকোনো সময় আবার আসুন।");
+                if (pair[2] === "draft") openDraftModal();
+                else if (pair[2] === "more") input.focus();
+                else showToast(curLang() === "en" ? "Thanks! Come back anytime." : "ধন্যবাদ! যেকোনো সময় আবার আসুন।");
             });
             qr.appendChild(b);
         });
@@ -146,13 +156,16 @@
             '<small class="muted" data-bn="মাঝরাতে (প্রশান্ত মহাসাগরীয়) রিসেট হবে।" data-en="Resets at midnight Pacific.">মাঝরাতে (প্রশান্ত মহাসাগরীয়) রিসেট হবে।</small></div>';
         var actions = document.createElement("div");
         actions.className = "row wrap";
-        [["/Account/Register", "user-plus", "নিবন্ধন করুন (৩× সীমা)"],
-         ["/Search", "search", "আইন খুঁজুন (বিনামূল্যে)"],
-         ["/Case/Submit", "edit-3", "ফর্মে জমা দিন"]].forEach(function (l) {
+        [["/Account/Register", "user-plus", "নিবন্ধন করুন (৩× সীমা)", "Register (3× limit)"],
+         ["/Search", "search", "আইন খুঁজুন (বিনামূল্যে)", "Search laws (free)"],
+         ["/Case/Submit", "edit-3", "ফর্মে জমা দিন", "Submit a form"]].forEach(function (l) {
             var a = document.createElement("a");
             a.className = "btn btn-outline btn-sm";
             a.href = l[0];
-            a.innerHTML = '<i data-lucide="' + l[1] + '"></i> ' + l[2];
+            var span = document.createElement("span");
+            bilingual(span, l[2], l[3]);
+            a.innerHTML = '<i data-lucide="' + l[1] + '"></i> ';
+            a.appendChild(span);
             actions.appendChild(a);
         });
 
@@ -257,18 +270,26 @@
         .then(function (r) { return r.json(); })
         .then(function (data) {
             if (data.error) {
-                showToast("সমস্যা: " + data.error);
+                showToast((curLang() === "en" ? "Error: " : "সমস্যা: ") + data.error);
                 btn.disabled = false;
-                btn.textContent = "নথি তৈরি করুন";
+                restoreDraftSubmitLabel(btn);
                 return;
             }
             window.location.href = data.redirectUrl;
         })
         .catch(function () {
-            showToast("সংযোগ সমস্যা — আবার চেষ্টা করুন");
+            showToast(curLang() === "en" ? "Connection error — try again" : "সংযোগ সমস্যা — আবার চেষ্টা করুন");
             btn.disabled = false;
-            btn.textContent = "নথি তৈরি করুন";
+            restoreDraftSubmitLabel(btn);
         });
+    }
+
+    // submitDraft()'s error paths used to overwrite #draft-submit's markup with plain
+    // Bangla text, silently undoing the bilingual span the view renders it with.
+    function restoreDraftSubmitLabel(btn) {
+        btn.innerHTML = '<i data-lucide="sparkles"></i> <span data-bn="নথি তৈরি করুন" data-en="Generate document">' +
+            (curLang() === "en" ? "Generate document" : "নথি তৈরি করুন") + '</span>';
+        renderIcons();
     }
 
     // ---------- recent chats / resume ----------
@@ -360,11 +381,13 @@
         welcome = el("chat-welcome");
         if (!thread || !input || !sendBtn) return;
 
-        // category chips prefill the composer
+        // category chips prefill the composer — data-prefill is Bangla, data-prefill-en
+        // (when present) is the English variant; pick per the active toggle language.
         document.querySelectorAll("[data-prefill]").forEach(function (chip) {
             if (chip.tagName === "BUTTON") {
                 chip.addEventListener("click", function () {
-                    input.value = chip.getAttribute("data-prefill");
+                    var enPrefill = chip.getAttribute("data-prefill-en");
+                    input.value = (curLang() === "en" && enPrefill) ? enPrefill : chip.getAttribute("data-prefill");
                     input.focus();
                 });
             }
