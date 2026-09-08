@@ -42,13 +42,11 @@
 
         var head = document.createElement("div");
         head.className = "answer-head";
-        head.innerHTML = '<h3><i data-lucide="scale"></i> <span data-bn="আপনার অধিকার" data-en="Your rights">আপনার অধিকার</span></h3>';
+        head.innerHTML = '<h3><span class="avatar"><i data-lucide="scale"></i></span> <span data-bn="আপনার অধিকার" data-en="Your rights">আপনার অধিকার</span></h3>';
         wrap.appendChild(head);
 
         var p = document.createElement("p");
-        p.style.fontFamily = "var(--font-doc)";
-        p.style.fontSize = "16px";
-        p.style.whiteSpace = "pre-wrap";
+        p.className = "answer-text";
         p.textContent = data.answer;
         wrap.appendChild(p);
 
@@ -120,6 +118,10 @@
     function draftSuggestion() {
         var d = document.createElement("div");
         d.className = "draft-card";
+        var eyebrow = document.createElement("span");
+        eyebrow.className = "eyebrow-mini";
+        bilingual(eyebrow, "পরবর্তী ধাপ", "Next step");
+        d.appendChild(eyebrow);
         var head = document.createElement("div");
         head.className = "row";
         head.innerHTML =
