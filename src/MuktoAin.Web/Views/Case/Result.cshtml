@@ -3,6 +3,18 @@
 @{
     ViewData["Title"] = "মামলা #" + Model.CaseId + " — মুক্ত আইন";
     var displayCode = string.IsNullOrEmpty(Model.TrackingCode) ? "" : "MKT-" + Model.TrackingCode.Substring(0, Math.Min(6, Model.TrackingCode.Length)).ToUpper();
+    // TimelineCurrent.ToLower() only happens to match an existing badge-*
+    // color class for UnderReview/Rejected -- DraftReady/Approved/Withdrawn
+    // had no matching class and rendered uncolored. Map explicitly instead.
+    var statusBadgeClass = Model.TimelineCurrent switch
+    {
+        "DraftReady" => "badge-draft",
+        "UnderReview" => "badge-underreview",
+        "Approved" => "badge-final",
+        "Rejected" => "badge-rejected",
+        "Withdrawn" => "badge-neutral",
+        _ => "badge-neutral"
+    };
 }
 
 <main class="container" id="main">
@@ -19,7 +31,7 @@
         <h1 class="page-title">@Model.Title</h1>
         <p class="page-sub">
             @Model.DistrictName · @Model.CreatedAt.ToString("d MMM yyyy")
-            <span class="badge badge-@(Model.TimelineCurrent.ToLower())">@StatusText.Bn(Model.TimelineCurrent) / @StatusText.En(Model.TimelineCurrent)</span>
+            <span class="badge @statusBadgeClass" data-bn="@StatusText.Bn(Model.TimelineCurrent)" data-en="@StatusText.En(Model.TimelineCurrent)">@StatusText.Bn(Model.TimelineCurrent)</span>
             @if (!string.IsNullOrEmpty(displayCode))
             {
                 <span class="chip chip-sm mono">@displayCode
@@ -29,31 +41,41 @@
         </p>
     </div>
 
-    <!-- Real status timeline (driven by actual status) -->
+    <!-- Real status timeline (driven by actual status) -- Withdrawn is an
+         exceptional citizen action, not a milestone every case passes
+         through, so it only appears as its own 3-step variant on a case
+         that was actually withdrawn, instead of sitting as a permanent 4th
+         slot after Approved on every case's roadmap. -->
     <div class="timeline" aria-label="Case timeline">
         @{
             var steps = new[] {
                 ("DraftReady", "খসড়া প্রস্তুত", "Draft ready"),
                 ("UnderReview", "আইনজীবী পর্যালোচনায়", "Under review"),
-                ("Approved", "অনুমোদিত", "Approved"),
-                ("Withdrawn", "প্রত্যাহৃত", "Withdrawn")
+                ("Approved", "অনুমোদিত", "Approved")
             };
             if (Model.TimelineCurrent == "Rejected")
             {
                 steps = new[] {
                     ("DraftReady", "খসড়া প্রস্তুত", "Draft ready"),
                     ("UnderReview", "আইনজীবী পর্যালোচনায়", "Under review"),
-                    ("Rejected", "প্রত্যাখ্যাত", "Rejected"),
+                    ("Rejected", "প্রত্যাখ্যাত", "Rejected")
+                };
+            }
+            else if (Model.TimelineCurrent == "Withdrawn")
+            {
+                steps = new[] {
+                    ("DraftReady", "খসড়া প্রস্তুত", "Draft ready"),
+                    ("UnderReview", "আইনজীবী পর্যালোচনায়", "Under review"),
                     ("Withdrawn", "প্রত্যাহৃত", "Withdrawn")
                 };
             }
             var curIndex = Array.FindIndex(steps, s => s.Item1 == Model.TimelineCurrent);
-            if (Model.TimelineCurrent == "Withdrawn") { curIndex = 3; }
+            if (curIndex < 0) { curIndex = steps.Length - 1; }
         }
         @for (var i = 0; i < steps.Length; i++)
         {
-            var isRejectedStep = Model.TimelineCurrent == "Rejected" && steps[i].Item1 == "Rejected";
-            var cls = isRejectedStep ? "current rejected"
+            var isExitStep = i == curIndex && (steps[i].Item1 == "Rejected" || steps[i].Item1 == "Withdrawn");
+            var cls = isExitStep ? "current " + steps[i].Item1.ToLowerInvariant()
                 : i < curIndex ? "done"
                 : i == curIndex ? "current" : "";
             <div class="t-step @cls">
@@ -63,161 +85,215 @@
         }
     </div>
 
-    @if (Model.TimelineCurrent == "Rejected" && Model.RejectionReason != null)
-    {
-        <div class="alert alert-danger" style="margin: 16px 0">
-            <i data-lucide="x-circle"></i>
-            <div>
-                <b data-bn="আইনজীবীর মতামত:" data-en="Lawyer's reason:">আইনজীবীর মতামত:</b> @Model.RejectionReason
+    <div class="with-rail" style="margin-top: 18px">
+        <div class="stack" style="gap: 16px">
+
+            @if (Model.TimelineCurrent == "Rejected" && Model.RejectionReason != null)
+            {
+                <div>
+                    <div class="alert alert-danger" style="margin-bottom: 10px">
+                        <i data-lucide="x-circle"></i>
+                        <div>
+                            <b data-bn="আইনজীবীর মতামত:" data-en="Lawyer's reason:">আইনজীবীর মতামত:</b> @Model.RejectionReason
+                        </div>
+                    </div>
+                    <div class="row wrap" style="gap: 10px">
+                        <a class="btn btn-primary btn-sm" asp-controller="Home" asp-action="Index"
+                           asp-route-prefill="আমার মামলাটি প্রত্যাখ্যাত হয়েছিল। কারণ: @Model.RejectionReason। এটি কি ঠিক করা সম্ভব?">
+                            <i data-lucide="message-circle"></i> <span data-bn="চ্যাটে ফিরে যান (কারণসহ)" data-en="Return to chat (with reason)">চ্যাটে ফিরে যান (কারণসহ)</span>
+                        </a>
+                    </div>
+                </div>
+            }
+
+            <!-- Rights explanation -- clamped to a short preview so a long
+                 explanation doesn't dominate the scroll; the expand toggle
+                 only appears when the text actually overflows the clamp
+                 (main.js, shared with the document preview below). -->
+            <div class="card">
+                <h2 class="section-h"><i data-lucide="scale"></i> <span data-bn="আপনার অধিকার" data-en="Your rights">আপনার অধিকার</span></h2>
+                <div class="serif md-content text-preview" id="rights-preview-@Model.CaseId" data-clamp-preview>@MarkdownText.ToHtml(Model.RightsExplanation)</div>
+                <button class="doc-expand-btn" type="button" data-clamp-expand-for="rights-preview-@Model.CaseId" hidden
+                        data-more-bn="আরও পড়ুন" data-more-en="Read more"
+                        data-less-bn="সংক্ষিপ্ত করুন" data-less-en="Show less">
+                    <i data-lucide="chevron-down"></i> <span data-bn="আরও পড়ুন" data-en="Read more">আরও পড়ুন</span>
+                </button>
             </div>
+
+            <!-- Cited sections -->
+            @if (Model.CitedSections.Any())
+            {
+                <div class="card">
+                    <h2 class="section-h"><i data-lucide="book-open"></i> <span data-bn="উদ্ধৃত ধারাসমূহ" data-en="Cited sections">উদ্ধৃত ধারাসমূহ</span></h2>
+                    @foreach (var s in Model.CitedSections)
+                    {
+                        <details class="acc">
+                            <summary>
+                                <span class="badge badge-neutral">@s.ActTitle @s.SectionNumber</span>
+                                <span class="acc-relevance">@s.RelevanceScore</span>
+                                <i data-lucide="chevron-down" class="chev"></i>
+                            </summary>
+                            <div class="acc-body cited-body">
+                                <p class="serif" style="line-height: 2; white-space: pre-wrap; margin: 0">@s.SectionText</p>
+                            </div>
+                        </details>
+                    }
+                </div>
+            }
+
+            <!-- Embedded paper draft -->
+            @if (Model.DocumentId.HasValue)
+            {
+                <div class="card">
+                    <h2 class="section-h" style="margin-top: 0">
+                        <i data-lucide="file-text"></i>
+                        <span data-bn="তৈরি হওয়া দলিল" data-en="Generated document">তৈরি হওয়া দলিল</span>
+                        <span class="badge badge-neutral">v@(Model.VersionNo)</span>
+                        @if (Model.CitizenEdited)
+                        {
+                            <span class="badge badge-review" data-bn="আপনি সম্পাদনা করেছেন" data-en="Citizen edited">আপনি সম্পাদনা করেছেন</span>
+                        }
+                    </h2>
+
+                    <div class="paper-sheet doc-preview" id="doc-preview-@Model.DocumentId" data-clamp-preview>
+                        @if (!Model.CanDownloadPdf)
+                        {
+                            <div class="paper-watermark"><span data-bn="খসড়া" data-en="DRAFT">খসড়া</span></div>
+                        }
+                        <div class="doc-meta">গণপ্রজাতন্ত্রী বাংলাদেশ · @StatusText.Bn(Model.DocumentStatus) · DOC-@Model.DocumentId</div>
+                        <pre style="white-space: pre-wrap; font-family: var(--font-doc); font-size: 15px; line-height: 2; margin: 0">@(Model.ContentFinal ?? Model.DocumentContent)</pre>
+                        <div class="doc-stamp">
+                            ⚠ এই দলিলটি AI সহায়তায় প্রস্তুত — যাচাইকৃত আইনজীবীর অনুমোদন ছাড়া চূড়ান্ত নয়।
+                            MuktoAin provides general legal information, not formal legal advice.
+                        </div>
+                    </div>
+                    <button class="doc-expand-btn" type="button" data-clamp-expand-for="doc-preview-@Model.DocumentId" hidden
+                            data-more-bn="সম্পূর্ণ দলিল দেখুন" data-more-en="Show full document"
+                            data-less-bn="সংক্ষিপ্ত করুন" data-less-en="Show less">
+                        <i data-lucide="chevron-down"></i> <span data-bn="সম্পূর্ণ দলিল দেখুন" data-en="Show full document">সম্পূর্ণ দলিল দেখুন</span>
+                    </button>
+                </div>
+            }
         </div>
-        <div class="row wrap" style="gap: 10px; margin-bottom: 16px">
-            <a class="btn btn-primary btn-sm" asp-controller="Home" asp-action="Index"
-               asp-route-prefill="আমার মামলাটি প্রত্যাখ্যাত হয়েছিল। কারণ: @Model.RejectionReason। এটি কি ঠিক করা সম্ভব?">
-                <i data-lucide="message-circle"></i> <span data-bn="চ্যাটে ফিরে যান (কারণসহ)" data-en="Return to chat (with reason)">চ্যাটে ফিরে যান (কারণসহ)</span>
+
+        <!-- Actions rail: sticky alongside the reading column, so the button
+             you need is never something you have to scroll to find. -->
+        <aside class="rail">
+            <!-- Lawyer verdict (promoted -- this is the citizen's actual answer,
+                 not a footnote; used to render as .muted.tiny at 12px, and sat
+                 in the reading column instead of next to the actions it backs
+                 up). -->
+            @if (Model.LawyerName != null)
+            {
+                <div class="card verdict-card">
+                    <div class="row" style="gap: 12px; align-items: center">
+                        <div class="item-ico"><i data-lucide="user-check"></i></div>
+                        <div style="flex: 1">
+                            <b>অ্যাডভোকেট @Model.LawyerName</b>
+                            @if (Model.LawyerBarNumber != null)
+                            {
+                                <small class="muted"> · Bar #@Model.LawyerBarNumber</small>
+                            }
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.LawyerComments) && Model.DocumentStatus != "Rejected")
+                    {
+                        <p class="verdict-quote">@Model.LawyerComments</p>
+                    }
+                </div>
+            }
+            @if (Model.DocumentId.HasValue || Model.TimelineCurrent is "DraftReady" or "Rejected")
+            {
+                <div class="card">
+                    <h2 class="section-h" style="margin-top: 0"><i data-lucide="square-check-big"></i> <span data-bn="কার্যক্রম" data-en="Actions">কার্যক্রম</span></h2>
+                    <div class="stack" style="gap: 10px">
+                        @if (Model.DocumentId.HasValue)
+                        {
+                            @if (Model.CanEdit)
+                            {
+                                <button class="btn btn-outline btn-block" type="button" data-open-modal="#edit-modal">
+                                    <i data-lucide="edit-3"></i> <span data-bn="সম্পাদনা" data-en="Edit">সম্পাদনা</span>
+                                </button>
+                            }
+                            @if (Model.TimelineCurrent is "DraftReady" or "Rejected")
+                            {
+                                <form asp-action="SendToLawyer" asp-route-id="@Model.CaseId" method="post"
+                                      asp-route-code="@Model.TrackingCode">
+                                    @Html.AntiForgeryToken()
+                                    <button class="btn btn-primary btn-block" type="submit"
+                                            data-confirm="আইনজীবীর কাছে পাঠাবেন? / Send to the lawyer pool?">
+                                        <i data-lucide="send"></i> <span data-bn="আইনজীবীর কাছে পাঠান" data-en="Send to lawyer">আইনজীবীর কাছে পাঠান</span>
+                                    </button>
+                                </form>
+                            }
+                            @if (Model.CanDownloadPdf)
+                            {
+                                <a class="btn btn-gold btn-block"
+                                   asp-controller="Document" asp-action="Download" asp-route-id="@Model.DocumentId">
+                                    <i data-lucide="download"></i> <span data-bn="চূড়ান্ত PDF ডাউনলোড করুন" data-en="Download final PDF">চূড়ান্ত PDF ডাউনলোড করুন</span>
+                                </a>
+
+                                @if (Model.HonorariumPaid)
+                                {
+                                    <div class="alert alert-success tiny" style="align-items: center; gap: 8px;">
+                                        <i data-lucide="check-circle-2"></i>
+                                        <span data-bn="আইনজীবীর স্বেচ্ছাসেবী সম্মানী প্রদান করা হয়েছে। ধন্যবাদ!" data-en="Lawyer honorarium has been paid. Thank you!">আইনজীবীর স্বেচ্ছাসেবী সম্মানী প্রদান করা হয়েছে। ধন্যবাদ!</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-quiet btn-block" type="button" data-open-modal="#honorarium-modal">
+                                        <i data-lucide="hand-coins"></i> <span data-bn="আইনজীবীকে সম্মানী দিন (ঐচ্ছিক)" data-en="Send Lawyer Honorarium (Optional)">আইনজীবীকে সম্মানী দিন (ঐচ্ছিক)</span>
+                                    </button>
+                                }
+                            }
+                            else
+                            {
+                                <div class="alert alert-warn tiny">
+                                    <i data-lucide="lock"></i>
+                                    <span data-bn="PDF ডাউনলোড আইনজীবী অনুমোদনের পরে আনলক হবে।" data-en="PDF download unlocks after lawyer approval.">PDF ডাউনলোড আইনজীবী অনুমোদনের পরে আনলক হবে।</span>
+                                </div>
+                            }
+                        }
+                        @if (Model.TimelineCurrent is "DraftReady" or "Rejected")
+                        {
+                            <form asp-action="Withdraw" asp-route-id="@Model.CaseId" method="post" asp-route-code="@Model.TrackingCode"
+                                  data-confirm="মামলাটি প্রত্যাহার করবেন? আর পাঠানো যাবে না / Withdraw this case? This cannot be undone.">
+                                @Html.AntiForgeryToken()
+                                <button class="btn btn-quiet btn-block" type="submit">
+                                    <i data-lucide="archive"></i> <span data-bn="মামলা প্রত্যাহার" data-en="Withdraw case">মামলা প্রত্যাহার</span>
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            }
+        </aside>
+    </div>
+
+    <!-- Mobile: the one action that matters most, always one tap away,
+         regardless of how far down the reading column the rail's full
+         actions card has scrolled. -->
+    @if (Model.DocumentId.HasValue && Model.CanDownloadPdf)
+    {
+        <div class="sticky-action-bar mobile-cta-bar" style="padding: 12px">
+            <a class="btn btn-gold btn-block"
+               asp-controller="Document" asp-action="Download" asp-route-id="@Model.DocumentId">
+                <i data-lucide="download"></i> <span data-bn="চূড়ান্ত PDF ডাউনলোড করুন" data-en="Download final PDF">চূড়ান্ত PDF ডাউনলোড করুন</span>
             </a>
         </div>
     }
-
-    <!-- Lawyer block (visible after claim/decision) -->
-    @if (Model.LawyerName != null)
+    else if (Model.DocumentId.HasValue && Model.TimelineCurrent is "DraftReady" or "Rejected")
     {
-        <div class="card" style="margin: 16px 0">
-            <div class="row" style="gap: 12px; align-items: center">
-                <div class="item-ico"><i data-lucide="user-check"></i></div>
-                <div style="flex: 1">
-                    <b>অ্যাডভোকেট @Model.LawyerName</b>
-                    @if (Model.LawyerBarNumber != null)
-                    {
-                        <small class="muted"> · Bar #@Model.LawyerBarNumber</small>
-                    }
-                    @if (Model.LawyerDecision != null)
-                    {
-                        <br />
-                        <span class="badge badge-@(Model.LawyerDecision == "Rejected" ? "rejected" : "final")">@Model.LawyerDecision</span>
-                    }
-                    @if (!string.IsNullOrEmpty(Model.LawyerComments) && Model.DocumentStatus != "Rejected")
-                    {
-                        <p class="muted tiny" style="margin: 6px 0 0">@Model.LawyerComments</p>
-                    }
-                </div>
-            </div>
+        <div class="sticky-action-bar mobile-cta-bar" style="padding: 12px">
+            <form asp-action="SendToLawyer" asp-route-id="@Model.CaseId" method="post" asp-route-code="@Model.TrackingCode" style="width: 100%">
+                @Html.AntiForgeryToken()
+                <button class="btn btn-primary btn-block" type="submit"
+                        data-confirm="আইনজীবীর কাছে পাঠাবেন? / Send to the lawyer pool?">
+                    <i data-lucide="send"></i> <span data-bn="আইনজীবীর কাছে পাঠান" data-en="Send to lawyer">আইনজীবীর কাছে পাঠান</span>
+                </button>
+            </form>
         </div>
-    }
-
-    <!-- Rights explanation -->
-    <div class="card" style="margin: 16px 0">
-        <h2 class="section-h"><i data-lucide="scale"></i> <span data-bn="আপনার অধিকার" data-en="Your rights">আপনার অধিকার</span></h2>
-        <div class="serif md-content">@MarkdownText.ToHtml(Model.RightsExplanation)</div>
-    </div>
-
-    <!-- Cited sections -->
-    @if (Model.CitedSections.Any())
-    {
-        <div class="card" style="margin: 16px 0">
-            <h2 class="section-h"><i data-lucide="book-open"></i> <span data-bn="উদ্ধৃত ধারাসমূহ" data-en="Cited sections">উদ্ধৃত ধারাসমূহ</span></h2>
-            @foreach (var s in Model.CitedSections)
-            {
-                <details class="acc">
-                    <summary>
-                        <span class="badge badge-neutral">@s.ActTitle @s.SectionNumber</span>
-                        <small class="muted">@s.RelevanceScore</small>
-                    </summary>
-                    <p class="serif" style="line-height: 2; white-space: pre-wrap">@s.SectionText</p>
-                </details>
-            }
-        </div>
-    }
-
-    <!-- Embedded paper draft -->
-    @if (Model.DocumentId.HasValue)
-    {
-        <div class="card" style="margin: 16px 0">
-            <div class="row spread wrap" style="margin-bottom: 12px; align-items: center; gap: 10px">
-                <h2 class="section-h" style="margin: 0">
-                    <i data-lucide="file-text"></i>
-                    <span data-bn="তৈরি হওয়া দলিল" data-en="Generated document">তৈরি হওয়া দলিল</span>
-                    <span class="badge badge-neutral">v@(Model.VersionNo)</span>
-                    @if (Model.CitizenEdited)
-                    {
-                        <span class="badge badge-review" data-bn="আপনি সম্পাদনা করেছেন" data-en="Citizen edited">আপনি সম্পাদনা করেছেন</span>
-                    }
-                </h2>
-                <div class="row" style="gap: 8px">
-                    @if (Model.CanEdit)
-                    {
-                        <button class="btn btn-outline btn-sm" type="button" data-open-modal="#edit-modal">
-                            <i data-lucide="edit-3"></i> <span data-bn="সম্পাদনা" data-en="Edit">সম্পাদনা</span>
-                        </button>
-                    }
-                    @if (Model.TimelineCurrent is "DraftReady" or "Rejected")
-                    {
-                        <form asp-action="SendToLawyer" asp-route-id="@Model.CaseId" method="post"
-                              asp-route-code="@Model.TrackingCode" style="display:inline">
-                            @Html.AntiForgeryToken()
-                            <button class="btn btn-primary btn-sm" type="submit"
-                                    data-confirm="আইনজীবীর কাছে পাঠাবেন? / Send to the lawyer pool?">
-                                <i data-lucide="send"></i> <span data-bn="আইনজীবীর কাছে পাঠান" data-en="Send to lawyer">আইনজীবীর কাছে পাঠান</span>
-                            </button>
-                        </form>
-                    }
-                </div>
-            </div>
-
-            <div class="paper-sheet">
-                @if (!Model.CanDownloadPdf)
-                {
-                    <div class="paper-watermark"><span data-bn="খসড়া" data-en="DRAFT">খসড়া</span></div>
-                }
-                <div class="doc-meta">গণপ্রজাতন্ত্রী বাংলাদেশ · @StatusText.Bn(Model.DocumentStatus) · DOC-@Model.DocumentId</div>
-                <pre style="white-space: pre-wrap; font-family: var(--font-doc); font-size: 15px; line-height: 2; margin: 0">@(Model.ContentFinal ?? Model.DocumentContent)</pre>
-                <div class="doc-stamp">
-                    ⚠ এই দলিলটি AI সহায়তায় প্রস্তুত — যাচাইকৃত আইনজীবীর অনুমোদন ছাড়া চূড়ান্ত নয়।
-                    MuktoAin provides general legal information, not formal legal advice.
-                </div>
-            </div>
-
-            @if (Model.CanDownloadPdf)
-            {
-                <a class="btn btn-gold btn-block" style="margin-top: 12px"
-                   asp-controller="Document" asp-action="Download" asp-route-id="@Model.DocumentId">
-                    <i data-lucide="download"></i> <span data-bn="চূড়ান্ত PDF ডাউনলোড করুন" data-en="Download final PDF">চূড়ান্ত PDF ডাউনলোড করুন</span>
-                </a>
-
-                @if (Model.HonorariumPaid)
-                {
-                    <div class="alert alert-success tiny" style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
-                        <i data-lucide="check-circle-2"></i>
-                        <span data-bn="আইনজীবীর স্বেচ্ছাসেবী সম্মানী প্রদান করা হয়েছে। ধন্যবাদ!" data-en="Lawyer honorarium has been paid. Thank you!">আইনজীবীর স্বেচ্ছাসেবী সম্মানী প্রদান করা হয়েছে। ধন্যবাদ!</span>
-                    </div>
-                }
-                else
-                {
-                    <button class="btn btn-quiet btn-block" type="button" data-open-modal="#honorarium-modal" style="margin-top: 10px">
-                        <i data-lucide="gift"></i> <span data-bn="আইনজীবীকে সম্মানী দিন (ঐচ্ছিক)" data-en="Send Lawyer Honorarium (Optional)">আইনজীবীকে সম্মানী দিন (ঐচ্ছিক)</span>
-                    </button>
-                }
-            }
-            else
-            {
-                <div class="alert alert-warn tiny" style="margin-top: 12px">
-                    <i data-lucide="lock"></i>
-                    <span data-bn="PDF ডাউনলোড আইনজীবী অনুমোদনের পরে আনলক হবে।" data-en="PDF download unlocks after lawyer approval.">PDF ডাউনলোড আইনজীবী অনুমোদনের পরে আনলক হবে।</span>
-                </div>
-            }
-        </div>
-    }
-
-    <!-- Withdraw (only when not in lawyer's hands and not already final) -->
-    @if (Model.TimelineCurrent is "DraftReady" or "Rejected")
-    {
-        <form asp-action="Withdraw" asp-route-id="@Model.CaseId" method="post" asp-route-code="@Model.TrackingCode"
-              data-confirm="মামলাটি প্রত্যাহার করবেন? আর পাঠানো যাবে না / Withdraw this case? This cannot be undone.">
-            @Html.AntiForgeryToken()
-            <button class="btn btn-quiet btn-sm" type="submit">
-                <i data-lucide="archive"></i> <span data-bn="মামলা প্রত্যাহার" data-en="Withdraw case">মামলা প্রত্যাহার</span>
-            </button>
-        </form>
     }
 </main>
 
@@ -251,7 +327,7 @@
         <div class="modal-handle"></div>
         <div class="modal-head">
             <div>
-                <span class="kicker"><i data-lucide="gift"></i> FR-24</span>
+                <span class="kicker"><i data-lucide="hand-coins"></i> FR-24</span>
                 <h3 id="honorarium-modal-title" data-bn="আইনজীবীকে সম্মানী প্রদান" data-en="Send Lawyer Honorarium">আইনজীবীকে সম্মানী প্রদান</h3>
             </div>
             <button class="icon-btn" type="button" data-close-modal aria-label="বন্ধ করুন"><i data-lucide="x"></i></button>

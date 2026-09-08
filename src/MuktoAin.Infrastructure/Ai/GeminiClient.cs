@@ -37,6 +37,7 @@ public class GeminiClient : IAiService
     private readonly string _generationModel;
     private readonly string _embeddingModel;
     private readonly int? _outputDimensionality;
+    private readonly int _dailyRequestLimitPerKey;
     private readonly ResiliencePipeline<HttpResponseMessage> _pipeline;
 
     // Round-robin ring position — advances on EVERY request so quota spend is
@@ -46,6 +47,15 @@ public class GeminiClient : IAiService
     // Per-key cooldown: parkedUntil[i] > UtcNow means key i is throttled and is
     // skipped during key selection. A 429 parks ONE key, never the whole ring.
     private readonly DateTime[] _parkedUntil;
+
+    // Admin dashboard key-usage tracker (display only — does not gate striping):
+    // one counter per key of requests actually SENT today, reset lazily at the
+    // Pacific-midnight day boundary the very next time a request is made after
+    // it passes (mirrors EmbeddingBatchJob's quota-reset convention, but without
+    // needing its own background timer since GeminiClient is a singleton with no
+    // ExecuteAsync loop of its own).
+    private readonly int[] _requestsToday;
+    private DateOnly _requestsTodayPacificDate;
 
     private readonly object _lock = new();
 
@@ -67,9 +77,39 @@ public class GeminiClient : IAiService
         _generationModel = opts.GenerationModel;
         _embeddingModel = opts.EmbeddingModel;
         _outputDimensionality = opts.EmbeddingOutputDimensionality;
+        _dailyRequestLimitPerKey = opts.DailyRequestLimitPerKey;
         _pipeline = resiliencePipeline;
         _parkedUntil = new DateTime[_apiKeys.Length];
+        _requestsToday = new int[_apiKeys.Length];
+        _requestsTodayPacificDate = CurrentPacificDate();
         _httpClient = httpClientFactory.CreateClient(nameof(GeminiClient));
+    }
+
+    /// <summary>
+    /// Snapshot of today's per-key request usage for the admin dashboard tracker.
+    /// Never exposes the actual key values — only a 1-based positional label.
+    /// </summary>
+    public IReadOnlyList<GeminiKeyStatus> Snapshot()
+    {
+        lock (_lock)
+        {
+            ResetIfNewPacificDayLocked();
+
+            var now = DateTime.UtcNow;
+            var result = new List<GeminiKeyStatus>(_apiKeys.Length);
+            for (var i = 0; i < _apiKeys.Length; i++)
+            {
+                var isParked = _parkedUntil[i] > now;
+                result.Add(new GeminiKeyStatus(
+                    Label: $"Key {i + 1}",
+                    RequestsToday: _requestsToday[i],
+                    DailyLimit: _dailyRequestLimitPerKey,
+                    IsParked: isParked,
+                    ParkedUntilUtc: isParked ? _parkedUntil[i] : null));
+            }
+
+            return result;
+        }
     }
 
     public async Task<string> GenerateContentAsync(string prompt, CancellationToken ct = default)
@@ -209,6 +249,8 @@ public class GeminiClient : IAiService
             {
                 continue;
             }
+
+            RecordRequestSent(keyIndex);
 
             var uri = BuildUri(model + methodSuffix, _apiKeys[keyIndex]);
 
@@ -373,6 +415,52 @@ public class GeminiClient : IAiService
         {
             return _parkedUntil[keyIndex] > DateTime.UtcNow;
         }
+    }
+
+    /// <summary>
+    /// Counts one request against <paramref name="keyIndex"/>'s daily usage tally
+    /// (display purposes only, see Snapshot()). Lazily rolls the counters over at
+    /// the Pacific-midnight boundary instead of running a background timer.
+    /// </summary>
+    private void RecordRequestSent(int keyIndex)
+    {
+        lock (_lock)
+        {
+            ResetIfNewPacificDayLocked();
+            _requestsToday[keyIndex]++;
+        }
+    }
+
+    /// <summary>Must be called with <see cref="_lock"/> already held.</summary>
+    private void ResetIfNewPacificDayLocked()
+    {
+        var today = CurrentPacificDate();
+        if (today != _requestsTodayPacificDate)
+        {
+            Array.Clear(_requestsToday);
+            _requestsTodayPacificDate = today;
+        }
+    }
+
+    /// <summary>
+    /// Today's date in America/Los_Angeles — the timezone Google resets Gemini's
+    /// free-tier daily quota in. Mirrors EmbeddingBatchJob.NextPacificMidnightUtc's
+    /// timezone lookup/fallback so both trackers agree on "today".
+    /// </summary>
+    private static DateOnly CurrentPacificDate()
+    {
+        TimeZoneInfo pacific;
+        try
+        {
+            pacific = TimeZoneInfo.FindSystemTimeZoneById(
+                OperatingSystem.IsWindows() ? "Pacific Standard Time" : "America/Los_Angeles");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            pacific = TimeZoneInfo.CreateCustomTimeZone("PST-fallback", TimeSpan.FromHours(-8), "PST-fallback", "PST-fallback");
+        }
+
+        return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, pacific));
     }
 
     /// <summary>

@@ -60,7 +60,9 @@
         <div class="card" style="margin: 16px 0">
             <div data-tabs>
                 <div class="tab-btns row" style="gap: 8px; margin-bottom: 12px">
-                    <button class="chip active" type="button" data-tab="original"><i data-lucide="file-lock"></i> Original AI Draft (read-only)</button>
+                    <button class="chip" type="button" data-tab="original"><i data-lucide="file-lock"></i> Original AI Draft (read-only)</button>
+                    <!-- desktop-only: split view has no mobile equivalent (tabs show one pane at a time there) -->
+                    <button class="chip active" type="button" data-tab="both"><i data-lucide="columns-2"></i> Split View</button>
                     <button class="chip" type="button" data-tab="editable"><i data-lucide="file-pen"></i> Editable (final)</button>
                 </div>
 
@@ -83,7 +85,7 @@
             </div>
 
             <!-- Desktop side-by-side (hidden on mobile by main.css breakpoint) -->
-            <div class="compare-grid-desktop" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px">
+            <div class="compare-grid-desktop">
                 <div class="compare-pane compare-original">
                     <h3 class="section-h"><i data-lucide="file-lock"></i> Original</h3>
                     <div class="paper-sheet" style="margin: 0">
@@ -112,8 +114,8 @@
         </div>
 
         <!-- Decision bar -->
-        <div class="sticky-action-bar row wrap" style="gap: 10px; padding: 14px 0">
-            <label class="tiny muted" style="margin-right: 6px" data-bn="সিদ্ধান্ত:" data-en="Decision:">সিদ্ধান্ত:</label>
+        <div class="sticky-action-bar row wrap" style="gap: 10px; padding: 14px 18px">
+            <label class="muted" style="margin-right: 6px; font-weight: 600" data-bn="সিদ্ধান্ত:" data-en="Decision:">সিদ্ধান্ত:</label>
 
             <button class="btn btn-outline btn-sm" type="submit" name="Decision" value="Approved"
                     data-confirm="মূল খসড়া কোনো পরিবর্তন ছাড়া অনুমোদন করবেন? / Approve the original without changes?">

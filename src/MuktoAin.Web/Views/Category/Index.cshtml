@@ -16,13 +16,20 @@
         <p class="page-sub">আপনার আইনি সমস্যাটি কোন বিভাগের অন্তর্ভুক্ত তা বেছে নিয়ে বিস্তারিত জানুন ও সরাসরি মামলা দাখিল করুন।</p>
     </div>
 
-    <div class="grid grid-2" style="gap: 20px; margin-bottom: 3rem;">
+    <label class="cat-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" class="input" id="catSearch" placeholder="বিভাগ খুঁজুন... / Search categories..." autocomplete="off" />
+    </label>
+
+    <div class="cat-browse-grid" id="catGrid">
         @foreach (var cat in Model)
         {
-            <a class="card click cat-card card-pad-lg" asp-action="Details" asp-route-id="@cat.CategoryId">
+            <a class="card click cat-card card-pad-lg" data-accent="@cat.Accent"
+               data-cat-name="@($"{cat.NameBn} {cat.NameEn}".ToLowerInvariant())"
+               asp-action="Details" asp-route-id="@cat.CategoryId">
                 <i data-lucide="arrow-up-right" class="go-arrow" aria-hidden="true"></i>
                 <div class="row" style="gap: 14px; margin-bottom: 8px;">
-                    <span class="cat-icon-lg cat-icon"><i data-lucide="@cat.Icon"></i></span>
+                    <span class="cat-icon" data-accent="@cat.Accent"><i data-lucide="@cat.Icon"></i></span>
                     <div>
                         <h2 style="font-size: 20px; margin-bottom: 2px;" data-bn="@cat.NameBn" data-en="@cat.NameEn">@cat.NameBn</h2>
                         <span class="cat-en">@cat.NameEn</span>
@@ -36,4 +43,31 @@
             </a>
         }
     </div>
+    <p class="cat-no-results" id="catNoResults">কোনো বিভাগ পাওয়া যায়নি। / No category matches your search.</p>
 </main>
+
+@section Scripts {
+    <script>
+        // Client-side filter for the category grid -- only 4 seeded rows today,
+        // but this is what makes browsing hold up once CP3 admin CRUD adds more
+        // (see .cat-browse-grid in main.css).
+        document.addEventListener("DOMContentLoaded", function () {
+            var search = document.getElementById("catSearch");
+            var grid = document.getElementById("catGrid");
+            var noResults = document.getElementById("catNoResults");
+            if (!search || !grid) return;
+            var cards = Array.prototype.slice.call(grid.querySelectorAll(".cat-card"));
+
+            search.addEventListener("input", function () {
+                var q = search.value.trim().toLowerCase();
+                var visible = 0;
+                cards.forEach(function (card) {
+                    var show = !q || card.dataset.catName.indexOf(q) !== -1;
+                    card.hidden = !show;
+                    if (show) visible++;
+                });
+                noResults.classList.toggle("show", visible === 0);
+            });
+        });
+    </script>
+}

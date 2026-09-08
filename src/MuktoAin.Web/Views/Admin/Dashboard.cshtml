@@ -31,9 +31,9 @@
     </div>
 
     <!-- 1. Infrastructure Pulse Bar (Live System Health) -->
-    <div class="card" style="margin-bottom: 24px; padding: 18px 22px; background: linear-gradient(135deg, rgba(255,253,247,0.98), rgba(248,242,228,0.95)); border: 1.5px solid #92743a;">
+    <div class="card" style="margin-bottom: 24px; padding: 18px 22px; border: 1.5px solid var(--border-strong);">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-            <strong style="font-size: 14px; display: flex; align-items: center; gap: 8px; color: #4a3812;">
+            <strong style="font-size: 14px; display: flex; align-items: center; gap: 8px; color: var(--ink-heading);">
                 <i data-lucide="server" style="width: 16px; height: 16px; color: var(--gold);"></i> <span data-bn="লাইভ ইনফ্রাস্ট্রাকচার ও সার্ভিস পালস (System Health)" data-en="Live Infrastructure & Service Pulse (System Health)">লাইভ ইনফ্রাস্ট্রাকচার ও সার্ভিস পালস (System Health)</span>
             </strong>
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -99,11 +99,31 @@
         </div>
     </div>
 
+    <!-- Real-time Gemini API Key Usage Tracker Card -->
+    <div class="card" style="padding: 20px 24px; margin-bottom: 24px; background: var(--surface-2); border: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i data-lucide="key" style="color: var(--primary); width: 22px; height: 22px;"></i>
+                <div>
+                    <h3 style="margin: 0; font-size: 16px;">
+                        <span data-bn="Gemini API কী ব্যবহার ট্র্যাকার" data-en="Gemini API Key Usage Tracker">Gemini API কী ব্যবহার ট্র্যাকার</span>
+                    </h3>
+                    <span class="muted tiny" data-bn="প্রতিটি কী-এর দৈনিক কোটার বিপরীতে ব্যবহারের পরিমাণ (প্যাসিফিক মধ্যরাতে রিসেট)" data-en="Per-key usage against its daily quota (resets at Pacific midnight)">প্রতিটি কী-এর দৈনিক কোটার বিপরীতে ব্যবহারের পরিমাণ (প্যাসিফিক মধ্যরাতে রিসেট)</span>
+                </div>
+            </div>
+            <span id="gemini-keys-summary-badge" class="badge badge-success" style="font-size: 13px; font-weight: 700;">— / — keys available</span>
+        </div>
+
+        <div id="gemini-keys-list" style="display: flex; flex-direction: column; gap: 10px; margin-top: 6px;">
+            <span class="muted tiny" data-bn="লোড হচ্ছে..." data-en="Loading...">লোড হচ্ছে...</span>
+        </div>
+    </div>
+
     <!-- 2. Operational KPI Cards -->
     <div class="grid grid-4" style="margin-bottom: 24px;">
         <div class="card kpi">
             <span class="k-label" data-bn="সনদ যাচাই অপেক্ষমান" data-en="Verifications Waiting"><i data-lucide="user-check" aria-hidden="true"></i>সনদ যাচাই অপেক্ষমান</span>
-            <span class="k-num" style="color: #92743a;" data-bn="২" data-en="2">২</span>
+            <span class="k-num" style="color: var(--gold);" data-bn="২" data-en="2">২</span>
             <span class="k-sub" data-bn="বাংলাদেশ বার কাউন্সিল আইনজীবী আবেদন" data-en="Bar Council Advocate Applications">বাংলাদেশ বার কাউন্সিল আইনজীবী আবেদন</span>
         </div>
         <div class="card kpi">
@@ -151,7 +171,7 @@
                         {
                             <tr style="border-bottom: 1px solid var(--border-soft);">
                                 <td style="padding: 10px 10px; font-weight: 600;">@app.ApplicantName</td>
-                                <td style="padding: 10px 10px; font-family: monospace; font-weight: 700; color: #4a3812;">@app.BarRegNo</td>
+                                <td style="padding: 10px 10px; font-family: monospace; font-weight: 700; color: var(--ink-heading);">@app.BarRegNo</td>
                                 <td style="padding: 10px 10px; font-size: 13px; color: var(--ink-2);">@app.AppliedDate</td>
                                 <td style="padding: 10px 10px; text-align: right;">
                                     <div style="display: inline-flex; gap: 6px;">
@@ -229,7 +249,7 @@
             <div class="card" style="padding: 18px 22px; background: rgba(146, 116, 56, 0.06); border: 1px dashed var(--gold);">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <strong style="font-size: 14px; color: #4a3812; display: block;"><i data-lucide="alert-triangle" style="width: 15px; height: 15px; display: inline;"></i> <span data-bn="রেট লিমিট ও ব্যাকলগ মনিটর" data-en="Rate Limits & Quota Monitor">রেট লিমিট ও ব্যাকলগ মনিটর</span></strong>
+                        <strong style="font-size: 14px; color: var(--ink-heading); display: block;"><i data-lucide="alert-triangle" style="width: 15px; height: 15px; display: inline;"></i> <span data-bn="রেট লিমিট ও ব্যাকলগ মনিটর" data-en="Rate Limits & Quota Monitor">রেট লিমিট ও ব্যাকলগ মনিটর</span></strong>
                         <span class="muted tiny" data-bn="গুগল এআই স্টুডিও ফ্রি-টিয়ার কোটা স্বাস্থ্য স্বাভাবিক (১৫ আরপিএম নিরাপদ)" data-en="Google AI Studio quota healthy (15 RPM safe limit)">গুগল এআই স্টুডিও ফ্রি-টিয়ার কোটা স্বাস্থ্য স্বাভাবিক (১৫ আরপিএম নিরাপদ)</span>
                     </div>
                     <span class="badge badge-success" data-bn="কোটা নিরাপদ" data-en="Quota Safe">কোটা নিরাপদ</span>
@@ -329,6 +349,57 @@
 
         updateEmbeddingProgress();
         setInterval(updateEmbeddingProgress, 2500);
+    })();
+
+    (function () {
+        function fmtParkedUntil(iso, lang) {
+            if (!iso) return '';
+            var d = new Date(iso);
+            var time = d.toLocaleTimeString(lang === 'en' ? 'en-US' : 'bn-BD', { hour: '2-digit', minute: '2-digit' });
+            return lang === 'en' ? ('cooling down until ' + time) : ('পুনরায় সক্রিয় হবে ' + time + ' এ');
+        }
+
+        async function updateGeminiKeyStatus() {
+            try {
+                const res = await fetch('/Admin/GeminiKeyStatus');
+                if (!res.ok) return;
+                const data = await res.json();
+                var lang = (localStorage.getItem('mkt-lang') || 'bn');
+
+                const summaryBadge = document.getElementById('gemini-keys-summary-badge');
+                if (summaryBadge) {
+                    summaryBadge.textContent = lang === 'en'
+                        ? `${data.availableKeys} / ${data.totalKeys} keys available`
+                        : `${data.totalKeys}টির মধ্যে ${data.availableKeys}টি কী সচল`;
+                    summaryBadge.className = 'badge ' + (data.exhaustedKeys === 0 ? 'badge-success' : (data.availableKeys > 0 ? 'badge-gold' : 'badge-danger'));
+                }
+
+                const list = document.getElementById('gemini-keys-list');
+                if (list && Array.isArray(data.keys)) {
+                    list.innerHTML = data.keys.map(function (k) {
+                        var barColor = k.isParked ? '#dc2626' : (k.percentage >= 80 ? '#d97706' : '#16a34a');
+                        var statusBadge = k.isParked
+                            ? `<span class="badge badge-danger" style="font-size: 11px;">${lang === 'en' ? 'Cooling down' : 'বিরতিতে'}</span>`
+                            : '';
+                        var parkedNote = k.isParked ? `<span class="muted tiny" style="margin-left: 6px;">${fmtParkedUntil(k.parkedUntilUtc, lang)}</span>` : '';
+                        return `
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span style="width: 56px; font-size: 12.5px; font-weight: 600; flex-shrink: 0;">${k.label}</span>
+                                <div style="flex: 1; height: 10px; background: var(--surface-3, #e2d9cb); border-radius: 6px; overflow: hidden;">
+                                    <div style="width: ${k.percentage}%; height: 100%; background: ${barColor}; transition: width 0.4s ease;"></div>
+                                </div>
+                                <span style="font-size: 12px; color: var(--ink-2); width: 130px; text-align: right; flex-shrink: 0;">${k.requestsToday.toLocaleString()} / ${k.dailyLimit.toLocaleString()} (${k.percentage}%)</span>
+                                ${statusBadge}${parkedNote}
+                            </div>`;
+                    }).join('');
+                }
+            } catch (e) {
+                console.error('Failed to update Gemini key status:', e);
+            }
+        }
+
+        updateGeminiKeyStatus();
+        setInterval(updateGeminiKeyStatus, 5000);
     })();
 </script>
 }
