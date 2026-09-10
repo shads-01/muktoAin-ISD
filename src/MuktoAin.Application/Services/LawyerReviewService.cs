@@ -202,6 +202,42 @@ public class LawyerReviewService
         return true;
     }
 
+    // History = every decision this lawyer has submitted, newest first.
+    // decisionFilter: null/"All" | "Approved" | "EditedApproved" | "Rejected".
+    // from/to bound ReviewedAt (inclusive) when given.
+    public async Task<IReadOnlyList<ReviewHistoryItemDto>> GetHistoryAsync(
+        int lawyerProfileId, string? decisionFilter = null, DateTime? from = null, DateTime? to = null)
+    {
+        var reviews = (await _reviewRepo.GetAllAsync())
+            .Where(r => r.LawyerProfileId == lawyerProfileId);
+
+        if (!string.IsNullOrWhiteSpace(decisionFilter) && decisionFilter != "All"
+            && Enum.TryParse<ReviewDecision>(decisionFilter, out var decision))
+            reviews = reviews.Where(r => r.Decision == decision);
+
+        if (from.HasValue)
+            reviews = reviews.Where(r => r.ReviewedAt >= from.Value);
+        if (to.HasValue)
+            reviews = reviews.Where(r => r.ReviewedAt <= to.Value);
+
+        var result = new List<ReviewHistoryItemDto>();
+        foreach (var r in reviews.OrderByDescending(r => r.ReviewedAt))
+        {
+            var d = await _docRepo.GetByIdAsync(r.DocumentId);
+            if (d == null) continue;
+            var c = await _caseRepo.GetByIdAsync(d.CaseId);
+            if (c == null) continue;
+            var category = await _categoryRepo.GetByIdAsync(c.CategoryId);
+            var district = await _districtRepo.GetByIdAsync(c.DistrictId);
+
+            result.Add(new ReviewHistoryItemDto(
+                r.ReviewId, r.DocumentId, c.CaseId, SafeDecrypt(c.Title),
+                category?.Name ?? "", district?.Name ?? "", r.Decision, r.Comments, r.ReviewedAt, d.VersionNo,
+                d.ContentFinal ?? d.ContentDraft));
+        }
+        return result;
+    }
+
     private async Task _documentUpdateAsync(GeneratedDocument d, DocumentStatus status, string? edited)
     {
         // Mirrors DocumentService.UpdateStatusAsync semantics (verified):

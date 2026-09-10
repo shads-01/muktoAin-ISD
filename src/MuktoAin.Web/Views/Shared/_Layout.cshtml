@@ -95,6 +95,8 @@
                     @if (isVerifiedLawyer)
                     {
                         <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i>রিভিউ কিউ</a>
+                        <a asp-controller="Lawyer" asp-action="History"><i data-lucide="history"></i>ইতিহাস</a>
+                        <a asp-controller="Lawyer" asp-action="Payments"><i data-lucide="wallet"></i>পেমেন্ট</a>
                     }
                     else
                     {
@@ -186,6 +188,8 @@
                 @if (isVerifiedLawyer)
                 {
                     <a asp-controller="Lawyer" asp-action="Queue"><i data-lucide="file-check-2"></i> রিভিউ কিউ</a>
+                    <a asp-controller="Lawyer" asp-action="History"><i data-lucide="history"></i> ইতিহাস</a>
+                    <a asp-controller="Lawyer" asp-action="Payments"><i data-lucide="wallet"></i> পেমেন্ট</a>
                 }
                 else
                 {

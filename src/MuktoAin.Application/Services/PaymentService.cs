@@ -18,14 +18,14 @@ public class PaymentService
     private readonly IRepository<PaymentOrder> _orderRepo;
     private readonly IRepository<PayoutRequest> _payoutRepo;
     private readonly IRepository<LawyerProfile> _lawyerRepo;
-    private readonly IRepository<Case> _caseRepo;
+    private readonly ICaseRepository _caseRepo;
     private readonly UserManager<User> _userManager;
 
     public PaymentService(
         IRepository<PaymentOrder> orderRepo,
         IRepository<PayoutRequest> payoutRepo,
         IRepository<LawyerProfile> lawyerRepo,
-        IRepository<Case> caseRepo,
+        ICaseRepository caseRepo,
         UserManager<User> userManager)
     {
         _orderRepo = orderRepo;
@@ -38,7 +38,12 @@ public class PaymentService
     public async Task<PaymentOrder> CreateHonorariumOrderAsync(
         int caseId, int? userId, decimal amount)
     {
-        var c = await _caseRepo.GetByIdAsync(caseId)
+        // GetWithDocumentsAsync (not the generic GetByIdAsync) -- Documents
+        // must be eager-loaded so AssignedLawyerProfileId below actually
+        // resolves; the plain FindAsync-backed GetByIdAsync always leaves
+        // Documents empty, silently orphaning every honorarium payment from
+        // the lawyer who reviewed it.
+        var c = await _caseRepo.GetWithDocumentsAsync(caseId)
                 ?? throw new ArgumentException("Case not found");
 
         var commission = Math.Round(amount * DefaultCommissionRate, 2);

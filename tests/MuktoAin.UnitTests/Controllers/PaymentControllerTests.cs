@@ -26,7 +26,7 @@ public class PaymentControllerTests
             _orderRepo.Object,
             Mock.Of<IRepository<PayoutRequest>>(),
             Mock.Of<IRepository<LawyerProfile>>(),
-            Mock.Of<IRepository<Case>>(),
+            Mock.Of<ICaseRepository>(),
             NewUserManager());
 
         _controller = new PaymentController(paymentService, _orderRepo.Object, Mock.Of<ILogger<PaymentController>>());
