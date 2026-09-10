@@ -1,8 +1,10 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
+using MuktoAin.Domain.Interfaces.Services;
 using MuktoAin.Web.ViewModels;
 
 namespace MuktoAin.Web.Controllers;
@@ -11,16 +13,19 @@ public class DocumentController : Controller
 {
     private readonly IRepository<GeneratedDocument>? _docRepo;
     private readonly DocumentService? _documentService;
+    private readonly IDocumentTranslationService? _translationService;
     private readonly ILogger<DocumentController> _logger;
 
     public DocumentController(
         ILogger<DocumentController> logger,
         IRepository<GeneratedDocument>? docRepo = null,
-        DocumentService? documentService = null)
+        DocumentService? documentService = null,
+        IDocumentTranslationService? translationService = null)
     {
         _logger = logger;
         _docRepo = docRepo;
         _documentService = documentService;
+        _translationService = translationService;
     }
 
     [HttpGet]
@@ -65,6 +70,52 @@ public class DocumentController : Controller
         // Mock fallback for prototype / review flow demonstration
         vm = GetMockDocument(id);
         return View(vm);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Translate(int id, string lang)
+    {
+        if (id <= 0)
+            return BadRequest(new { error = "Invalid document id." });
+
+        if (!string.Equals(lang, "bn", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(lang, "en", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { error = "Unsupported language." });
+
+        if (_docRepo == null || _translationService == null)
+            return StatusCode(503, new { error = "Translation service unavailable." });
+
+        GeneratedDocument? doc;
+        try
+        {
+            doc = await _docRepo.GetByIdAsync(id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load document {DocumentId} for translation", id);
+            return StatusCode(503, new { error = "Translation service unavailable." });
+        }
+
+        if (doc == null)
+            return NotFound();
+
+        var content = doc.ContentFinal ?? doc.ContentDraft;
+        var sourceLanguage = Regex.IsMatch(content, @"\p{IsBengali}") ? "bn" : "en";
+        var targetLanguage = lang.ToLowerInvariant();
+
+        if (string.Equals(sourceLanguage, targetLanguage, StringComparison.OrdinalIgnoreCase))
+            return Ok(new { content, isTranslated = false, disclaimer = (string?)null });
+
+        try
+        {
+            var result = await _translationService.GetOrTranslateAsync(doc.DocumentId, content, sourceLanguage, targetLanguage);
+            return Ok(new { content = result.Content, isTranslated = result.IsTranslated, disclaimer = result.Disclaimer });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Translation failed for document {DocumentId} to {Language}", id, targetLanguage);
+            return StatusCode(502, new { error = "Translation unavailable right now — showing the original." });
+        }
     }
 
     [HttpGet]
