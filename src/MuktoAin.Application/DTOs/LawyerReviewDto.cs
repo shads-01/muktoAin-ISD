@@ -38,3 +38,18 @@ public record SubmitReviewDto(
     string Comments,          // MANDATORY for every decision; rejection shows to citizen
     string? EditedContent    // required when Decision == EditedApproved
 );
+
+// "What did I review" history row -- one per LawyerReview, newest first.
+public record ReviewHistoryItemDto(
+    int ReviewId,
+    int DocumentId,
+    int CaseId,
+    string CaseTitle,
+    string CategoryName,
+    string DistrictName,
+    ReviewDecision Decision,
+    string Comments,
+    DateTime ReviewedAt,
+    int VersionNo,
+    string DocumentText // ContentFinal if approved, else ContentDraft (what was rejected)
+);

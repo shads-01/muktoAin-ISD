@@ -169,3 +169,40 @@ public class LawyerQueueItemViewModel
     public int WaitingHours { get; set; }
     public bool CanOpen { get; set; }
 }
+
+public class LawyerHistoryViewModel
+{
+    public string LawyerName { get; set; } = string.Empty;
+    public string BarRegistrationNumber { get; set; } = string.Empty;
+    public string ActiveFilter { get; set; } = "All";
+    public string? FromDate { get; set; }
+    public string? ToDate { get; set; }
+    public string Sort { get; set; } = "date_desc";
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+    public int TotalCount { get; set; }
+    public List<LawyerHistoryItemViewModel> Items { get; set; } = new();
+}
+
+public class LawyerHistoryItemViewModel
+{
+    public int ReviewId { get; set; }
+    public int DocumentId { get; set; }
+    public int CaseId { get; set; }
+    public string CaseTitle { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public string DistrictName { get; set; } = string.Empty;
+    public string Decision { get; set; } = string.Empty;
+    public string Comments { get; set; } = string.Empty;
+    public DateTime ReviewedAt { get; set; }
+    public int VersionNo { get; set; }
+    public string DocumentText { get; set; } = string.Empty;
+}
+
+public class LawyerPaymentsViewModel
+{
+    public string LawyerName { get; set; } = string.Empty;
+    public string BarRegistrationNumber { get; set; } = string.Empty;
+    public decimal Balance { get; set; }
+    public List<EarningRowViewModel> History { get; set; } = new();
+}

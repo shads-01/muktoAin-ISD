@@ -179,9 +179,17 @@
                             <div style="font-size: 13px; color: #4a3812; font-weight: 700;">স্বীকৃত আইনি দায়িত্ব (Human-in-the-Loop Safeguard)</div>
                             <div style="font-size: 12.5px; color: var(--ink-2); margin-top: 4px;">আইনজীবী হিসেবে আপনার প্রতিটি অনুমোদন সরাসরি কোর্ট ও থানার ফরম্যাটে কার্যকর হয়।</div>
                         </div>
-                        <a asp-controller="Lawyer" asp-action="Queue" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            <i data-lucide="file-check-2"></i> আইনজীবী রিভিউ কিউতে যান (Go to Queue)
-                        </a>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <a asp-controller="Lawyer" asp-action="Queue" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <i data-lucide="file-check-2"></i> আইনজীবী রিভিউ কিউতে যান (Go to Queue)
+                            </a>
+                            <a asp-controller="Lawyer" asp-action="History" class="btn btn-outline btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <i data-lucide="history"></i> রিভিউ ইতিহাস (Review History)
+                            </a>
+                            <a asp-controller="Lawyer" asp-action="Payments" class="btn btn-outline btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <i data-lucide="wallet"></i> আয় ও পেমেন্ট (Payments)
+                            </a>
+                        </div>
                     }
                     else
                     {
@@ -239,46 +247,6 @@
                 </form>
             </div>
 
-            @if (Model.EarningsBalance.HasValue)
-            {
-                <div class="card" style="margin-top: 16px">
-                    <div class="row spread wrap" style="align-items: center; gap: 10px">
-                        <div>
-                            <h2 class="section-h" style="margin:0"><i data-lucide="wallet"></i> <span data-bn="আয় (স্যান্ডবক্স)" data-en="Earnings (sandbox)">আয় (স্যান্ডবক্স)</span></h2>
-                            <span class="badge badge-warn sandbox-badge tiny">ডেমো মোড — স্যান্ডবক্স পেমেন্ট</span>
-                        </div>
-                        <div style="font-size: 32px; font-weight: 700">৳@Model.EarningsBalance</div>
-                    </div>
-                    @if (Model.EarningsHistory is { Count: > 0 })
-                    {
-                        <table style="margin-top: 12px">
-                            <thead><tr><th>Case</th><th>Gross</th><th>Commission</th><th>Net</th><th>Paid</th></tr></thead>
-                            <tbody>
-                                @foreach (var e in Model.EarningsHistory)
-                                {
-                                    <tr>
-                                        <td class="mono">CASE-@e.CaseId</td>
-                                        <td>৳@e.Gross</td>
-                                        <td>৳@e.Commission</td>
-                                        <td><b>৳@e.Net</b></td>
-                                        <td class="tiny muted">@e.PaidAt.ToString("d MMM")</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                    else
-                    {
-                        <p class="muted tiny" style="margin-top: 8px" data-bn="এখনো কোনো সম্মানী নেই।" data-en="No honoraria yet.">এখনো কোনো সম্মানী নেই।</p>
-                    }
-                    <form asp-controller="Account" asp-action="RequestPayout" method="post" style="margin-top: 12px">
-                        @Html.AntiForgeryToken()
-                        <button class="btn btn-outline btn-sm" type="submit">
-                            <i data-lucide="banknote"></i> <span data-bn="পরিশোধ চান" data-en="Request payout">পরিশোধ চান</span>
-                        </button>
-                    </form>
-                </div>
-            }
         </div>
     </div>
 </main>

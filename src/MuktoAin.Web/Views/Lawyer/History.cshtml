@@ -1,0 +1,176 @@
+@model LawyerHistoryViewModel
+@using MuktoAin.Web.Controllers
+@{
+    ViewData["Title"] = "রিভিউ ইতিহাস — মুক্ত আইন";
+
+    // Display-only Bengali numeral rendering, same convention as
+    // Case/Track.cshtml's pagination.
+    static string ToBn(int n) => n.ToString()
+        .Select(c => char.IsDigit(c) ? (char)(c - '0' + '০') : c)
+        .Aggregate(new System.Text.StringBuilder(), (sb, c) => sb.Append(c))
+        .ToString();
+
+    var totalPages = Model.PageSize > 0
+        ? (int)Math.Ceiling(Model.TotalCount / (double)Model.PageSize)
+        : 1;
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index" data-bn="হোম" data-en="Home">হোম</a>
+        <span class="sep">/</span>
+        <span data-bn="রিভিউ ইতিহাস" data-en="Review History">রিভিউ ইতিহাস</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="history"></i> FR-13 · FR-23</span>
+        <h1 class="page-title" data-bn="আমার রিভিউ ইতিহাস" data-en="My Review History">আমার রিভিউ ইতিহাস</h1>
+        <p class="page-sub">@Model.LawyerName · Bar #@Model.BarRegistrationNumber</p>
+    </div>
+
+    <!-- Decision filter chips -->
+    <div class="chip-row" style="margin-bottom: 12px">
+        @foreach (var f in new[] { "All", "Approved", "EditedApproved", "Rejected" })
+        {
+            <a class="chip chip-sm @(Model.ActiveFilter == f ? "active" : "")"
+               asp-action="History" asp-route-decision="@f" asp-route-from="@Model.FromDate" asp-route-to="@Model.ToDate" asp-route-sort="@Model.Sort">
+                @(f switch {
+                    "All" => "সকল / All",
+                    "Approved" => "অনুমোদিত / Approved",
+                    "EditedApproved" => "সম্পাদিত-অনুমোদিত / Edited",
+                    _ => "প্রত্যাখ্যাত / Rejected"
+                })
+            </a>
+        }
+    </div>
+
+    <!-- Date range + sort filter -->
+    <form method="get" asp-action="History" class="card" style="margin-bottom: 16px; padding: 14px; display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+        <input type="hidden" name="decision" value="@Model.ActiveFilter" />
+        <div class="form-group" style="margin: 0">
+            <label class="form-label tiny">শুরু / From</label>
+            <input type="date" name="from" class="form-control" value="@Model.FromDate" style="min-height: 36px; padding: 7px 10px; font-size: 13.5px;" />
+        </div>
+        <div class="form-group" style="margin: 0">
+            <label class="form-label tiny">শেষ / To</label>
+            <input type="date" name="to" class="form-control" value="@Model.ToDate" style="min-height: 36px; padding: 7px 10px; font-size: 13.5px;" />
+        </div>
+        <div class="form-group" style="margin: 0">
+            <label class="form-label tiny">সাজান / Sort by</label>
+            <select name="sort" class="form-control" style="min-height: 36px; padding: 7px 10px; font-size: 13.5px;" onchange="this.form.submit()">
+                @if (Model.Sort == "date_desc") { <option value="date_desc" selected>Newest first</option> } else { <option value="date_desc">Newest first</option> }
+                @if (Model.Sort == "date_asc") { <option value="date_asc" selected>Oldest first</option> } else { <option value="date_asc">Oldest first</option> }
+                @if (Model.Sort == "case_asc") { <option value="case_asc" selected>Case title A-Z</option> } else { <option value="case_asc">Case title A-Z</option> }
+            </select>
+        </div>
+        <button type="submit" class="btn btn-outline btn-sm"><i data-lucide="filter"></i> Filter</button>
+        @if (!string.IsNullOrEmpty(Model.FromDate) || !string.IsNullOrEmpty(Model.ToDate))
+        {
+            <a class="btn btn-quiet btn-sm" asp-action="History" asp-route-decision="@Model.ActiveFilter" asp-route-sort="@Model.Sort">Clear dates</a>
+        }
+    </form>
+
+    @if (!Model.Items.Any())
+    {
+        <div class="empty-state">
+            <div class="item-ico"><i data-lucide="inbox"></i></div>
+            <h3 data-bn="এই ফিল্টারে কোনো রিভিউ নেই।" data-en="No reviews match this filter.">এই ফিল্টারে কোনো রিভিউ নেই।</h3>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Case</th>
+                        <th>Category</th>
+                        <th>Decision</th>
+                        <th>Comment</th>
+                        <th>Version</th>
+                        <th>Reviewed</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var h in Model.Items)
+                    {
+                        <tr>
+                            <td class="mono">CASE-@h.CaseId<br /><small class="muted">@h.CaseTitle</small></td>
+                            <td>@h.CategoryName</td>
+                            <td>
+                                @{
+                                    var badgeClass = h.Decision switch
+                                    {
+                                        "Approved" => "badge-final",
+                                        "EditedApproved" => "badge-review",
+                                        _ => "badge-rejected"
+                                    };
+                                }
+                                <span class="badge @badgeClass">@h.Decision</span>
+                            </td>
+                            <td class="tiny">@h.Comments</td>
+                            <td>v@(h.VersionNo)</td>
+                            <td class="tiny muted">@h.ReviewedAt.ToString("d MMM yyyy, HH:mm")</td>
+                            <td>
+                                <button class="btn btn-outline btn-sm" type="button" data-open-modal="#hist-@h.ReviewId">
+                                    <i data-lucide="file-text"></i> <span data-bn="বিস্তারিত" data-en="Details">বিস্তারিত</span>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (totalPages > 1)
+            {
+                <div class="pagination" style="margin-top: 12px">
+                    @if (Model.Page > 1)
+                    {
+                        <a asp-action="History" asp-route-decision="@Model.ActiveFilter" asp-route-from="@Model.FromDate" asp-route-to="@Model.ToDate" asp-route-sort="@Model.Sort" asp-route-page="@(Model.Page - 1)"><i data-lucide="chevron-left"></i></a>
+                    }
+                    @for (var p = 1; p <= totalPages; p++)
+                    {
+                        @if (p == Model.Page)
+                        {
+                            <button type="button" class="active" data-page="@p">@ToBn(p)</button>
+                        }
+                        else
+                        {
+                            <a asp-action="History" asp-route-decision="@Model.ActiveFilter" asp-route-from="@Model.FromDate" asp-route-to="@Model.ToDate" asp-route-sort="@Model.Sort" asp-route-page="@p">@ToBn(p)</a>
+                        }
+                    }
+                    @if (Model.Page < totalPages)
+                    {
+                        <a asp-action="History" asp-route-decision="@Model.ActiveFilter" asp-route-from="@Model.FromDate" asp-route-to="@Model.ToDate" asp-route-sort="@Model.Sort" asp-route-page="@(Model.Page + 1)"><i data-lucide="chevron-right"></i></a>
+                    }
+                </div>
+            }
+        </div>
+    }
+</main>
+
+<!-- Review detail modals (one per row) -->
+@foreach (var h in Model.Items)
+{
+    <div class="modal-backdrop" id="hist-@h.ReviewId" role="dialog" aria-modal="true">
+        <div class="modal reading-modal">
+            <div class="modal-handle"></div>
+            <div class="modal-head">
+                <div>
+                    <span class="kicker">CASE-@h.CaseId · DOC-@h.DocumentId · v@(h.VersionNo)</span>
+                    <h3>@h.CaseTitle</h3>
+                </div>
+                <button class="icon-btn" type="button" data-close-modal aria-label="Close"><i data-lucide="x"></i></button>
+            </div>
+            <p class="tiny muted" style="margin: 0 0 10px">
+                @h.CategoryName · @h.DistrictName · পর্যালোচনা: @h.ReviewedAt.ToString("d MMM yyyy, HH:mm")
+            </p>
+            <p class="tiny" style="margin: 0 0 10px"><b>মন্তব্য / Comments:</b> @h.Comments</p>
+            <label class="form-label tiny">পর্যালোচিত দলিল / Reviewed document text</label>
+            <div class="serif md-content" style="max-height: 50vh; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-btn); padding: 14px 16px; background: var(--surface-2); font-size: 15px;">
+                @MarkdownText.ToHtml(h.DocumentText)
+            </div>
+        </div>
+    </div>
+}

@@ -51,10 +51,6 @@ public class ProfileViewModel
     // Role-specific activity metrics
     public int TotalCasesSubmitted { get; set; }
     public int TotalReviewsCompleted { get; set; }
-
-    // FR-24 (lawyer variant)
-    public decimal? EarningsBalance { get; set; }
-    public List<EarningRowViewModel>? EarningsHistory { get; set; }
 }
 
 public class EarningRowViewModel

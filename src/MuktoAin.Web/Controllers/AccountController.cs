@@ -15,20 +15,17 @@ public class AccountController : Controller
     private readonly SignInManager<User> _signInManager;
     private readonly UserManager<User> _userManager;
     private readonly IRepository<LawyerProfile> _lawyerProfileRepo;
-    private readonly PaymentService _paymentService;
     private readonly ILogger<AccountController> _logger;
 
     public AccountController(
         SignInManager<User> signInManager,
         UserManager<User> userManager,
         IRepository<LawyerProfile> lawyerProfileRepo,
-        PaymentService paymentService,
         ILogger<AccountController> logger)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _lawyerProfileRepo = lawyerProfileRepo;
-        _paymentService = paymentService;
         _logger = logger;
     }
 
@@ -189,25 +186,6 @@ public class AccountController : Controller
                 vm.VerificationStatus = lawyerProfile.VerificationStatus.ToString();
                 vm.VerifiedAt = lawyerProfile.VerifiedAt;
                 vm.TotalReviewsCompleted = lawyerProfile.Reviews?.Count ?? 0;
-
-                // Earnings card is for APPROVED lawyers only (redesign B6-5b):
-                // pending/rejected lawyers can have no honoraria, so a ৳0 card
-                // would be noise on their Status-oriented profile.
-                if (lawyerProfile.VerificationStatus == VerificationStatus.Approved)
-                {
-                    var earnings = await _paymentService.GetLawyerEarningsAsync(lawyerProfile.LawyerProfileId);
-                    vm.EarningsBalance = earnings.Balance;
-                    vm.EarningsHistory = earnings.History.Select(h => new EarningRowViewModel
-                    {
-                        PaymentOrderId = h.PaymentOrderId,
-                        CaseId = h.CaseId,
-                        Gross = h.Gross,
-                        Commission = h.Commission,
-                        Net = h.Net,
-                        PaidAt = h.PaidAt
-                    }).ToList();
-                    ViewData["LawyerProfileId"] = lawyerProfile.LawyerProfileId;
-                }
             }
         }
 
@@ -298,30 +276,6 @@ public class AccountController : Controller
             TempData["ErrorEn"] = $"Password change failed: {firstErr}";
         }
 
-        return RedirectToAction(nameof(Profile));
-    }
-
-    [HttpPost]
-    [Authorize]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RequestPayout()
-    {
-        var userId = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var id) ? id : (int?)null;
-        if (userId == null) return RedirectToAction("Login");
-        var profiles = await _lawyerProfileRepo.GetAllAsync();
-        var profile = profiles.FirstOrDefault(p => p.UserId == userId);
-        if (profile == null) return Forbid();
-
-        var earnings = await _paymentService.GetLawyerEarningsAsync(profile.LawyerProfileId);
-        if (earnings.Balance <= 0)
-        {
-            TempData["Error"] = "পরিশোধযোগ্য ব্যালেন্স নেই।";
-            TempData["ErrorEn"] = "No payable balance.";
-            return RedirectToAction(nameof(Profile));
-        }
-        await _paymentService.RequestPayoutAsync(profile.LawyerProfileId, earnings.Balance);
-        TempData["Success"] = "পরিশোধের অনুরোধ জমা হয়েছে (স্যান্ডবক্স)।";
-        TempData["SuccessEn"] = "Payout request submitted (sandbox).";
         return RedirectToAction(nameof(Profile));
     }
 

@@ -17,17 +17,20 @@ public class LawyerController : Controller
 {
     private readonly LawyerReviewService _reviewService;
     private readonly LawyerVerificationService _verificationService;
+    private readonly PaymentService _paymentService;
     private readonly IRepository<LawyerProfile> _profileRepo;
     private readonly UserManager<User> _userManager;
 
     public LawyerController(
         LawyerReviewService reviewService,
         LawyerVerificationService verificationService,
+        PaymentService paymentService,
         IRepository<LawyerProfile> profileRepo,
         UserManager<User> userManager)
     {
         _reviewService = reviewService;
         _verificationService = verificationService;
+        _paymentService = paymentService;
         _profileRepo = profileRepo;
         _userManager = userManager;
     }
@@ -199,5 +202,105 @@ public class LawyerController : Controller
         TempData["Success"] = "পর্যালোচনা সম্পন্ন — পরবর্তী নথিতে যাচ্ছেন।";
         TempData["SuccessEn"] = "Review saved — advancing to the next document.";
         return RedirectToAction(nameof(Queue));
+    }
+
+    private const int HistoryPageSize = 20;
+
+    // "What did I review" — every decision this lawyer has submitted, newest
+    // first. Filter chips: All/Approved/EditedApproved/Rejected + date range +
+    // sort (date_desc default | date_asc | case_asc).
+    [HttpGet]
+    public async Task<IActionResult> History(string? decision, string? from, string? to, string? sort, int page = 1)
+    {
+        var profile = await MyProfileAsync();
+        if (profile == null) return NotFound();
+
+        DateTime? fromDate = DateTime.TryParse(from, out var f) ? f.Date : null;
+        DateTime? toDate = DateTime.TryParse(to, out var t) ? t.Date.AddDays(1).AddTicks(-1) : null;
+
+        var history = await _reviewService.GetHistoryAsync(profile.LawyerProfileId, decision, fromDate, toDate);
+        // Service already returns newest-first; only re-sort for the other options.
+        IEnumerable<ReviewHistoryItemDto> sorted = sort switch
+        {
+            "date_asc" => history.OrderBy(h => h.ReviewedAt),
+            "case_asc" => history.OrderBy(h => h.CaseTitle, StringComparer.OrdinalIgnoreCase),
+            _ => history
+        };
+
+        var vm = new LawyerHistoryViewModel
+        {
+            LawyerName = (await _userManager.FindByIdAsync(profile.UserId.ToString()))?.FullName ?? "",
+            BarRegistrationNumber = profile.BarRegistrationNumber,
+            ActiveFilter = decision ?? "All",
+            FromDate = from,
+            ToDate = to,
+            Sort = sort ?? "date_desc",
+            TotalCount = history.Count
+        };
+        vm.Page = Math.Max(1, Math.Min(page, Math.Max((int)Math.Ceiling(vm.TotalCount / (double)HistoryPageSize), 1)));
+        vm.Items = sorted.Skip((vm.Page - 1) * HistoryPageSize).Take(HistoryPageSize)
+            .Select(h => new LawyerHistoryItemViewModel
+            {
+                ReviewId = h.ReviewId,
+                DocumentId = h.DocumentId,
+                CaseId = h.CaseId,
+                CaseTitle = h.CaseTitle,
+                CategoryName = h.CategoryName,
+                DistrictName = h.DistrictName,
+                Decision = h.Decision.ToString(),
+                Comments = h.Comments,
+                ReviewedAt = h.ReviewedAt,
+                VersionNo = h.VersionNo,
+                DocumentText = h.DocumentText
+            }).ToList();
+
+        return View(vm);
+    }
+
+    // FR-24 (lawyer variant): balance + honorarium history, moved off the
+    // shared Account/Profile page into its own lawyer-scoped route.
+    [HttpGet]
+    public async Task<IActionResult> Payments()
+    {
+        var profile = await MyProfileAsync();
+        if (profile == null) return NotFound();
+
+        var earnings = await _paymentService.GetLawyerEarningsAsync(profile.LawyerProfileId);
+        var vm = new LawyerPaymentsViewModel
+        {
+            LawyerName = (await _userManager.FindByIdAsync(profile.UserId.ToString()))?.FullName ?? "",
+            BarRegistrationNumber = profile.BarRegistrationNumber,
+            Balance = earnings.Balance,
+            History = earnings.History.Select(h => new EarningRowViewModel
+            {
+                PaymentOrderId = h.PaymentOrderId,
+                CaseId = h.CaseId,
+                Gross = h.Gross,
+                Commission = h.Commission,
+                Net = h.Net,
+                PaidAt = h.PaidAt
+            }).ToList()
+        };
+        return View(vm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RequestPayout()
+    {
+        var profile = await MyProfileAsync();
+        if (profile == null) return NotFound();
+
+        var earnings = await _paymentService.GetLawyerEarningsAsync(profile.LawyerProfileId);
+        if (earnings.Balance <= 0)
+        {
+            TempData["Error"] = "পরিশোধযোগ্য ব্যালেন্স নেই।";
+            TempData["ErrorEn"] = "No payable balance.";
+            return RedirectToAction(nameof(Payments));
+        }
+        await _paymentService.RequestPayoutAsync(profile.LawyerProfileId, earnings.Balance);
+        TempData["Success"] = "পরিশোধের অনুরোধ জমা হয়েছে (স্যান্ডবক্স)।";
+        TempData["SuccessEn"] = "Payout request submitted (sandbox).";
+        return RedirectToAction(nameof(Payments));
     }
 }
