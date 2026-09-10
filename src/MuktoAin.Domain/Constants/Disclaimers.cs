@@ -17,4 +17,13 @@ public static class Disclaimers
     /// </summary>
     public static string ForLanguage(string language) =>
         string.Equals(language, "en", StringComparison.OrdinalIgnoreCase) ? Legal : LegalBangla;
+
+    /// <summary>
+    /// Disclaimer shown alongside an on-demand AI translation of a document,
+    /// naming the original language as the authoritative version.
+    /// </summary>
+    public static string TranslationDisclaimer(string originalLanguage) =>
+        string.Equals(originalLanguage, "en", StringComparison.OrdinalIgnoreCase)
+            ? "AI-translated for convenience — the English version is the authoritative document."
+            : "সুবিধার জন্য এআই দ্বারা অনূদিত — বাংলা সংস্করণটি প্রামাণ্য দলিল।";
 }

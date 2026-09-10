@@ -31,6 +31,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<int>, int>
     public DbSet<CaseActReference> CaseActReferences => Set<CaseActReference>();
     public DbSet<District> Districts => Set<District>();
     public DbSet<GeneratedDocument> GeneratedDocuments => Set<GeneratedDocument>();
+    public DbSet<DocumentTranslation> DocumentTranslations => Set<DocumentTranslation>();
     public DbSet<LawyerProfile> LawyerProfiles => Set<LawyerProfile>();
     public DbSet<LawyerReview> LawyerReviews => Set<LawyerReview>();
     public DbSet<ScenarioMapping> ScenarioMappings => Set<ScenarioMapping>();
