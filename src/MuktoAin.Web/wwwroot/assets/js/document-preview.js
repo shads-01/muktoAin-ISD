@@ -9,6 +9,10 @@
   var originalContent = bodyEl.getAttribute("data-original-content") || bodyEl.textContent;
   var cache = {}; // lang -> { content, isTranslated, disclaimer }
   var inFlight = false;
+  var latestRequestedLang = null;
+
+  // Detect the document's source language by checking for Bengali Unicode characters
+  var documentLanguage = /[ঀ-৿]/.test(originalContent) ? "bn" : "en";
 
   function showOriginal() {
     bodyEl.textContent = originalContent;
@@ -36,14 +40,26 @@
   }
 
   function applyDocumentLanguage(lang) {
-    if (!documentId || inFlight) return;
+    if (!documentId) return;
 
-    if (cache[lang]) {
-      if (cache[lang].isOriginal) showOriginal();
-      else showTranslated(cache[lang]);
+    // Record this as the latest requested language — all paths (shortcut, cache, fetch) must update this
+    // so stale fetch responses can correctly detect they've been superseded
+    latestRequestedLang = lang;
+
+    // Finding 1: If the requested language is the document's source language, show original immediately (no network call)
+    if (lang === documentLanguage) {
+      showOriginal();
       return;
     }
 
+    // Finding 3: Check cache before inFlight gate — cached translations should never be blocked by unrelated in-flight requests
+    if (cache[lang]) {
+      showTranslated(cache[lang]);
+      return;
+    }
+
+    // If another fetch is already in flight, don't start a new one
+    if (inFlight) return;
     inFlight = true;
     fetch("/Document/" + encodeURIComponent(documentId) + "/Translate?lang=" + encodeURIComponent(lang), {
       method: "POST"
@@ -53,16 +69,22 @@
         return res.json();
       })
       .then(function (data) {
-        if (data.isTranslated === false) {
-          cache[lang] = { isOriginal: true };
-          showOriginal();
-        } else {
-          cache[lang] = data;
-          showTranslated(data);
+        // Finding 3: Only apply this response if it's still the latest requested language
+        if (latestRequestedLang === lang) {
+          if (data.isTranslated === false) {
+            cache[lang] = { isOriginal: true };
+            showOriginal();
+          } else {
+            cache[lang] = data;
+            showTranslated(data);
+          }
         }
       })
       .catch(function () {
-        showError();
+        // Finding 3: Only show error if this was the latest requested language
+        if (latestRequestedLang === lang) {
+          showError();
+        }
       })
       .finally(function () {
         inFlight = false;
