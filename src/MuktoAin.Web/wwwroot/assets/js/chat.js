@@ -28,6 +28,22 @@
         el.textContent = curLang() === "en" ? en : bn;
         return el;
     }
+    // Blocks below are built via innerHTML strings that hardcode Bangla text
+    // alongside data-bn/data-en attributes (relying on main.js's toggle handler
+    // to fix them up later). Without this, freshly-inserted nodes show Bangla
+    // until the user next clicks a language button. Mirrors main.js's own
+    // [data-bn][data-en] sweep (applyLanguage step 2b), scoped to one subtree.
+    function applyLangToNode(root) {
+        root.querySelectorAll("[data-bn][data-en]").forEach(function (node) {
+            var text = curLang() === "en" ? node.dataset.en : node.dataset.bn;
+            if (node.children.length === 0) {
+                node.textContent = text;
+            } else {
+                var iconEl = node.querySelector("i, svg");
+                node.innerHTML = iconEl ? iconEl.outerHTML + " " + text : text;
+            }
+        });
+    }
 
     // ---------- rendering ----------
 
@@ -46,6 +62,7 @@
         var head = document.createElement("div");
         head.className = "answer-head";
         head.innerHTML = '<h3><span class="avatar"><i data-lucide="scale"></i></span> <span data-bn="আপনার অধিকার" data-en="Your rights">আপনার অধিকার</span></h3>';
+        applyLangToNode(head);
         wrap.appendChild(head);
 
         // A <div>, not a <p>: marked's output is itself block-level (<p>/<ol>/<ul>),
@@ -137,12 +154,14 @@
             '<div class="item-ico"><i data-lucide="file-text"></i></div>' +
             '<div><b data-bn="এই সমস্যার জন্য দলিল তৈরি করতে পারি" data-en="I can draft a document for this problem">এই সমস্যার জন্য দলিল তৈরি করতে পারি</b><br>' +
             '<span class="muted tiny" data-bn="আইনজীবী-যাচাইকৃত খসড়া — আপনি সম্পাদনা করতে পারবেন" data-en="Lawyer-verified draft — you can edit it">আইনজীবী-যাচাইকৃত খসড়া — আপনি সম্পাদনা করতে পারবেন</span></div>';
+        applyLangToNode(head);
         d.appendChild(head);
         var btn = document.createElement("button");
         btn.className = "btn btn-gold btn-block";
         btn.type = "button";
         btn.style.marginTop = "10px";
         btn.innerHTML = '<i data-lucide="sparkles"></i> <span data-bn="নথি তৈরি করুন" data-en="Generate document">নথি তৈরি করুন</span>';
+        applyLangToNode(btn);
         btn.addEventListener("click", openDraftModal);
         d.appendChild(btn);
         thread.appendChild(d);
@@ -165,6 +184,7 @@
             '<div class="item-ico" style="background:var(--primary-soft); color:var(--primary)"><i data-lucide="alarm-clock"></i></div>' +
             '<div style="flex:1"><b data-bn="আজকের AI সীমা শেষ" data-en="Daily AI limit reached">আজকের AI সীমা শেষ</b><br>' +
             '<small class="muted" data-bn="মাঝরাতে (প্রশান্ত মহাসাগরীয়) রিসেট হবে।" data-en="Resets at midnight Pacific.">মাঝরাতে (প্রশান্ত মহাসাগরীয়) রিসেট হবে।</small></div>';
+        applyLangToNode(d);
         var actions = document.createElement("div");
         actions.className = "row wrap";
         [["/Account/Register", "user-plus", "নিবন্ধন করুন (৩× সীমা)", "Register (3× limit)"],
@@ -186,6 +206,7 @@
         topupBtn.type = "button";
         topupBtn.setAttribute("data-open-modal", "#topup-modal");
         topupBtn.innerHTML = '<i data-lucide="zap"></i> <span data-bn="টপ-আপ করুন (স্যান্ডবক্স)" data-en="Top Up (Sandbox)">টপ-আপ করুন (স্যান্ডবক্স)</span>';
+        applyLangToNode(topupBtn);
         actions.appendChild(topupBtn);
 
         d.appendChild(actions);
@@ -478,6 +499,7 @@
                 } finally {
                     topupSubmit.disabled = false;
                     topupSubmit.innerHTML = '<i data-lucide="credit-card"></i> <span data-bn="টপ-আপ করুন (স্যান্ডবক্স)" data-en="Top Up (Sandbox)">টপ-আপ করুন (স্যান্ডবক্স)</span>';
+                    applyLangToNode(topupSubmit);
                     renderIcons();
                 }
             });
