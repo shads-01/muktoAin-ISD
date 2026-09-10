@@ -459,6 +459,9 @@
       { sel: '.nav-links a[href*="/Admin/Dashboard"], .nav-links a[href="/Admin"]', text: dict["nav-admindash"], icon: "shield" },
       { sel: '.nav-links a[href*="/Admin/Analytics"]', text: dict["nav-analytics"], icon: "bar-chart-3" },
       { sel: '.nav-links a[href*="/Lawyer/Queue"]', text: dict["nav-lawyerqueue"], icon: "file-check-2" },
+      { sel: '.nav-links a[href*="/Lawyer/History"]', text: currentLang === "en" ? "History" : "ইতিহাস", icon: "history" },
+      { sel: '.nav-links a[href*="/Lawyer/Payments"]', text: currentLang === "en" ? "Payments" : "পেমেন্ট", icon: "wallet" },
+      { sel: '.nav-links a[href*="/Lawyer/Status"]', text: currentLang === "en" ? "Verification" : "ভেরিফিকেশন", icon: "badge-check" },
       { sel: '.nav-links a[href*="/Search"]', text: dict["nav-corpus"] || dict["nav-search"], icon: "search" },
       { sel: '.nav-links a[href*="/Category"]', text: dict["nav-categories"], icon: "layout-grid" },
       { sel: '.nav-links a[href*="/Home/About"]', text: dict["nav-about"], icon: "info" },
@@ -494,6 +497,9 @@
       { sel: 'aside.drawer nav a[href*="/Admin/Dashboard"], aside.drawer nav a[href="/Admin"]', text: currentLang === "en" ? "Admin Dashboard" : "অ্যাডমিন ড্যাশবোর্ড", icon: "shield" },
       { sel: 'aside.drawer nav a[href*="/Admin/Analytics"]', text: currentLang === "en" ? "Analytics & Reports" : "অ্যানালিটিক্স ও রিপোর্ট", icon: "bar-chart-3" },
       { sel: 'aside.drawer nav a[href*="/Lawyer/Queue"]', text: currentLang === "en" ? "Lawyer Review Queue" : "আইনজীবী রিভিউ কিউ", icon: "file-check-2" },
+      { sel: 'aside.drawer nav a[href*="/Lawyer/History"]', text: currentLang === "en" ? "Review History" : "রিভিউ ইতিহাস", icon: "history" },
+      { sel: 'aside.drawer nav a[href*="/Lawyer/Payments"]', text: currentLang === "en" ? "Payments" : "আয় ও পেমেন্ট", icon: "wallet" },
+      { sel: 'aside.drawer nav a[href*="/Lawyer/Status"]', text: currentLang === "en" ? "Lawyer Verification" : "আইনজীবী ভেরিফিকেশন", icon: "badge-check" },
       { sel: 'aside.drawer nav a[href*="/Search"]', text: currentLang === "en" ? "Statutes & Corpus" : "আইন ও করপাস", icon: "search" },
       { sel: 'aside.drawer nav a[href*="/Category"]', text: currentLang === "en" ? "Legal Categories" : "আইনি বিভাগসমূহ", icon: "layout-grid" },
       { sel: 'aside.drawer nav a[href*="/Home/About"]', text: currentLang === "en" ? "About & Disclaimer" : "পরিচিতি ও দাবিত্যাগ", icon: "info" },
@@ -954,56 +960,6 @@
         } else if (b.textContent.indexOf("খসড়া") !== -1 || b.textContent.indexOf("Templates") !== -1) {
           b.innerHTML = '<i data-lucide="file-text"></i> ' + dict["cat-badge-draft"];
         }
-      });
-
-    } else if (path.indexOf("/lawyer") !== -1) {
-      // Lawyer Portal
-      var kicker = document.querySelector(".page-head .kicker");
-      if (kicker) kicker.innerHTML = '<i data-lucide="award"></i> ' + (currentLang === "en" ? "Verified Advocate Portal · FR-13" : "সনদপ্রাপ্ত আইনজীবী পোর্টাল · FR-13");
-      var title = document.querySelector(".page-head .page-title");
-      if (title) title.textContent = currentLang === "en" ? "Document Review Queue" : "দলিল পর্যালোচনা কিউ (Review Queue)";
-      var sub = document.querySelector(".page-head .page-sub");
-      if (sub) sub.textContent = currentLang === "en" ? "Review and certify AI-generated drafts to approve final official documents for citizens." : "AI দ্বারা প্রস্তুতকৃত খসড়া দলিল পর্যালোচনা ও সত্যায়ন করে নাগরিকের জন্য চূড়ান্ত PDF অনুমোদন করুন।";
-
-      var badgeBar = document.querySelector(".page-head .badge-final");
-      if (badgeBar) badgeBar.innerHTML = '<i data-lucide="check-circle-2"></i> ' + (currentLang === "en" ? "Bar Verified: DHA-1187" : "বার সনদ যাচাইকৃত: DHA-1187");
-
-      var kpiCards = document.querySelectorAll(".stat-strip .kpi");
-      if (kpiCards.length >= 3) {
-        var k1_lbl = kpiCards[0].querySelector(".k-label");
-        var k1_num = kpiCards[0].querySelector(".k-num");
-        var k1_sub = kpiCards[0].querySelector(".k-sub");
-        if (k1_lbl) k1_lbl.innerHTML = '<i data-lucide="clock"></i> ' + (currentLang === "en" ? "Pending in Queue" : "অপেক্ষমাণ কিউ");
-        if (k1_num) k1_num.textContent = currentLang === "en" ? "3 items" : "৩টি";
-        if (k1_sub) k1_sub.textContent = currentLang === "en" ? "Avg Review Time: 2 hours" : "গড় পর্যালোচনা সময়: ২ ঘণ্টা";
-
-        var k2_lbl = kpiCards[1].querySelector(".k-label");
-        var k2_num = kpiCards[1].querySelector(".k-num");
-        var k2_sub = kpiCards[1].querySelector(".k-sub");
-        if (k2_lbl) k2_lbl.innerHTML = '<i data-lucide="check-check"></i> ' + (currentLang === "en" ? "Your Reviews" : "আপনার পর্যালোচনাসমূহ");
-        if (k2_num) k2_num.textContent = currentLang === "en" ? "28 items" : "২৮টি";
-        if (k2_sub) k2_sub.textContent = currentLang === "en" ? "Completed this month" : "এই মাসে সম্পন্ন";
-
-        var k3_lbl = kpiCards[2].querySelector(".k-label");
-        var k3_num = kpiCards[2].querySelector(".k-num");
-        var k3_sub = kpiCards[2].querySelector(".k-sub");
-        if (k3_lbl) k3_lbl.innerHTML = '<i data-lucide="star"></i> ' + (currentLang === "en" ? "Pro-Bono Hours" : "প্রো-বোনো ঘণ্টা");
-        if (k3_num) k3_num.textContent = currentLang === "en" ? "14.5" : "১৪.৫";
-        if (k3_sub) k3_sub.textContent = currentLang === "en" ? "Legal aid contribution" : "আইনি সহায়তা অবদান";
-      }
-
-      var lawyerThs = document.querySelectorAll("table thead th");
-      if (lawyerThs.length >= 6) {
-        lawyerThs[0].textContent = currentLang === "en" ? "Case Tracking" : "মামলা ট্র্যাকিং";
-        lawyerThs[1].textContent = currentLang === "en" ? "Title & Description" : "শিরোনাম ও বিবরণ";
-        lawyerThs[2].textContent = currentLang === "en" ? "Legal Category" : "আইনি বিভাগ";
-        lawyerThs[3].textContent = currentLang === "en" ? "Submitted At" : "দাখিলের সময়";
-        lawyerThs[4].textContent = currentLang === "en" ? "Status" : "বর্তমান অবস্থা";
-        lawyerThs[5].textContent = currentLang === "en" ? "Action" : "পদক্ষেপ";
-      }
-
-      document.querySelectorAll("table tbody a.btn-primary").forEach(function(btn) {
-        btn.textContent = currentLang === "en" ? "Review Draft →" : "পর্যালোচনা করুন →";
       });
 
     } else if (path.indexOf("/admin/dashboard") !== -1 || path === "/admin" || path === "/admin/") {
