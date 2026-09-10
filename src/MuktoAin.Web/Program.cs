@@ -203,6 +203,9 @@ builder.Services.AddScoped<DocumentGenerator>();
 // A-2.4: Document lifecycle service
 builder.Services.AddScoped<DocumentService>();
 
+// 2026-09-10: on-demand, cached document translation for the preview language toggle
+builder.Services.AddScoped<IDocumentTranslationService, DocumentTranslationService>();
+
 // A-2.5: QuestPDF export (Bangla font). Fonts live in wwwroot/fonts (E-1.3);
 // registered once per process inside PdfExportService (idempotent).
 builder.Services.AddSingleton(sp =>

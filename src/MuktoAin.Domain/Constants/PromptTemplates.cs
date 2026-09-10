@@ -16,6 +16,7 @@ public static class PromptTemplates
         - Only cite sections provided above. Never fabricate citations.
         - Use simple language a non-lawyer can understand.
         - If the provided sections don't cover the problem, say so explicitly.
+        - Return plain prose only — do not use markdown syntax (no **, #, -, backticks).
         - End with: {disclaimer}
         """;
 
@@ -35,6 +36,22 @@ public static class PromptTemplates
         - Use formal Bangladeshi legal-document structure and plain {language}.
         - Leave clearly marked placeholders like [YOUR NAME] for citizen-specific details.
         - If the provided sections don't cover the problem, say so explicitly.
+        - Return plain prose only — do not use markdown syntax (no **, #, -, backticks).
         - End with: {disclaimer}
+        """;
+
+    public const string Translation = """
+        You are a precise legal-document translator.
+        Translate the following legal document text from {sourceLanguage} to {targetLanguage}.
+
+        Rules:
+        - Produce a literal, faithful translation only. Do not add, remove, or reinterpret any legal claim.
+        - Preserve Act names, Section numbers, monetary figures, and dates exactly as written — do not convert, round, or reformat them.
+        - Preserve the original paragraph and section structure.
+        - Do not use markdown syntax (no **, #, -, backticks).
+        - Output ONLY the translated text, with no preamble or explanation.
+
+        Text to translate:
+        {content}
         """;
 }

@@ -79,7 +79,8 @@
             <div class="muted tiny">মুক্ত আইন প্ল্যাটফর্ম সহায়তায় প্রস্তুতকৃত আইনি আবেদনপত্র</div>
         </div>
 
-        <div class="document-preview" style="font-size: 15px; line-height: 1.8; color: var(--ink); white-space: pre-wrap; word-break: break-word;">@displayContent</div>
+        <div id="documentTranslationNotice" class="alert alert-warning card-pad mb-3" style="display:none; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; font-size: 13px;" role="status"></div>
+        <div id="documentPreviewBody" class="document-preview" data-document-id="@Model.DocumentId" data-original-content="@displayContent" style="font-size: 15px; line-height: 1.8; color: var(--ink); white-space: pre-wrap; word-break: break-word;">@displayContent</div>
 
         <!-- Surface 3: Mandatory Document Disclaimer Stamp -->
         <div class="mt-5 pt-3" style="border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); line-height: 1.5;">
@@ -114,3 +115,5 @@
         </div>
     </div>
 </div>
+
+<script src="~/assets/js/document-preview.js"></script>
