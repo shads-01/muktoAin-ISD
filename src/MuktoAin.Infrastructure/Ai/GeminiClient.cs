@@ -37,7 +37,7 @@ public class GeminiClient : IAiService
     private readonly string _generationModel;
     private readonly string _embeddingModel;
     private readonly int? _outputDimensionality;
-    private readonly int _dailyRequestLimitPerKey;
+    private readonly int _generationTokenLimitPerMinute;
     private readonly ResiliencePipeline<HttpResponseMessage> _pipeline;
 
     // Round-robin ring position — advances on EVERY request so quota spend is
@@ -49,13 +49,19 @@ public class GeminiClient : IAiService
     private readonly DateTime[] _parkedUntil;
 
     // Admin dashboard key-usage tracker (display only — does not gate striping):
-    // one counter per key of requests actually SENT today, reset lazily at the
-    // Pacific-midnight day boundary the very next time a request is made after
-    // it passes (mirrors EmbeddingBatchJob's quota-reset convention, but without
-    // needing its own background timer since GeminiClient is a singleton with no
-    // ExecuteAsync loop of its own).
-    private readonly int[] _requestsToday;
-    private DateOnly _requestsTodayPacificDate;
+    // one rolling 60s window per key of tokens spent by GENERATION calls
+    // (generateContent's usageMetadata.totalTokenCount). Embedding calls aren't
+    // recorded — see GeminiOptions.GenerationTokenLimitPerMinute. Events older
+    // than the window are pruned lazily on read/write rather than via a
+    // background timer, since GeminiClient is a singleton with no ExecuteAsync
+    // loop of its own.
+    private static readonly TimeSpan TokenWindow = TimeSpan.FromMinutes(1);
+    private readonly Queue<(DateTime OccurredUtc, int Tokens)>[] _tokenEvents;
+
+    // Test seam: overridable "now" so the 60s token window can be exercised
+    // without a real 60-second sleep in unit tests. Production callers never
+    // set this — it defaults to the real clock.
+    internal Func<DateTime> UtcNowProvider = () => DateTime.UtcNow;
 
     private readonly object _lock = new();
 
@@ -77,11 +83,14 @@ public class GeminiClient : IAiService
         _generationModel = opts.GenerationModel;
         _embeddingModel = opts.EmbeddingModel;
         _outputDimensionality = opts.EmbeddingOutputDimensionality;
-        _dailyRequestLimitPerKey = opts.DailyRequestLimitPerKey;
+        _generationTokenLimitPerMinute = opts.GenerationTokenLimitPerMinute;
         _pipeline = resiliencePipeline;
         _parkedUntil = new DateTime[_apiKeys.Length];
-        _requestsToday = new int[_apiKeys.Length];
-        _requestsTodayPacificDate = CurrentPacificDate();
+        _tokenEvents = new Queue<(DateTime, int)>[_apiKeys.Length];
+        for (var i = 0; i < _apiKeys.Length; i++)
+        {
+            _tokenEvents[i] = new Queue<(DateTime, int)>();
+        }
         _httpClient = httpClientFactory.CreateClient(nameof(GeminiClient));
     }
 
@@ -93,8 +102,6 @@ public class GeminiClient : IAiService
     {
         lock (_lock)
         {
-            ResetIfNewPacificDayLocked();
-
             var now = DateTime.UtcNow;
             var result = new List<GeminiKeyStatus>(_apiKeys.Length);
             for (var i = 0; i < _apiKeys.Length; i++)
@@ -102,8 +109,8 @@ public class GeminiClient : IAiService
                 var isParked = _parkedUntil[i] > now;
                 result.Add(new GeminiKeyStatus(
                     Label: $"Key {i + 1}",
-                    RequestsToday: _requestsToday[i],
-                    DailyLimit: _dailyRequestLimitPerKey,
+                    TokensUsedLastMinute: SumTokensLastMinuteLocked(i),
+                    TokenLimitPerMinute: _generationTokenLimitPerMinute,
                     IsParked: isParked,
                     ParkedUntilUtc: isParked ? _parkedUntil[i] : null));
             }
@@ -122,9 +129,19 @@ public class GeminiClient : IAiService
             },
         };
 
-        var json = await SendAsync(_generationModel, ":generateContent", body, ct);
+        var (json, keyIndex) = await SendAsync(_generationModel, ":generateContent", body, ct);
 
         using var doc = JsonDocument.Parse(json);
+
+        // Admin dashboard token tracker: record actual usage if Google sent it.
+        // usageMetadata is normally present, but this stays defensive since it's
+        // display-only and must never fail a real generation call.
+        if (doc.RootElement.TryGetProperty("usageMetadata", out var usage) &&
+            usage.TryGetProperty("totalTokenCount", out var totalTokenCount))
+        {
+            RecordTokensUsed(keyIndex, totalTokenCount.GetInt32());
+        }
+
         return doc.RootElement
             .GetProperty("candidates")[0]
             .GetProperty("content")
@@ -149,7 +166,7 @@ public class GeminiClient : IAiService
             body["outputDimensionality"] = dims;
         }
 
-        var json = await SendAsync(_embeddingModel, ":embedContent", body, ct);
+        var (json, _) = await SendAsync(_embeddingModel, ":embedContent", body, ct);
 
         using var doc = JsonDocument.Parse(json);
         var values = doc.RootElement.GetProperty("embedding").GetProperty("values");
@@ -199,7 +216,7 @@ public class GeminiClient : IAiService
             }).ToArray()
         };
 
-        var json = await SendAsync(_embeddingModel, ":batchEmbedContents", body, ct);
+        var (json, _) = await SendAsync(_embeddingModel, ":batchEmbedContents", body, ct);
 
         using var doc = JsonDocument.Parse(json);
         var embeddingsElement = doc.RootElement.GetProperty("embeddings");
@@ -227,7 +244,7 @@ public class GeminiClient : IAiService
     /// HttpRequestMessage is built per attempt. Non-429 client errors (4xx other
     /// than 408) fail fast — the request body is at fault, not the key.
     /// </summary>
-    private async Task<string> SendAsync(string model, string methodSuffix, object body, CancellationToken ct)
+    private async Task<(string Json, int KeyIndex)> SendAsync(string model, string methodSuffix, object body, CancellationToken ct)
     {
         var jsonBody = JsonSerializer.Serialize(body, JsonOptions);
         Exception? lastError = null;
@@ -249,8 +266,6 @@ public class GeminiClient : IAiService
             {
                 continue;
             }
-
-            RecordRequestSent(keyIndex);
 
             var uri = BuildUri(model + methodSuffix, _apiKeys[keyIndex]);
 
@@ -285,7 +300,7 @@ public class GeminiClient : IAiService
 
                 using (result)
                 {
-                    return await result.Content.ReadAsStringAsync(ct);
+                    return (await result.Content.ReadAsStringAsync(ct), keyIndex);
                 }
             }
 
@@ -418,49 +433,44 @@ public class GeminiClient : IAiService
     }
 
     /// <summary>
-    /// Counts one request against <paramref name="keyIndex"/>'s daily usage tally
-    /// (display purposes only, see Snapshot()). Lazily rolls the counters over at
-    /// the Pacific-midnight boundary instead of running a background timer.
+    /// Counts <paramref name="tokens"/> against <paramref name="keyIndex"/>'s
+    /// rolling 60s usage window (display purposes only, see Snapshot()).
+    /// GENERATION calls only — see GeminiOptions.GenerationTokenLimitPerMinute.
     /// </summary>
-    private void RecordRequestSent(int keyIndex)
+    private void RecordTokensUsed(int keyIndex, int tokens)
     {
+        if (tokens <= 0)
+        {
+            return;
+        }
+
         lock (_lock)
         {
-            ResetIfNewPacificDayLocked();
-            _requestsToday[keyIndex]++;
-        }
-    }
-
-    /// <summary>Must be called with <see cref="_lock"/> already held.</summary>
-    private void ResetIfNewPacificDayLocked()
-    {
-        var today = CurrentPacificDate();
-        if (today != _requestsTodayPacificDate)
-        {
-            Array.Clear(_requestsToday);
-            _requestsTodayPacificDate = today;
+            _tokenEvents[keyIndex].Enqueue((UtcNowProvider(), tokens));
+            PruneTokenEventsLocked(keyIndex);
         }
     }
 
     /// <summary>
-    /// Today's date in America/Los_Angeles — the timezone Google resets Gemini's
-    /// free-tier daily quota in. Mirrors EmbeddingBatchJob.NextPacificMidnightUtc's
-    /// timezone lookup/fallback so both trackers agree on "today".
+    /// Sums <paramref name="keyIndex"/>'s token events still inside the trailing
+    /// 60s window, pruning anything older first.
+    /// Must be called with <see cref="_lock"/> already held.
     /// </summary>
-    private static DateOnly CurrentPacificDate()
+    private int SumTokensLastMinuteLocked(int keyIndex)
     {
-        TimeZoneInfo pacific;
-        try
-        {
-            pacific = TimeZoneInfo.FindSystemTimeZoneById(
-                OperatingSystem.IsWindows() ? "Pacific Standard Time" : "America/Los_Angeles");
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            pacific = TimeZoneInfo.CreateCustomTimeZone("PST-fallback", TimeSpan.FromHours(-8), "PST-fallback", "PST-fallback");
-        }
+        PruneTokenEventsLocked(keyIndex);
+        return _tokenEvents[keyIndex].Sum(e => e.Tokens);
+    }
 
-        return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, pacific));
+    /// <summary>Must be called with <see cref="_lock"/> already held.</summary>
+    private void PruneTokenEventsLocked(int keyIndex)
+    {
+        var cutoff = UtcNowProvider() - TokenWindow;
+        var queue = _tokenEvents[keyIndex];
+        while (queue.Count > 0 && queue.Peek().OccurredUtc < cutoff)
+        {
+            queue.Dequeue();
+        }
     }
 
     /// <summary>

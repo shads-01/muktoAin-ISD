@@ -156,10 +156,10 @@ public class AdminController : Controller
         var keys = snapshot.Select(k => new
         {
             label = k.Label,
-            requestsToday = k.RequestsToday,
-            dailyLimit = k.DailyLimit,
-            percentage = k.DailyLimit > 0
-                ? Math.Round(Math.Min(100.0, (double)k.RequestsToday / k.DailyLimit * 100.0), 1)
+            tokensUsedLastMinute = k.TokensUsedLastMinute,
+            tokenLimitPerMinute = k.TokenLimitPerMinute,
+            percentage = k.TokenLimitPerMinute > 0
+                ? Math.Round(Math.Min(100.0, (double)k.TokensUsedLastMinute / k.TokenLimitPerMinute * 100.0), 1)
                 : 0,
             isParked = k.IsParked,
             parkedUntilUtc = k.ParkedUntilUtc

@@ -50,10 +50,18 @@ public class GeminiOptions
     // MUST match Qdrant:VectorSize in appsettings.
     public int? EmbeddingOutputDimensionality { get; set; }
 
-    // Admin dashboard key-usage tracker: one fixed daily request quota assumed for
-    // EVERY configured key (all keys are free-tier AI Studio projects today — see
-    // GeminiClient's per-key striping comment). Default 1500 matches the Gemini
-    // free-tier flash-model daily request cap. Purely a display budget for
-    // GeminiClient.Snapshot() — does not affect striping/parking behavior.
-    public int DailyRequestLimitPerKey { get; set; } = 1500;
+    // Admin dashboard key-usage tracker: tokens actually spent by GENERATION
+    // calls (generateContent) in the trailing 60 seconds, checked against
+    // Gemini's free-tier TPM cap — one fixed quota assumed for EVERY configured
+    // key (all keys are free-tier AI Studio projects today — see GeminiClient's
+    // per-key striping comment). Default 250,000 verified 2026-09-09 against
+    // AI Studio's own quota page for gemini-3.6-flash; Google doesn't guarantee
+    // published/observed limits stay fixed, so re-check per-project via
+    // aistudio.google.com > Usage and billing > Rate limits if this drifts.
+    // Embedding calls are NOT counted — batchEmbedContents/embedContent don't
+    // return usageMetadata — so this undercounts true per-project TPM since
+    // embeddings are most of this app's traffic (see FIX-EMB-5). Purely a
+    // display budget for GeminiClient.Snapshot() — does not affect
+    // striping/parking behavior or gate real requests.
+    public int GenerationTokenLimitPerMinute { get; set; } = 250_000;
 }
