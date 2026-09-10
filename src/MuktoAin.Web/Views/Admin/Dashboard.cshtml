@@ -108,7 +108,7 @@
                     <h3 style="margin: 0; font-size: 16px;">
                         <span data-bn="Gemini API কী ব্যবহার ট্র্যাকার" data-en="Gemini API Key Usage Tracker">Gemini API কী ব্যবহার ট্র্যাকার</span>
                     </h3>
-                    <span class="muted tiny" data-bn="প্রতিটি কী-এর দৈনিক কোটার বিপরীতে ব্যবহারের পরিমাণ (প্যাসিফিক মধ্যরাতে রিসেট)" data-en="Per-key usage against its daily quota (resets at Pacific midnight)">প্রতিটি কী-এর দৈনিক কোটার বিপরীতে ব্যবহারের পরিমাণ (প্যাসিফিক মধ্যরাতে রিসেট)</span>
+                    <span class="muted tiny" data-bn="প্রতিটি কী-এর জেনারেশন টোকেন ব্যবহার, গত ৬০ সেকেন্ডে (এমবেডিং কল গণনায় ধরা হয় না)" data-en="Per-key generation tokens used in the trailing 60 seconds (embedding calls not counted)">প্রতিটি কী-এর জেনারেশন টোকেন ব্যবহার, গত ৬০ সেকেন্ডে (এমবেডিং কল গণনায় ধরা হয় না)</span>
                 </div>
             </div>
             <span id="gemini-keys-summary-badge" class="badge badge-success" style="font-size: 13px; font-weight: 700;">— / — keys available</span>
@@ -388,7 +388,7 @@
                                 <div style="flex: 1; height: 10px; background: var(--surface-3, #e2d9cb); border-radius: 6px; overflow: hidden;">
                                     <div style="width: ${k.percentage}%; height: 100%; background: ${barColor}; transition: width 0.4s ease;"></div>
                                 </div>
-                                <span style="font-size: 12px; color: var(--ink-2); width: 130px; text-align: right; flex-shrink: 0;">${k.requestsToday.toLocaleString()} / ${k.dailyLimit.toLocaleString()} (${k.percentage}%)</span>
+                                <span style="font-size: 12px; color: var(--ink-2); width: 170px; text-align: right; flex-shrink: 0;">${k.tokensUsedLastMinute.toLocaleString()} / ${k.tokenLimitPerMinute.toLocaleString()} tok/min (${k.percentage}%)</span>
                                 ${statusBadge}${parkedNote}
                             </div>`;
                     }).join('');

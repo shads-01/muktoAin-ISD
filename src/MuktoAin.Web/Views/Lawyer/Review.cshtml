@@ -70,7 +70,7 @@
                     <div class="compare-pane compare-original">
                         <div class="paper-sheet" style="margin: 0">
                             <div class="paper-watermark"><span data-bn="খসড়া" data-en="DRAFT">খসড়া</span></div>
-                            <pre style="white-space: pre-wrap; font-family: var(--font-doc); font-size: 15px; line-height: 2; margin: 0">@Model.ContentDraft</pre>
+                            <div class="serif md-content" style="font-family: var(--font-doc); font-size: 15px">@MarkdownText.ToHtml(Model.ContentDraft)</div>
                         </div>
                     </div>
                 </div>
@@ -90,7 +90,7 @@
                     <h3 class="section-h"><i data-lucide="file-lock"></i> Original</h3>
                     <div class="paper-sheet" style="margin: 0">
                         <div class="paper-watermark"><span data-bn="খসড়া" data-en="DRAFT">খসড়া</span></div>
-                        <pre style="white-space: pre-wrap; font-family: var(--font-doc); font-size: 14px; line-height: 1.9; margin: 0">@Model.ContentDraft</pre>
+                        <div class="serif md-content" style="font-family: var(--font-doc); font-size: 14px">@MarkdownText.ToHtml(Model.ContentDraft)</div>
                     </div>
                 </div>
                 <div class="compare-pane compare-edit">

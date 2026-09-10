@@ -374,8 +374,8 @@ public class GeminiClientTests
         Assert.Equal(2, snapshot.Count);
         Assert.All(snapshot, k =>
         {
-            Assert.Equal(0, k.RequestsToday);
-            Assert.Equal(1500, k.DailyLimit); // GeminiOptions default
+            Assert.Equal(0, k.TokensUsedLastMinute);
+            Assert.Equal(250_000, k.TokenLimitPerMinute); // GeminiOptions default
             Assert.False(k.IsParked);
             Assert.Null(k.ParkedUntilUtc);
         });
@@ -383,8 +383,83 @@ public class GeminiClientTests
         Assert.Equal("Key 2", snapshot[1].Label);
     }
 
+    private static HttpResponseMessage GenerateContentResponse(int totalTokenCount) =>
+        new(HttpStatusCode.OK)
+        {
+            Content = new StringContent(
+                JsonSerializer.Serialize(new
+                {
+                    candidates = new[]
+                    {
+                        new { content = new { parts = new[] { new { text = "answer" } } } }
+                    },
+                    usageMetadata = new { totalTokenCount }
+                }),
+                Encoding.UTF8, "application/json")
+        };
+
     [Fact]
-    public async Task Snapshot_AfterRequests_CountsOnlyTheKeyThatWasActuallyCalled()
+    public async Task Snapshot_AfterGenerateContentCalls_SumsTokensForTheKeyThatServedEachRequest()
+    {
+        var handlerMock = new Mock<HttpMessageHandler>();
+        var tokenCounts = new Queue<int>([100, 250, 40]);
+        handlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(() => GenerateContentResponse(tokenCounts.Dequeue()));
+
+        var client = CreateClient(handlerMock.Object, apiKeys: ["key-1", "key-2"]);
+
+        // Round-robin: 3 requests -> key-1 (100 tok), key-2 (250 tok), key-1 (40 tok).
+        await client.GenerateContentAsync("q1");
+        await client.GenerateContentAsync("q2");
+        await client.GenerateContentAsync("q3");
+
+        var snapshot = client.Snapshot();
+
+        Assert.Equal(140, snapshot.First(k => k.Label == "Key 1").TokensUsedLastMinute);
+        Assert.Equal(250, snapshot.First(k => k.Label == "Key 2").TokensUsedLastMinute);
+    }
+
+    [Fact]
+    public async Task Snapshot_EmbedContentCalls_DoNotCountTowardTokenUsage()
+    {
+        // Embedding is most of this app's real traffic (FIX-EMB-5), but
+        // batchEmbedContents/embedContent don't return usageMetadata, so the
+        // generation-only token tracker must not move for these calls.
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns<HttpRequestMessage, CancellationToken>((req, ct) =>
+            {
+                var isBatch = req.RequestUri!.AbsolutePath.Contains(":batchEmbedContents");
+                var responseJson = isBatch
+                    ? JsonSerializer.Serialize(new { embeddings = new[] { new { values = new[] { 0.1f } } } })
+                    : JsonSerializer.Serialize(new { embedding = new { values = new[] { 0.1f } } });
+
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(responseJson, Encoding.UTF8, "application/json")
+                });
+            });
+
+        var client = CreateClient(handlerMock.Object, apiKeys: ["key-1", "key-2"]);
+
+        await client.EmbedContentAsync("q1");
+        await client.BatchEmbedContentAsync(new[] { "q2", "q3" });
+
+        var snapshot = client.Snapshot();
+
+        Assert.All(snapshot, k => Assert.Equal(0, k.TokensUsedLastMinute));
+    }
+
+    [Fact]
+    public async Task Snapshot_TokenEventsOlderThanOneMinute_AreExcludedFromTheRollingWindow()
     {
         var handlerMock = new Mock<HttpMessageHandler>();
         handlerMock.Protected()
@@ -392,24 +467,22 @@ public class GeminiClientTests
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(() => new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(
-                    JsonSerializer.Serialize(new { embedding = new { values = new[] { 0.1f } } }),
-                    Encoding.UTF8, "application/json")
-            });
+            .ReturnsAsync(() => GenerateContentResponse(500));
 
-        var client = CreateClient(handlerMock.Object, apiKeys: ["key-1", "key-2"]);
+        var client = CreateClient(handlerMock.Object, apiKeys: ["key-1"]);
+        var fakeNow = DateTime.UtcNow;
+        client.UtcNowProvider = () => fakeNow;
 
-        // Round-robin: 3 requests -> key-1, key-2, key-1.
-        await client.EmbedContentAsync("q1");
-        await client.EmbedContentAsync("q2");
-        await client.EmbedContentAsync("q3");
+        await client.GenerateContentAsync("q1");
+        Assert.Equal(500, client.Snapshot().Single().TokensUsedLastMinute);
 
-        var snapshot = client.Snapshot();
+        // Still within the 60s window: usage persists.
+        fakeNow = fakeNow.AddSeconds(59);
+        Assert.Equal(500, client.Snapshot().Single().TokensUsedLastMinute);
 
-        Assert.Equal(2, snapshot.First(k => k.Label == "Key 1").RequestsToday);
-        Assert.Equal(1, snapshot.First(k => k.Label == "Key 2").RequestsToday);
+        // Past the 60s window: the event rolls off.
+        fakeNow = fakeNow.AddSeconds(2);
+        Assert.Equal(0, client.Snapshot().Single().TokensUsedLastMinute);
     }
 
     [Fact]

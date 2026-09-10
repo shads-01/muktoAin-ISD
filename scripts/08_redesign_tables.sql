@@ -7,6 +7,9 @@
    ============================================================ */
 SET NOCOUNT ON;
 GO
+-- Filtered indexes (CHAT_SESSION.SessionKey below) require QUOTED_IDENTIFIER ON.
+SET QUOTED_IDENTIFIER ON;
+GO
 
 IF OBJECT_ID(N'[dbo].[CHAT_SESSION]', N'U') IS NULL
 BEGIN
@@ -23,9 +26,16 @@ BEGIN
         CONSTRAINT FK_CHAT_SESSION_User FOREIGN KEY (UserId)
             REFERENCES [dbo].[USER] (UserId),
         CONSTRAINT FK_CHAT_SESSION_Case FOREIGN KEY (CommittedCaseId)
-            REFERENCES [dbo].[CASE] (CaseId),
-        CONSTRAINT UQ_CHAT_SESSION_SessionKey UNIQUE (SessionKey)
+            REFERENCES [dbo].[CASE] (CaseId)
     );
+    -- FILTERED unique index, not a table UNIQUE constraint: SessionKey is NULL
+    -- for every logged-in user's session (only guests get a real key — see
+    -- ChatService.GetOrCreateSessionAsync), and a plain UNIQUE constraint/index
+    -- on SQL Server allows only ONE NULL table-wide. The WHERE clause excludes
+    -- NULL rows from the uniqueness check entirely, so any number of logged-in
+    -- sessions can coexist while guest keys still can't collide.
+    CREATE UNIQUE INDEX UQ_CHAT_SESSION_SessionKey ON [dbo].[CHAT_SESSION] (SessionKey)
+        WHERE SessionKey IS NOT NULL;
     CREATE INDEX IX_CHAT_SESSION_UserId ON [dbo].[CHAT_SESSION] (UserId);
     CREATE INDEX IX_CHAT_SESSION_Status ON [dbo].[CHAT_SESSION] (Status);
 END
