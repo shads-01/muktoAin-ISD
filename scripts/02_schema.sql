@@ -171,7 +171,12 @@ BEGIN
         UserId                INT                NULL,
         CategoryId            INT                NOT NULL,
         DistrictId            TINYINT            NOT NULL,
-        Title                 NVARCHAR(250)      NOT NULL,
+        -- NVARCHAR(MAX), not (250): Title is stored encrypted (see CaseService/
+        -- ChatService's _encryptionService.Encrypt(dto.Title)) — ASP.NET Data
+        -- Protection ciphertext runs well past the 250-char plaintext limit the
+        -- UI advertises (fixed key/IV/HMAC overhead + ~4/3 base64 expansion), so
+        -- a fixed-width column truncates on save for any non-trivial title.
+        Title                 NVARCHAR(MAX)      NOT NULL,
         Description           NVARCHAR(MAX)      NOT NULL,
         Language              NVARCHAR(10)       NOT NULL,
         Status                INT                NOT NULL DEFAULT (0),
