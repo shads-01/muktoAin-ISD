@@ -10,6 +10,10 @@ namespace MuktoAin.Application.Documents.Templates;
 /// Bangladesh District Labour Court complaint template.
 /// Follows the format specified in Arpita_plan.md Step 2.3 —
 /// structured complaint under the Bangladesh Labour Act, 2006.
+/// Headings match the case's language (LabourComplaintHeadings); ASCII-art
+/// dividers were removed as noise outside a monospace render, and the
+/// AI-authored rights explanation is run through AiTextSanitizer before
+/// being embedded (2026-09-10 styling fix).
 /// </summary>
 public class LabourComplaintTemplate : IDocumentTemplate
 {
@@ -17,13 +21,18 @@ public class LabourComplaintTemplate : IDocumentTemplate
 
     public Task<string> RenderAsync(Case caseEntity, RightsExplanationDto explanation)
     {
+        var language = caseEntity.Language;
         var districtName = caseEntity.District?.Name ?? "________";
         var sb = new StringBuilder();
 
+        var isEnglish = string.Equals(language, "en", StringComparison.OrdinalIgnoreCase);
+
         // ── Header ──────────────────────────────────────────────
-        sb.AppendLine("TO");
-        sb.AppendLine("The Inspector General / District Labour Court");
-        sb.AppendLine($"{districtName}, Bangladesh");
+        sb.AppendLine(isEnglish ? "TO" : "বরাবর,");
+        sb.AppendLine(isEnglish
+            ? "The Inspector General / District Labour Court"
+            : "কলকারখানা ও প্রতিষ্ঠান পরিদর্শন অধিদপ্তর / শ্রম আদালত");
+        sb.AppendLine(isEnglish ? $"{districtName}, Bangladesh." : $"{districtName}, বাংলাদেশ।");
         sb.AppendLine();
 
         // ── Subject ─────────────────────────────────────────────
@@ -35,7 +44,7 @@ public class LabourComplaintTemplate : IDocumentTemplate
         sb.AppendLine();
 
         // ── Salutation ──────────────────────────────────────────
-        sb.AppendLine("Respected Sir/Madam,");
+        sb.AppendLine(isEnglish ? "Respected Sir/Madam," : "মহোদয়,");
         sb.AppendLine();
 
         // ── Complainant Introduction ────────────────────────────
@@ -44,14 +53,12 @@ public class LabourComplaintTemplate : IDocumentTemplate
         sb.AppendLine();
 
         // ── Facts of the Case ───────────────────────────────────
-        sb.AppendLine("FACTS OF THE CASE:");
-        sb.AppendLine(new string('─', 40));
+        sb.AppendLine(LabourComplaintHeadings.For(LabourComplaintHeadings.FactsOfTheCase, language) + ":");
         sb.AppendLine(caseEntity.Description);
         sb.AppendLine();
 
         // ── Applicable Legal Provisions ─────────────────────────
-        sb.AppendLine("APPLICABLE LEGAL PROVISIONS:");
-        sb.AppendLine(new string('─', 40));
+        sb.AppendLine(LabourComplaintHeadings.For(LabourComplaintHeadings.ApplicableLegalProvisions, language) + ":");
         if (explanation.CitedSections.Count > 0)
         {
             foreach (var section in explanation.CitedSections)
@@ -67,18 +74,17 @@ public class LabourComplaintTemplate : IDocumentTemplate
             sb.AppendLine();
         }
 
-        // ── Rights Explanation ──────────────────────────────────
-        if (!string.IsNullOrWhiteSpace(explanation.Explanation))
+        // ── Rights Explanation (AI-authored — sanitized) ────────
+        var sanitizedExplanation = AiTextSanitizer.Sanitize(explanation.Explanation);
+        if (!string.IsNullOrWhiteSpace(sanitizedExplanation))
         {
-            sb.AppendLine("YOUR RIGHTS UNDER APPLICABLE LAW:");
-            sb.AppendLine(new string('─', 40));
-            sb.AppendLine(explanation.Explanation);
+            sb.AppendLine(LabourComplaintHeadings.For(LabourComplaintHeadings.YourRights, language) + ":");
+            sb.AppendLine(sanitizedExplanation);
             sb.AppendLine();
         }
 
         // ── Relief Sought ───────────────────────────────────────
-        sb.AppendLine("RELIEF SOUGHT:");
-        sb.AppendLine(new string('─', 40));
+        sb.AppendLine(LabourComplaintHeadings.For(LabourComplaintHeadings.ReliefSought, language) + ":");
         sb.AppendLine("Based on the above facts and the applicable legal provisions cited herein,");
         sb.AppendLine("the complainant respectfully prays for appropriate relief including but not");
         sb.AppendLine("limited to compensation, reinstatement, and/or any other remedy the");
@@ -86,8 +92,7 @@ public class LabourComplaintTemplate : IDocumentTemplate
         sb.AppendLine();
 
         // ── Declaration ─────────────────────────────────────────
-        sb.AppendLine("DECLARATION:");
-        sb.AppendLine(new string('─', 40));
+        sb.AppendLine(LabourComplaintHeadings.For(LabourComplaintHeadings.Declaration, language) + ":");
         sb.AppendLine("I hereby declare that the information provided above is true and correct to");
         sb.AppendLine("the best of my knowledge and belief. I understand that any false statement");
         sb.AppendLine("may result in legal consequences.");
@@ -100,10 +105,8 @@ public class LabourComplaintTemplate : IDocumentTemplate
         sb.AppendLine();
 
         // ── Disclaimer Stamp (Surface 3 of 3) ───────────────────
-        sb.AppendLine(new string('═', 60));
         sb.AppendLine(Disclaimers.Legal);
         sb.AppendLine(Disclaimers.LegalBangla);
-        sb.AppendLine(new string('═', 60));
 
         return Task.FromResult(sb.ToString());
     }
