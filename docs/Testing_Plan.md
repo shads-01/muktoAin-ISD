@@ -50,7 +50,7 @@ If a feature above turns out partially wired when you sit down to test it, note 
 1. `dotnet build` the solution — confirm 0 errors (screenshot).
 2. Confirm `appsettings.Development.json` has a valid Gemini API key and Qdrant endpoint, and SQL Server (LocalDB/Express) is reachable — run `dotnet run --project src/MuktoAin.Web`.
 3. Confirm seed data present: 1,484 Acts / 35,633 Sections / 64 Districts / categories (per `[T-1.15]` exit-gate note in `plans/Dependency_plan.md`).
-4. Note embedding backfill state — per `[[rag-pipeline-latent-bugs-2026-08-30]]`, only a small slice of chunks (~265, all pre-1900 acts) may be embedded in Qdrant depending on whether the full backfill has run. This directly affects which test inputs will exercise the **vector** path vs the **FTS fallback** path — record which one is active when you test Chat/Case submission (see TC-CHAT-06, TC-CASE-08 below).
+4. Confirm embedding backfill state — the full corpus (42,858 chunks) is now embedded in Qdrant (backfill from `[[rag-pipeline-latent-bugs-2026-08-30]]` has completed), so Chat/Case queries should hit the **vector** path by default; still record which path (vector vs. FTS fallback) was actually exercised per test case (see CHAT-05, CASE-05 below), since a genuinely unmatched query can still fall back.
 5. Record: OS, .NET SDK version, browser used for manual testing, DB name.
 
 ---
@@ -110,37 +110,31 @@ For the report: capture the pass/fail summary line (`Passed! - Failed: X, Passed
 
 Legend for **Type**: **N** = Normal, **B** = Boundary, **E** = Exceptional (system-level failure/edge condition), **I** = Invalid input.
 
-**Trimmed (2026-09-10) for manual-testing time:** every feature area below still has at least one row, and every area keeps a spread across the N/B/E/I types it's capable of exercising — but redundant/near-duplicate rows (e.g. two invalid-login variants, two language variants of the same submit flow) were cut, and rows already fully covered by an existing unit test with no separate UI-level risk were dropped in favor of the higher-risk row in the same area. Original row IDs are kept as-is (nothing renumbered) so cut rows can be reinstated individually if time allows.
-
 ### 5.1 Authentication & Account (`AccountController`)
 
 | ID | Type | Scenario | Steps | Expected result |
 |---|---|---|---|---|
 | ACC-01 | N | Register a new citizen | Fill valid name/email/password, submit | Account created, redirected to login/home, can log in |
 | ACC-02 | I | Register with duplicate email | Register twice with same email | Friendly validation error, no crash, no duplicate account |
-| ACC-05 | E | Register with script/HTML in name field | Name = `<script>alert(1)</script>` | Value is stored/rendered **encoded**, no script execution (XSS check) |
-| ACC-06 | N | Login with correct credentials | Valid email/password | Redirect to home/dashboard, session established |
-| ACC-07 | I | Login with wrong password / nonexistent email | Try both: correct email + wrong password, then a random email | Same generic "invalid credentials" message both times (must **not** reveal whether the email exists) |
-| ACC-09 | B | Repeated failed logins (lockout boundary) | Fail login 5+ times rapidly | Check whether ASP.NET Identity lockout kicks in as configured; document actual vs expected behavior |
-| ACC-14 | E | Access `/Account/Profile` while logged out | Navigate directly (unauthenticated) | Redirected to login, not a 500/exception |
-| ACC-15 | E | Non-lawyer requests payout | Logged in as Citizen, POST `/Account/RequestPayout` (e.g. via browser devtools or direct URL) | Rejected — authorization/role check, not silently processed |
-
-*Cut for time (reinstate if slack remains): ACC-03/04 (form validation, low risk — already exercised by unit tests), ACC-08 (duplicate of ACC-07's assertion), ACC-10/11 (forgot-password), ACC-12/13 (profile/password update, low risk).*
+| ACC-03 | E | Register with script/HTML in name field | Name = `<script>alert(1)</script>` | Value is stored/rendered **encoded**, no script execution (XSS check) |
+| ACC-04 | N | Login with correct credentials | Valid email/password | Redirect to home/dashboard, session established |
+| ACC-05 | I | Login with wrong password / nonexistent email | Try both: correct email + wrong password, then a random email | Same generic "invalid credentials" message both times (must **not** reveal whether the email exists) |
+| ACC-06 | B | Repeated failed logins (lockout boundary) | Fail login 5+ times rapidly | Check whether ASP.NET Identity lockout kicks in as configured; document actual vs expected behavior |
+| ACC-07 | E | Access `/Account/Profile` while logged out | Navigate directly (unauthenticated) | Redirected to login, not a 500/exception |
+| ACC-08 | E | Non-lawyer requests payout | Logged in as Citizen, POST `/Account/RequestPayout` (e.g. via browser devtools or direct URL) | Rejected — authorization/role check, not silently processed |
 
 ### 5.2 Case Submission & Lifecycle (`CaseController`)
 
 | ID | Type | Scenario | Steps | Expected result |
 |---|---|---|---|---|
 | CASE-01 | N | Submit case (Bangla and/or English) | Realistic Bangla or English legal problem description | Case created, redirected to `/Case/Result` with rights explanation + cited sections |
-| CASE-04 | I | Submit with empty description | Blank textarea, submit | **Known defect** — currently accepted with no rejection (see §7); confirm it's still the actual live behavior |
-| CASE-06 | E | Submit with an invalid/nonexistent category id | Tamper `cat` query param to a nonexistent id | Handled gracefully (ignored or error page), not a 500 |
-| CASE-07 | N | Guest (anonymous) submission | Submit without logging in | Case created with `IsAnonymous=true`, tracking code shown **once** |
-| CASE-08 | E | Result page — cited legal provisions | Submit a labour-law-shaped complaint, view `/Case/Result` | Sections are actually cited (regression check — see §7, bug #1/#2); "FACTS OF THE CASE" shows **plain text**, not ciphertext |
-| CASE-09 | I | Track case with a malformed or nonexistent code | Garbage string, then a random valid-format GUID | Friendly "not found" both times, never an unhandled exception |
-| CASE-13 | E | Access another user's case `Result` by guessing the id | Log in as User A, browse to User B's case id | Access denied, not data leakage |
-| CASE-14 | B | `/Case/Track` list pagination boundary | As a citizen with 10+ cases, request `?page=0` and `?page=9999` | Clamped to a valid page (never an exception or empty crash), 10 rows/page |
-
-*Cut for time: CASE-02/03 (language variants of CASE-01, same code path), CASE-05 (no real boundary exists — column is `NVARCHAR(MAX)`), CASE-11/12 (state-machine edge cases, lower risk than CASE-13's access-control check).*
+| CASE-02 | I | Submit with empty description | Blank textarea, submit | **Known defect** — currently accepted with no rejection (see §7); confirm it's still the actual live behavior |
+| CASE-03 | E | Submit with an invalid/nonexistent category id | Tamper `cat` query param to a nonexistent id | Handled gracefully (ignored or error page), not a 500 |
+| CASE-04 | N | Guest (anonymous) submission | Submit without logging in | Case created with `IsAnonymous=true`, tracking code shown **once** |
+| CASE-05 | E | Result page — cited legal provisions | Submit a labour-law-shaped complaint, view `/Case/Result` | Sections are actually cited (regression check — see §7, bug #1/#2); "FACTS OF THE CASE" shows **plain text**, not ciphertext |
+| CASE-06 | I | Track case with a malformed or nonexistent code | Garbage string, then a random valid-format GUID | Friendly "not found" both times, never an unhandled exception |
+| CASE-07 | E | Access another user's case `Result` by guessing the id | Log in as User A, browse to User B's case id | Access denied, not data leakage |
+| CASE-08 | B | `/Case/Track` list pagination boundary | As a citizen with 10+ cases, request `?page=0` and `?page=9999` | Clamped to a valid page (never an exception or empty crash), 10 rows/page |
 
 ### 5.3 Chat / RAG / AI Pipeline (`ChatController`)
 
@@ -148,12 +142,10 @@ Legend for **Type**: **N** = Normal, **B** = Boundary, **E** = Exceptional (syst
 |---|---|---|---|---|
 | CHAT-01 | N | Start new chat + ask a legal question | `POST /Chat/New`, then `Ask` with a real question | Grounded answer with citations + disclaimer text present |
 | CHAT-02 | I | Ask with empty message body | `Ask` with `{}` or empty string | Validation error, no Gemini call, no crash |
-| CHAT-04 | E | Ask against a nonexistent/foreign chat id | Use a chat id belonging to another user or that doesn't exist | Rejected, not cross-user data leakage |
-| CHAT-05 | B | Hit the free-tier message quota (`/Chat/Quota` boundary) | Send messages until quota, then one more | Correct capped-tier behavior (per R-13, `Tier="full"` should still show correctly once capped=false is set — verify no regression) |
-| CHAT-06 | E | Gemini/Qdrant unavailable simulation | Temporarily point config at a bad Qdrant URL or invalid API key, ask a question | Falls back to SQL FTS gracefully (per architecture rule 3) or fails with a user-visible error — not a raw exception page |
-| CHAT-08 | N | `Commit` a chat into a formal Case | Complete a chat, then commit | Case created from chat content correctly |
-
-*Cut for time: CHAT-03 (long-message boundary, low risk), CHAT-07 (prompt-injection, lower priority than the two hard failure-mode checks above).*
+| CHAT-03 | E | Ask against a nonexistent/foreign chat id | Use a chat id belonging to another user or that doesn't exist | Rejected, not cross-user data leakage |
+| CHAT-04 | B | Hit the free-tier message quota (`/Chat/Quota` boundary) | Send messages until quota, then one more | Correct capped-tier behavior (per R-13, `Tier="full"` should still show correctly once capped=false is set — verify no regression) |
+| CHAT-05 | E | Gemini/Qdrant unavailable simulation | Temporarily point config at a bad Qdrant URL or invalid API key, ask a question | Falls back to SQL FTS gracefully (per architecture rule 3) or fails with a user-visible error — not a raw exception page |
+| CHAT-06 | N | `Commit` a chat into a formal Case | Complete a chat, then commit | Case created from chat content correctly |
 
 ### 5.4 Standalone Acts Search (`SearchController`, FR-7)
 
@@ -164,8 +156,6 @@ Legend for **Type**: **N** = Normal, **B** = Boundary, **E** = Exceptional (syst
 | SRCH-03 | I | Query with SQL wildcard/special characters | `%`, `_`, `"`, `O'Brien`-style apostrophe | No exception, properly escaped, sane result set |
 | SRCH-04 | B | Pagination: `page=0` and page far beyond last page | `?q=labour&page=0`, `?q=labour&page=9999` | Clamped to a valid page on the low end, friendly "no more results" on the high end — never an exception |
 
-*Cut for time: SRCH-05 (same boundary direction as SRCH-04's page=9999 case), SRCH-06 (nonexistent-id filter, same "empty, not an exception" pattern already covered elsewhere).*
-
 ### 5.5 Category Browsing (`CategoryController`, FR-6)
 
 | ID | Type | Scenario | Steps | Expected result |
@@ -173,8 +163,6 @@ Legend for **Type**: **N** = Normal, **B** = Boundary, **E** = Exceptional (syst
 | CAT-01 | N | Browse category index | `/Category` | All seeded categories listed |
 | CAT-02 | N | View valid category details | `/Category/Details/{validId}` | Category detail + related acts shown |
 | CAT-03 | I | View nonexistent/invalid category id | `/Category/Details/999999`, `/Category/Details/0` | 404/friendly not-found, not a 500 |
-
-*Cut for time: CAT-04 (same failure mode as CAT-03, now folded into it).*
 
 ### 5.6 Document Preview/Download & PDF Gate (`DocumentController`, FR-9)
 
@@ -184,35 +172,29 @@ Legend for **Type**: **N** = Normal, **B** = Boundary, **E** = Exceptional (syst
 | DOC-02 | E | Download before lawyer approval | Attempt `/Document/Download/{id}` while status is `Draft` | Locked/blocked — download must require `Approved` status |
 | DOC-03 | N | Download after approval | Approve via lawyer flow first, then download | Valid PDF file (`%PDF` header, opens cleanly), correct Bengali text rendering, disclaimer stamp present on every page |
 | DOC-04 | I | Preview/download nonexistent document id | Random id | Friendly not-found, not a 500 |
-| DOC-06 | E | Download with Bengali filename | Download a document whose title contains Bengali text | Filename renders correctly (UTF-8 `Content-Disposition`, per R-10 — regression-test it) |
-
-*Cut for time: DOC-05 (cross-user access-control check, same pattern already exercised by CASE-13).*
+| DOC-05 | E | Download with Bengali filename | Download a document whose title contains Bengali text | Filename renders correctly (UTF-8 `Content-Disposition`, per R-10 — regression-test it) |
 
 ### 5.7 Lawyer Flow (`LawyerController`)
 
 | ID | Type | Scenario | Steps | Expected result |
 |---|---|---|---|---|
 | LAW-01 | N | View own verification status | Logged in as a lawyer, `/Lawyer/Status` | Correct status shown |
-| LAW-03 | E | Unverified lawyer accesses the review queue | Log in as a lawyer whose `VerificationStatus != Approved`, browse `/Lawyer/Queue` | Denied or empty queue with explanation, not raw data exposure |
-| LAW-05 | B/E | Two lawyers claim the same document near-simultaneously | Open the same doc in two sessions, claim both quickly | Only one claim should succeed — `A-2.7` is now marked complete per `plans/Dependency_plan.md` (`ClaimAsync` checks `AssignedLawyerProfileId` before assigning), but it's a check-then-set guard with no DB-level concurrency token (`RowVersion`), so two truly simultaneous requests could still both pass the check — document the actual behavior; if both succeed, that's a bug to report |
-| LAW-06 | I | Submit review rejection without mandatory comment | Leave comment blank on reject | Blocked — comment is mandatory per FR-14 |
-| LAW-07 | N | Edit-and-approve flow | Edit draft text, approve | Both `ContentDraft` (original) and `ContentFinal` (edited) preserved separately |
-| LAW-09 | E | Non-lawyer accesses `/Lawyer/*` routes | Log in as Citizen, browse `/Lawyer/Queue` | Redirected/403, not exposed |
-
-*Cut for time: LAW-02 (form validation, low risk), LAW-04 (UI filter chips, cosmetic), LAW-08 (reject flow — same status-transition pattern as LAW-07's approve path, do this one first if time allows).*
+| LAW-02 | E | Unverified lawyer accesses the review queue | Log in as a lawyer whose `VerificationStatus != Approved`, browse `/Lawyer/Queue` | Denied or empty queue with explanation, not raw data exposure |
+| LAW-03 | B/E | Two lawyers claim the same document near-simultaneously | Open the same doc in two sessions, claim both quickly | Only one claim should succeed — `A-2.7` is now marked complete per `plans/Dependency_plan.md` (`ClaimAsync` checks `AssignedLawyerProfileId` before assigning), but it's a check-then-set guard with no DB-level concurrency token (`RowVersion`), so two truly simultaneous requests could still both pass the check — document the actual behavior; if both succeed, that's a bug to report |
+| LAW-04 | I | Submit review rejection without mandatory comment | Leave comment blank on reject | Blocked — comment is mandatory per FR-14 |
+| LAW-05 | N | Edit-and-approve flow | Edit draft text, approve | Both `ContentDraft` (original) and `ContentFinal` (edited) preserved separately |
+| LAW-06 | E | Non-lawyer accesses `/Lawyer/*` routes | Log in as Citizen, browse `/Lawyer/Queue` | Redirected/403, not exposed |
 
 ### 5.8 Admin Console (`AdminController`)
 
 | ID | Type | Scenario | Steps | Expected result |
 |---|---|---|---|---|
 | ADM-01 | N | View dashboard KPIs | `/Admin/Dashboard` as Admin | Real counts shown (per R-3 — no more `MockData`) |
-| ADM-03 | E | Non-admin accesses `/Admin/*` | Log in as Citizen or Lawyer, browse any admin route | 403/redirect, never the page content |
-| ADM-04 | E | Admin suspends another admin / self-suspend | Attempt to suspend the currently logged-in admin account, or another admin | Blocked by admin-protection guardrail (per existing `UserManagementService` tests — verify it holds at the controller/UI level too) |
-| ADM-06 | N | Approve a pending lawyer verification | `/Admin/Lawyers`, approve one | `VerificationStatus=Approved`, `VerifiedByAdminId`/`VerifiedAt` stamped |
-| ADM-08 | N | View corpus stats | `/Admin/Corpus` | Correct aggregate counts (1,484 Acts / 35,633 Sections etc.), loads fast (per R-14 DB-side aggregation fix — regression-test that it doesn't regress to an in-memory 42K-entity load) |
-| ADM-09 | I | `/Admin/VerifyLawyer` with a nonexistent `lawyerProfileId` | Tamper the id | Handled gracefully, not a 500 |
-
-*Cut for time: ADM-02 (analytics view, low risk), ADM-05 (suspend/unsuspend, same mechanism as ADM-04's guardrail check), ADM-07 (reject-reason validation, low risk), ADM-10 (embedding progress display, low risk).*
+| ADM-02 | E | Non-admin accesses `/Admin/*` | Log in as Citizen or Lawyer, browse any admin route | 403/redirect, never the page content |
+| ADM-03 | E | Admin suspends another admin / self-suspend | Attempt to suspend the currently logged-in admin account, or another admin | Blocked by admin-protection guardrail (per existing `UserManagementService` tests — verify it holds at the controller/UI level too) |
+| ADM-04 | N | Approve a pending lawyer verification | `/Admin/Lawyers`, approve one | `VerificationStatus=Approved`, `VerifiedByAdminId`/`VerifiedAt` stamped |
+| ADM-05 | N | View corpus stats | `/Admin/Corpus` | Correct aggregate counts (1,484 Acts / 35,633 Sections etc.), loads fast (per R-14 DB-side aggregation fix — regression-test that it doesn't regress to an in-memory 42K-entity load) |
+| ADM-06 | I | `/Admin/VerifyLawyer` with a nonexistent `lawyerProfileId` | Tamper the id | Handled gracefully, not a 500 |
 
 ### 5.9 Sandbox Payments (`PaymentController`, FR-24)
 
@@ -221,20 +203,16 @@ Legend for **Type**: **N** = Normal, **B** = Boundary, **E** = Exceptional (syst
 | PAY-01 | N | Honorarium payment on an approved case | Trigger the honorarium modal on an approved case, submit valid sandbox payment | Payment recorded, status reflects success |
 | PAY-02 | E | Honorarium payment on a non-approved case | Attempt the honorarium flow before the case is approved | Blocked — case must be approved first |
 | PAY-03 | I | Negative or zero amount | POST `Honorarium`/`TopUp` with `amount=-100` or `0` | Rejected, no payment row written |
-| PAY-07 | E | Simulated sandbox payment failure | Use whatever "fail" test path the sandbox provider exposes | Failure surfaced to the user clearly, no false "success" state |
-
-*Cut for time: PAY-04 (malformed body, same rejection pattern as PAY-03), PAY-05 (top-up flow, same code path as PAY-01), PAY-06 (nonexistent-id lookup, same "not found, not a 500" pattern already covered in other areas).*
+| PAY-04 | E | Simulated sandbox payment failure | Use whatever "fail" test path the sandbox provider exposes | Failure surfaced to the user clearly, no false "success" state |
 
 ### 5.10 Cross-cutting: Disclaimer, Localization, Error Pages
 
 | ID | Type | Scenario | Steps | Expected result |
 |---|---|---|---|---|
 | GEN-01 | N | Disclaimer banner present + injected into AI output/documents | Load a few pages, then a Chat/Result response and a document preview | Non-dismissible banner on every page; disclaimer text present in the AI response and the drafted document |
-| GEN-04 | N | Language toggle bn ↔ en | Switch language on a page with `_LanguageToggle.cshtml` | UI strings switch correctly, no missing-resource fallback text (`[[key]]`-style placeholders) |
-| GEN-05 | E | Navigate to a nonexistent route | `/this-does-not-exist` | Custom `HomeController.NotFound`/404 page, not the default IIS/Kestrel error |
-| GEN-06 | E | Force a server error | Trigger any known error path (e.g. malformed id causing an unhandled exception, if found) | Custom `ServerError`/`Error` page shown, no stack trace leaked to the browser in a non-dev environment |
-
-*Cut for time: GEN-02/03 (folded into GEN-01 — same disclaimer check, different surfaces, do in one pass), GEN-07 (mobile viewport, lower priority than the functional checks above).*
+| GEN-02 | N | Language toggle bn ↔ en | Switch language on a page with `_LanguageToggle.cshtml` | UI strings switch correctly, no missing-resource fallback text (`[[key]]`-style placeholders) |
+| GEN-03 | E | Navigate to a nonexistent route | `/this-does-not-exist` | Custom `HomeController.NotFound`/404 page, not the default IIS/Kestrel error |
+| GEN-04 | E | Force a server error | Trigger any known error path (e.g. malformed id causing an unhandled exception, if found) | Custom `ServerError`/`Error` page shown, no stack trace leaked to the browser in a non-dev environment |
 
 ---
 
@@ -258,11 +236,11 @@ Produce one Pass/Fail/Partial row per FR with a one-line justification — this 
 
 From `[[rag-pipeline-latent-bugs-2026-08-30]]`, three stacked bugs previously made "Cited Legal Provisions" always empty on `/Case/Result`:
 
-1. **Encryption bug** — `RightsExplanationService`/`DocumentService` were feeding raw ciphertext (instead of decrypted text) into the RAG query and into "FACTS OF THE CASE". *Regression case: CASE-08 above.* If ciphertext reappears anywhere in a rendered page, that's the bug back.
-2. **Keyword-fallback AND-logic bug** — the FTS fallback ANDed every word of a full case description together, guaranteeing zero matches. *Regression case: CASE-01/CASE-08, submit a full-sentence case description and confirm sections come back even when the vector path is empty.*
-3. **Gemini/Qdrant vector-dimension mismatch** — embeddings were generated at 3072-dim against a 768-dim Qdrant collection, so every embed upsert silently failed 100% of the time. *Regression case: CHAT-01/CASE-01 with a query matching an **already-embedded** act returns vector-path results, not just FTS fallback (check `/Admin/EmbeddingProgress` too if time allows — cut from §5.8 for time, but worth a quick look since it's this bug's most direct indicator).*
+1. **Encryption bug** — `RightsExplanationService`/`DocumentService` were feeding raw ciphertext (instead of decrypted text) into the RAG query and into "FACTS OF THE CASE". *Regression case: CASE-05 above.* If ciphertext reappears anywhere in a rendered page, that's the bug back.
+2. **Keyword-fallback AND-logic bug** — the FTS fallback ANDed every word of a full case description together, guaranteeing zero matches. *Regression case: CASE-01/CASE-05, submit a full-sentence case description and confirm sections come back even when the vector path is empty.*
+3. **Gemini/Qdrant vector-dimension mismatch** — embeddings were generated at 3072-dim against a 768-dim Qdrant collection, so every embed upsert silently failed 100% of the time. *Regression case: CHAT-01/CASE-01 with a query matching any act now returns vector-path results, not just FTS fallback (check `/Admin/EmbeddingProgress` too if time allows, since it's this bug's most direct indicator — the full corpus, 42,858 chunks, is embedded as of the completed backfill).*
 
-If you test with a case description matching an act that **hasn't** been embedded yet (see §3 step 4 caveat — most of the corpus isn't embedded yet, only ~265 pre-1900 chunks), you will correctly land on the FTS fallback path. That's expected, not a bug — document which path you exercised for each Chat/Case test case so the report doesn't misreport a fallback hit as a vector-path failure.
+Since the full backfill has completed, most Chat/Case queries should land on the vector path. If a query still falls back to FTS (e.g., no close semantic match), that's expected, not a bug — document which path you exercised for each Chat/Case test case so the report doesn't misreport a fallback hit as a vector-path failure.
 
 ---
 
@@ -272,7 +250,7 @@ If you test with a case description matching an act that **hasn't** been embedde
 2. **Test Environment** — §3 details + screenshot of successful build/run.
 3. **Testing Strategy** — the level-mapping table from §1, and why manual testing was chosen for System/Acceptance (instructor-approved).
 4. **Unit Test Results** — §4.1 summary screenshot + §4.2 table (cite files, don't retype every assertion) + §4.3 new tests added, with before/after pass counts.
-5. **Integration Test Results** — `RagRetrievalSmokeTests` results + any manual integration checks (DB, Qdrant/FTS fallback trigger — CHAT-06).
+5. **Integration Test Results** — `RagRetrievalSmokeTests` results + any manual integration checks (DB, Qdrant/FTS fallback trigger — CHAT-05).
 6. **System Test Results** — every table in §5, each row filled with **actual result** + **screenshot** (one screenshot per row is overkill; group screenshots per feature area, but every *E*/*I* row that reveals unexpected behavior gets its own screenshot).
 7. **Acceptance Test Results** — §6 Pass/Fail/Partial matrix.
 8. **Bugs & Issues Found** — for each: symptom, exact repro steps, screenshot, root cause (if found), and a **fix/improvement recommendation** (this is explicitly graded — don't skip the recommendation even for bugs you don't fix).
