@@ -2,10 +2,6 @@
 
 See `AGENTS.md` for full project guidelines, clean architecture boundaries, and technology stack.
 
-## Git Commit Policy
-
-**NEVER commit, stage, push, or amend — ever.** Shads (the human) is the sole committer. Skip any plan/skill step that says `git commit` — leave changes in the working tree.
-
 ## Mandatory Task Progress Tracking Rule
 
 **Every AI coding agent (Antigravity, Claude Code, OpenCode, Codex, Cursor, etc.) MUST strictly adhere to this workflow:**
@@ -16,3 +12,12 @@ See `AGENTS.md` for full project guidelines, clean architecture boundaries, and 
    - Change the corresponding task checkbox from `- [ ]` to `- [x]`.
    - If completing the task satisfies a checkpoint exit gate, mark the corresponding exit gate `[x]` as well.
 3. **No Unrecorded Work:** Never complete a task or prompt without recording completed progress in `plans/Dependency_plan.md`.
+
+## Git/GitHub Attribution Rule
+
+**Claude must never add itself as a contributor, co-author, or committer on this project's git/GitHub history.**
+
+- Do not add `Co-Authored-By: Claude ...` (or any similar AI attribution) trailers to commit messages.
+- Do not add "Generated with Claude Code" or similar footers to commit messages or pull request descriptions.
+- Do not set commit author/committer identity to Claude or any AI tool.
+- Commits and PRs should be attributed solely to the human contributor driving the work.
