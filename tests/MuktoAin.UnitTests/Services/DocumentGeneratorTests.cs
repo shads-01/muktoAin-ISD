@@ -61,4 +61,30 @@ public class DocumentGeneratorTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => generator.GenerateAsync(caseEntity, explanation));
     }
+
+    [Theory]
+    [InlineData(1, DocumentType.LabourComplaint)]
+    [InlineData(2, DocumentType.GeneralDiary)]
+    [InlineData(3, DocumentType.RtiRequest)]
+    [InlineData(4, DocumentType.ConsumerComplaint)]
+    public async Task GenerateAsync_AvailableTemplates_RendersMatchingDocument(int categoryId, DocumentType expectedType)
+    {
+        var templates = new IDocumentTemplate[]
+        {
+            new MuktoAin.Application.Documents.Templates.LabourComplaintTemplate(),
+            new MuktoAin.Application.Documents.Templates.GeneralDiaryTemplate(),
+            new MuktoAin.Application.Documents.Templates.RtiRequestTemplate(),
+            new MuktoAin.Application.Documents.Templates.ConsumerComplaintTemplate()
+        };
+
+        var generator = new DocumentGenerator(templates);
+        var caseEntity = new Case { CategoryId = categoryId, Description = "Testing document generation" };
+        var explanation = new RightsExplanationDto("Explanation", Array.Empty<CitedSectionDto>(), "Disclaimer");
+
+        var result = await generator.GenerateAsync(caseEntity, explanation);
+
+        Assert.Equal(expectedType, generator.GetDocumentType(categoryId));
+        Assert.NotNull(result);
+        Assert.NotEmpty(result);
+    }
 }

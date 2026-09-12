@@ -196,8 +196,11 @@ builder.Services.AddScoped<IRightsExplanationService, RightsExplanationService>(
 // S-3.6: Admin user management (FR-18)
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 
-// A-2.2 & A-2.3: Document generation engine and templates
+// A-2.2, A-2.3 & A-3.1 (Steps 3.1-3.3): Document generation engine and all 4 templates
 builder.Services.AddScoped<IDocumentTemplate, LabourComplaintTemplate>();
+builder.Services.AddScoped<IDocumentTemplate, GeneralDiaryTemplate>();
+builder.Services.AddScoped<IDocumentTemplate, RtiRequestTemplate>();
+builder.Services.AddScoped<IDocumentTemplate, ConsumerComplaintTemplate>();
 builder.Services.AddScoped<DocumentGenerator>();
 
 // A-2.4: Document lifecycle service
