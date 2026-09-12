@@ -1042,3 +1042,184 @@ CP3 (Day 7+):
 Deferred items live in TODOS.md (Qdrant SDK spike, ScenarioMapping retrieval-boost depth, Program.cs merge convention, CI FTS-image choice).
 
 NO UNRESOLVED DECISIONS
+
+---
+
+## Checkpoint 3 — New Tasks (2026-09 Redistribution)
+
+> **📋 MANDATORY implementation plans (docs/superpowers/plans/) — do NOT author your own:**
+> AI coding agents executing Arpita's remaining tasks MUST follow the linked superpowers implementation plans task-by-task (exact code, file paths, test expectations, step order). Do NOT re-derive, summarize, or replace them with your own plan. If a plan looks outdated vs. the code, STOP and report to Shads.
+>
+> | Tasks | Implementation Plan |
+> |---|---|
+> | S-3.1, S-3.2, S-3.3 | `docs/superpowers/plans/2026-09-12-qa-benchmark-chain.md` |
+> | S-3.8, S-3.9 | `docs/superpowers/plans/2026-09-12-project-documentation-pack.md` (Tasks 2–3) |
+> | SSL-1 → SSL-5 | `docs/superpowers/plans/2026-09-12-sslcommerz-sandbox-payment-gateway.md` |
+> | AUD-7, AUD-8, AUD-11 | `docs/superpowers/plans/2026-09-12-admin-audit-trail-and-payment-hardening.md` |
+> | A-3.7, A-3.9, A-3.11, A-3.12 | `docs/superpowers/plans/2026-09-12-arpita-hardening-and-tests.md` |
+> | A-3.8, A-3.10 | `docs/superpowers/plans/2026-09-12-project-documentation-pack.md` (Tasks 4–5) |
+>
+> The task summaries below are **orientation only** — the linked plans are the source of truth.
+
+### S-3.1 / S-3.2 / S-3.3: QA Benchmark Chain (Reassigned from Shads)
+
+> Arpita built all 4 document templates and the DocumentGenerator engine — she understands the output pipeline the benchmark evaluates.
+
+#### S-3.1: QA Benchmark Dataset Loader (2,165 Questions)
+
+> `[Blocked by: T-2.3, A-2.2]`
+
+1. Create `MuktoAin.Application/Services/BenchmarkLoaderService.cs` with `IBenchmarkLoader` interface.
+2. Parse the 2,165-question JSON/CSV dataset from `data/benchmark/`.
+3. Map each question to `BenchmarkQuestionDto` (question text, expected category, expected act/section references, language).
+4. Add unit tests for parsing, edge cases (missing fields, mixed languages).
+
+#### S-3.2: Benchmark Runner (Zero-Shot Baseline Evaluation)
+
+> `[Blocked by: S-3.1]`
+
+1. Create `MuktoAin.Application/Services/BenchmarkRunnerService.cs` with `IBenchmarkRunner`.
+2. For each benchmark question: run through `AiOrchestrationService` → capture response + citations.
+3. Score against expected references (precision, recall, F1 per question).
+4. Aggregate results into `BenchmarkResultDto` with per-category breakdown.
+5. Output results to `data/benchmark/results/zero-shot-baseline.json`.
+
+#### S-3.3: Few-Shot IRAC Prompt Assembly & Re-Evaluation
+
+> `[Blocked by: S-3.2]`
+
+1. Extend `PromptAssembler` with a few-shot IRAC template variant (Issue, Rule, Application, Conclusion).
+2. Re-run `BenchmarkRunnerService` with the few-shot prompts.
+3. Compare zero-shot vs few-shot results.
+4. Output to `data/benchmark/results/few-shot-irac.json`.
+
+### S-3.8 / S-3.9: Documentation (Reassigned from Shads)
+
+#### S-3.8: `docs/deployment-guide.md`
+
+> `[Blocked by: S-3.4]`
+
+1. Write comprehensive deployment guide covering:
+   - Prerequisites (MSSQL, .NET 8 SDK, Qdrant, API keys)
+   - Local development setup (step-by-step)
+   - Docker deployment
+   - Azure deployment (optional)
+   - Secrets management (`appsettings.Development.json` template)
+2. Verify: all steps reproducible on a clean machine.
+
+#### S-3.9: Root `README.md`
+
+> `[Blocked by: S-3.4, S-3.8]`
+
+1. Rewrite `README.md` with:
+   - Mission statement (MuktoAin = মুক্ত আইন)
+   - Technology stack table
+   - Quick start instructions (referencing deployment guide)
+   - Architecture overview (referencing `docs/architecture.md`)
+   - Attribution & disclaimer
+   - Team & academic context
+
+### SSLCommerz Sandbox Payment Gateway — SSL-1 through SSL-5
+
+> **Full implementation plan:** [`docs/superpowers/plans/2026-09-12-sslcommerz-sandbox-payment-gateway.md`](file:///c:/Users/HP/Desktop/Projects/muktoAin-ISD/docs/superpowers/plans/2026-09-12-sslcommerz-sandbox-payment-gateway.md)
+> **AI agents:** Follow the plan above task-by-task (26 steps). It contains exact code, file paths, and test expectations.
+
+**Summary of tasks (all details in the plan doc):**
+
+1. **SSL-1:** Create `IPaymentGatewayClient` port in Domain + `SslCommerzGatewayClient` adapter in Infrastructure (HTTP client wrapping SSLCommerz Session-Init and Validation APIs)
+2. **SSL-2:** Extend `PaymentService` with `CreateCheckoutSessionAsync` (initiates SSLCommerz checkout) and `ConfirmPaymentAsync` (server-to-server validation after redirect)
+3. **SSL-3:** Add `PaymentController` actions — `Success`, `Fail`, `Cancel`, `Result` callbacks + update `Honorarium`/`TopUp` to return `gatewayUrl` instead of instant success
+4. **SSL-4:** Add `GatewayTransactionId`, `BankTransactionId`, `ValidationPayload` columns to `PaymentOrder` + `SslCommerz` config section in `appsettings`
+5. **SSL-5:** Unit tests for `SslCommerzGatewayClient` (mocked `HttpClient`), `PaymentService` checkout/confirm flow, and controller callback routing
+
+### Audit Report Fixes (Arpita-Assigned)
+
+#### AUD-7: Admin Audit Trail (Entity + Service)
+
+1. Create `AdminAuditLog` entity in Domain:
+   ```csharp
+   public class AdminAuditLog
+   {
+       public int Id { get; set; }
+       public int AdminUserId { get; set; }
+       public string Action { get; set; }  // e.g. "SuspendUser", "ApproveBarRegistration", "RefundOrder"
+       public int? TargetUserId { get; set; }
+       public int? TargetEntityId { get; set; }
+       public string? Details { get; set; }
+       public DateTime CreatedAt { get; set; }
+   }
+   ```
+2. Create `IAdminAuditService` + `AdminAuditService` in Application layer.
+3. Wire `LogAdminAction(...)` calls into `UserManagementService` (suspend/unsuspend), `LawyerVerificationService` (verify/reject), `PaymentService` (refund, mark-paid), `AdminController` (scenario delete).
+4. Create SQL script `scripts/14_add_admin_audit_log.sql`.
+5. Replace `AI_LOG`-based "audit" panel in Admin Dashboard with real `AdminAuditLog` entries.
+
+#### AUD-8: Pagination Fixes
+
+1. Add `skip`/`take` parameters to `LawyerReviewService.GetQueueAsync`.
+2. Add pagination to `AdminController.Users` (offset + page size).
+3. Add pagination to `AdminController.AiLogs` (replace hardcoded `Take(200)`).
+4. Add page controls to the corresponding Razor views.
+
+#### AUD-11: PaymentService Idempotency Guards
+
+1. In `MarkPaidAsync`, check current `Status` — reject if already `Paid` or `Refunded`.
+2. In `RefundAsync`, check current `Status` — reject if not `Paid`.
+3. Add unit tests for double-mark-paid and invalid-state-refund scenarios.
+
+### New Tasks (Line Rebalancing)
+
+#### A-3.7: Comprehensive API Integration Test Suite
+
+> `[Blocked by: A-2.1, A-2.4, E-3.4]`
+
+1. Create integration tests for Document, Case, and Payment controller endpoints.
+2. Use `WebApplicationFactory<Program>` with test DB.
+3. Cover: happy path CRUD, authorization checks, edge cases.
+4. Target: ~1,000 lines of test code.
+
+#### A-3.8: `docs/user-guide.md` (Citizen, Lawyer, Admin Workflows)
+
+1. Write end-user documentation covering:
+   - Citizen workflow: registration → case submission → chat → document generation → PDF download
+   - Lawyer workflow: bar verification → review queue → claim → approve/edit/reject → payments
+   - Admin workflow: dashboard → user management → acts management → analytics
+2. Include step-by-step instructions with placeholder screenshots.
+3. Target: ~800 lines.
+
+#### A-3.9: Extended Document Template Variants (Bangla-Only + Tests)
+
+> `[Blocked by: A-3.1]`
+
+1. Add Bangla-only rendering variants for all 4 templates (no English interleaving).
+2. Add unit tests for Bangla-only output, mixed-language fallback, and edge cases.
+3. Target: ~700 lines.
+
+#### A-3.10: `docs/testing-report.md` (Test Coverage & Methodology)
+
+1. Document the full test coverage analysis:
+   - Per-module test counts and coverage %
+   - Testing methodology (unit vs integration)
+   - What's tested vs what's mocked
+   - How to run the full suite
+2. Target: ~500 lines.
+
+#### A-3.11: Input Validation Hardening Across All Forms
+
+> `[Blocked by: E-3.4]`
+
+1. Add server-side `[Required]`, `[StringLength]`, `[RegularExpression]` to all ViewModels.
+2. Add client-side validation scripts for all forms.
+3. Add XSS prevention (HTML encoding, sanitization).
+4. Add length guards matching DB column widths.
+5. Target: ~500 lines.
+
+#### A-3.12: Error Handling Improvements + User-Friendly Error Pages
+
+> `[Blocked by: E-1.4]`
+
+1. Create custom error pages for 404, 403, 500 (bilingual Bn/En).
+2. Add graceful API error response DTOs.
+3. Add user-friendly fallback messages for service failures.
+4. Target: ~400 lines.
+

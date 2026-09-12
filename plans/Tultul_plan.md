@@ -1000,3 +1000,77 @@ Tultul's work is almost entirely self-contained. The critical insight: **she IS 
 Deferred items live in TODOS.md (Qdrant SDK spike, ScenarioMapping retrieval-boost depth, Program.cs merge convention, CI FTS-image choice).
 
 NO UNRESOLVED DECISIONS
+
+---
+
+## Checkpoint 3 — New Tasks (2026-09 Redistribution)
+
+> **Note:** Hrittika = Tultul (same person). All T-* prefix tasks are Hrittika's. The filename `Tultul_plan.md` is kept for git history continuity.
+
+> **📋 MANDATORY implementation plans (docs/superpowers/plans/) — do NOT author your own:**
+> AI coding agents executing Hrittika's remaining tasks MUST follow the linked superpowers implementation plans task-by-task (exact code, file paths, test expectations, step order). Do NOT re-derive, summarize, or replace them with your own plan. If a plan looks outdated vs. the code, STOP and report to Shads.
+>
+> | Tasks | Implementation Plan |
+> |---|---|
+> | T-3.1, T-3.2 | `docs/superpowers/plans/2026-09-12-acts-scenario-management.md` |
+> | T-3.3 | `docs/superpowers/plans/2026-09-12-repository-db-integration-tests.md` |
+> | T-3.5 | `docs/superpowers/plans/2026-09-12-project-documentation-pack.md` (Task 1) |
+> | S-3.4 | `docs/superpowers/plans/2026-09-12-docker-cicd.md` |
+> | AUD-4 | `docs/superpowers/plans/2026-09-12-rowversion-concurrency-aud4.md` |
+> | TIER-1 → TIER-6 | `docs/superpowers/plans/2026-09-12-admin-tiers.md` |
+> | NOTIF-1 → NOTIF-7 | `docs/superpowers/plans/2026-09-12-notifications.md` |
+>
+> The task summaries below are **orientation only** — the linked plans are the source of truth.
+
+### S-3.4: Multi-Stage Dockerfile & GitHub Actions CI/CD Pipeline (Reassigned from Shads)
+
+> Hrittika scaffolded the .NET 8 solution in T-1.1 — she knows the project structure best.
+
+1. Create `Dockerfile` with multi-stage build (SDK 8.0 build → ASP.NET 8.0 runtime).
+2. Create `.github/workflows/ci.yml` with:
+   - Restore → Build → Unit Test → Publish
+   - Optional: Docker image build on push to `main`
+3. Create `.dockerignore` (exclude `node_modules`, `.git`, `bin/`, `obj/`).
+4. Verify: `docker build -t muktoain .` succeeds; CI workflow syntax validates.
+
+### AUD-4: RowVersion Concurrency Tokens on Schema
+
+> Source: `docs/PROJECT_AUDIT_REPORT.md` — Lawyer claim race, payment double-processing, and case status TOCTOU all lack DB-level concurrency control.
+
+1. Add `[Timestamp] public byte[] RowVersion { get; set; }` to:
+   - `GeneratedDocument` (lawyer claim race)
+   - `Case` (status transitions)
+   - `PaymentOrder` (mark-paid idempotency)
+2. Add EF config: `builder.Property(e => e.RowVersion).IsRowVersion();` in each entity's configuration.
+3. Create `scripts/13_add_rowversion_columns.sql` (idempotent `IF NOT EXISTS` guard).
+4. Verify: build clean, existing tests pass.
+
+### Admin Tiers (SuperAdmin) — TIER-1 through TIER-6
+
+> **Full implementation plan:** [`docs/superpowers/plans/2026-09-12-admin-tiers.md`](file:///c:/Users/HP/Desktop/Projects/muktoAin-ISD/docs/superpowers/plans/2026-09-12-admin-tiers.md)
+> **AI agents:** Follow the plan above task-by-task (44 steps). It contains exact code, file paths, and test expectations.
+
+**Summary of tasks (all details in the plan doc):**
+
+1. **TIER-1:** Add `User.IsSuperAdmin` bool property + EF config + `scripts/12_add_user_issuperadmin.sql`
+2. **TIER-2:** Update `UserRoleClaimsTransformation` to project `IsSuperAdmin` claim + register `SuperAdminOnly` authorization policy in `Program.cs`
+3. **TIER-3:** Add `SetAdminStatusAsync`, `PromoteToSuperAdminAsync`, `CreateAdminAsync` to `UserManagementService` with mutual-immutability guard (SuperAdmin cannot modify another SuperAdmin)
+4. **TIER-4:** Update `Views/Admin/Users.cshtml` with SuperAdmin management controls (promote, create admin, visual distinction)
+5. **TIER-5:** Unit tests for all SuperAdmin business logic
+6. **TIER-6:** Seed initial SuperAdmin account + update `Dependency_plan.md`
+
+### In-App Notifications — NOTIF-1 through NOTIF-7
+
+> **Full implementation plan:** [`docs/superpowers/plans/2026-09-12-notifications.md`](file:///c:/Users/HP/Desktop/Projects/muktoAin-ISD/docs/superpowers/plans/2026-09-12-notifications.md)
+> **AI agents:** Follow the plan above task-by-task (70 steps). It contains exact code, file paths, and test expectations.
+
+**Summary of tasks (all details in the plan doc):**
+
+1. **NOTIF-1:** Create `NotificationType` enum (5 values) + `Notification` entity in Domain
+2. **NOTIF-2:** EF `NotificationConfiguration` + `DbSet<Notification>` + `scripts/11_add_notification_table.sql`
+3. **NOTIF-3:** `NotificationService.cs` with `NotifyAsync`/`NotifyAllAdminsAsync` (fail-safe, never throws) + `NotificationTextFormatter` (bilingual Bn/En)
+4. **NOTIF-4:** Wire 1-line `NotifyAsync` calls into 5 existing services: `CaseService.SubmitCaseAsync`, `LawyerReviewService.SubmitReviewAsync`, `LawyerVerificationService.VerifyAsync`, `PaymentService`, `AccountController.Register` (for new lawyer applications)
+5. **NOTIF-5:** `NotificationController` — `UnreadCount` JSON endpoint (polled every 30s), `MarkRead`, paginated `Index` list view
+6. **NOTIF-6:** Bell icon dropdown in `_Layout.cshtml` using existing `.menu-pop`/`[data-pop]` pattern + vanilla JS polling
+7. **NOTIF-7:** Unit tests for NotificationService dispatch, text formatting, controller authorization, and ownership checks
+
