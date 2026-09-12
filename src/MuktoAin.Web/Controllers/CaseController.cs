@@ -24,6 +24,7 @@ public class CaseController : Controller
     private readonly IRepository<GeneratedDocument> _docRepo;
     private readonly IRepository<LawyerReview> _reviewRepo;
     private readonly IRepository<LawyerProfile> _lawyerProfileRepo;
+    private readonly IModerationService _moderationService;
 
     public CaseController(
         CaseService caseService,
@@ -34,7 +35,8 @@ public class CaseController : Controller
         IRepository<District> districtRepo,
         IRepository<GeneratedDocument> docRepo,
         IRepository<LawyerReview> reviewRepo,
-        IRepository<LawyerProfile> lawyerProfileRepo)
+        IRepository<LawyerProfile> lawyerProfileRepo,
+        IModerationService moderationService)
     {
         _caseService = caseService;
         _rightsExplanationService = rightsExplanationService;
@@ -45,6 +47,7 @@ public class CaseController : Controller
         _docRepo = docRepo;
         _reviewRepo = reviewRepo;
         _lawyerProfileRepo = lawyerProfileRepo;
+        _moderationService = moderationService;
     }
 
     [HttpGet]
@@ -74,6 +77,14 @@ public class CaseController : Controller
     {
         if (!ModelState.IsValid)
         {
+            await PopulateDropdownsAsync(vm);
+            return View(vm);
+        }
+
+        // A-3.5: Moderation blocklist check on case submission
+        if (!_moderationService.IsContentAppropriate(vm.Title) || !_moderationService.IsContentAppropriate(vm.Description))
+        {
+            ModelState.AddModelError(string.Empty, "আপনার আবেদনে অনুপযুক্ত বা নিষিদ্ধ শব্দ রয়েছে। অনুগ্রহ করে আইনি সমস্যা সম্পর্কিত তথ্য প্রদান করুন। / Your submission contains inappropriate content. Please provide relevant legal information.");
             await PopulateDropdownsAsync(vm);
             return View(vm);
         }
