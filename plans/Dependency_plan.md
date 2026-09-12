@@ -123,7 +123,7 @@
 ## 🏛️ Checkpoint 3: Review Gate, Admin, Evaluation & Delivery (25%)
 
 ### 1. Document Templates, Admin Services & Schema Enhancements
-- [ ] **[A-3.1]** Complete All 4 Document Templates (GD, RTI, Consumer) — *Arpita* `[Blocked by: A-2.2]`
+- [x] ~~**[A-3.1]** Complete All 4 Document Templates (GD, RTI, Consumer) — *Arpita* `[Blocked by: A-2.2]`~~ — all 4 structured legal document templates (`LabourComplaintTemplate`, `GeneralDiaryTemplate`, `RtiRequestTemplate`, `ConsumerComplaintTemplate`) fully implemented in `MuktoAin.Application.Documents.Templates`, registered in DI, and verified with unit tests.
 - [ ] **[A-3.2]** `AdminAnalyticsService.cs` (KPIs, Funnels, Workloads) — *Arpita* `[Blocked by: T-1.12] [Wires to E-3.1]`
 - [ ] **[T-3.1]** `ActsManagementService.cs` (Admin CRUD & SHA256 Re-indexing) — *Tultul* `[Blocked by: T-1.8, S-1.8] [Wires to E-3.2]`
 - [ ] **[T-3.2]** `ScenarioMappingService.cs` (Admin Keyword Boosts for FR-18) — *Tultul* `[Blocked by: T-1.12] [Wires to E-3.2]`
