@@ -55,8 +55,15 @@ public class ChatController : Controller
         if (body == null || string.IsNullOrWhiteSpace(body.Question) || body.ChatSessionId <= 0)
             return BadRequest(new { error = "question and chatSessionId required" });
 
+        var session = await _chatService.GetSessionAsync(body.ChatSessionId);
+        if (session == null)
+            return NotFound(new { error = "Session not found" });
+
         var userId = CurrentUserId();
-        var key = userId.HasValue ? null : SessionKey();
+        var key = SessionKey();
+        var allowed = session.UserId == userId
+                      || (session.UserId == null && session.SessionKey == key);
+        if (!allowed) return Forbid();
 
         // Cache-first (spec: cache hits stretch the daily quota — a repeated
         // question must NOT be charged a turn or walled). AskAsync returns
@@ -200,6 +207,16 @@ public class ChatController : Controller
             return BadRequest(new { error = "chatSessionId, categoryId, districtId required" });
         if (string.IsNullOrWhiteSpace(body.Title))
             return BadRequest(new { error = "title required" });
+
+        var session = await _chatService.GetSessionAsync(body.ChatSessionId);
+        if (session == null)
+            return NotFound(new { error = "Session not found" });
+
+        var userId = CurrentUserId();
+        var key = SessionKey();
+        var allowed = session.UserId == userId
+                      || (session.UserId == null && session.SessionKey == key);
+        if (!allowed) return Forbid();
 
         try
         {

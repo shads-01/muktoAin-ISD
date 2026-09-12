@@ -377,7 +377,7 @@ document.addEventListener("DOMContentLoaded", function () {
             var res = await fetch("/Payment/Honorarium", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ caseId: @Model.CaseId, amount: amount })
+                body: JSON.stringify({ caseId: @Model.CaseId, amount: amount, trackingCode: '@Model.TrackingCode' })
             });
             var data = await res.json();
             if (data.success) {
