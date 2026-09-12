@@ -65,12 +65,14 @@ public class DocumentGeneratorTests
     [Theory]
     [InlineData(1, DocumentType.LabourComplaint)]
     [InlineData(2, DocumentType.GeneralDiary)]
+    [InlineData(3, DocumentType.RtiRequest)]
     public async Task GenerateAsync_AvailableTemplates_RendersMatchingDocument(int categoryId, DocumentType expectedType)
     {
         var templates = new IDocumentTemplate[]
         {
             new MuktoAin.Application.Documents.Templates.LabourComplaintTemplate(),
-            new MuktoAin.Application.Documents.Templates.GeneralDiaryTemplate()
+            new MuktoAin.Application.Documents.Templates.GeneralDiaryTemplate(),
+            new MuktoAin.Application.Documents.Templates.RtiRequestTemplate()
         };
 
         var generator = new DocumentGenerator(templates);
