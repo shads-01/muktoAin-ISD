@@ -140,7 +140,7 @@
 - [ ] **[S-3.1]** QA Benchmark Dataset Loader (2,165 Questions) — *Shads* `[Blocked by: T-2.3, A-2.2] [Unblocks: S-3.2]`
 - [ ] **[S-3.2]** Benchmark Runner (Zero-Shot Baseline Evaluation) — *Shads* `[Blocked by: S-3.1] [Unblocks: S-3.3]`
 - [ ] **[S-3.3]** Few-Shot IRAC Prompt Assembly & Re-Evaluation — *Shads* `[Blocked by: S-3.2]`
-- [ ] **[A-3.3]** Business Logic Unit Tests & Security Edge-Case Tests — *Arpita* `[Blocked by: A-2.1 to A-2.7]`
+- [x] ~~**[A-3.3]** Business Logic Unit Tests & Security Edge-Case Tests — *Arpita* `[Blocked by: A-2.1 to A-2.7]`~~ — 294 unit tests passing across all Arpita services (`CaseService` state machine & PII encryption, `DocumentGenerator` & all 4 templates, `DocumentService` lifecycle & PDF download gate, `LawyerReviewService` review queue, claim concurrency optimistic locks, review submission validation & ownership guards, `LawyerVerificationService`, `AdminAnalyticsService` anonymization); full suite verified clean.
 - [ ] **[A-3.5]** `ModerationService.cs` (Submission Blocklist Filter) — *Arpita* `[Blocked by: T-1.12]`
 - [ ] **[A-3.6]** `docs/attribution-CC-BY-SA-4.0.md` (Acts + QA Dataset Licenses) — *Arpita* — *(no blockers)*
 - [ ] **[T-3.3]** Repository & DB Integration Tests — *Tultul* `[Blocked by: T-1.12]`

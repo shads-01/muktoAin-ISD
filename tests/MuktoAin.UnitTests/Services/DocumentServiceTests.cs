@@ -193,6 +193,15 @@ public class DocumentServiceTests
         _mockDocRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
     }
 
+    [Fact]
+    public async Task UpdateStatusAsync_DocumentNotFound_ThrowsArgumentException()
+    {
+        _mockDocRepo.Setup(r => r.GetByIdAsync(999)).ReturnsAsync((GeneratedDocument?)null);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _service.UpdateStatusAsync(999, DocumentStatus.Approved));
+    }
+
     // ── A-2.5: PDF download gate (GetPdfIfApprovedAsync) ────────────────
 
     [Fact]
