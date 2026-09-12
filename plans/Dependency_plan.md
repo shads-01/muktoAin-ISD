@@ -124,7 +124,7 @@
 
 ### 1. Document Templates, Admin Services & Schema Enhancements
 - [x] ~~**[A-3.1]** Complete All 4 Document Templates (GD, RTI, Consumer) — *Arpita* `[Blocked by: A-2.2]`~~ — all 4 structured legal document templates (`LabourComplaintTemplate`, `GeneralDiaryTemplate`, `RtiRequestTemplate`, `ConsumerComplaintTemplate`) fully implemented in `MuktoAin.Application.Documents.Templates`, registered in DI, and verified with unit tests.
-- [ ] **[A-3.2]** `AdminAnalyticsService.cs` (KPIs, Funnels, Workloads) — *Arpita* `[Blocked by: T-1.12] [Wires to E-3.1]`
+- [x] ~~**[A-3.2]** `AdminAnalyticsService.cs` (KPIs, Funnels, Workloads) — *Arpita* `[Blocked by: T-1.12] [Wires to E-3.1]`~~ — implemented `IAdminAnalyticsService` & `AdminAnalyticsService` in `MuktoAin.Application.Services` aggregating anonymized KPIs (TotalCases, PendingReviews, ApprovedDocuments, Category & District distributions) per FR-16; registered in DI; verified with unit tests.
 - [ ] **[T-3.1]** `ActsManagementService.cs` (Admin CRUD & SHA256 Re-indexing) — *Tultul* `[Blocked by: T-1.8, S-1.8] [Wires to E-3.2]`
 - [ ] **[T-3.2]** `ScenarioMappingService.cs` (Admin Keyword Boosts for FR-18) — *Tultul* `[Blocked by: T-1.12] [Wires to E-3.2]`
 - [x] ~~**[S-3.6]** `UserManagementService.cs` (Admin Role Management) — *Shads* `[Blocked by: S-1.1] [Wires to E-3.3]`~~ — implemented `IUserManagementService` and `UserManagementService` wrapping `UserManager<User>` with suspension and admin protection guardrails; registered in DI; verified with unit tests
