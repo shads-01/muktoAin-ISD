@@ -111,4 +111,83 @@ public class DocumentControllerTests
         var result = await _controller.Download(-1);
         Assert.IsType<NotFoundResult>(result);
     }
+
+    [Fact]
+    public async Task Preview_WhenDocumentNotFoundInRepo_ReturnsNotFound_WithoutMockFallback()
+    {
+        _docRepo.Setup(r => r.GetByIdAsync(999)).ReturnsAsync((GeneratedDocument?)null);
+
+        var result = await _controller.Preview(999);
+
+        Assert.IsType<NotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task Preview_WhenCaseServicePresentAndUserUnauthorized_ReturnsForbid()
+    {
+        var doc = new GeneratedDocument
+        {
+            DocumentId = 30,
+            CaseId = 77,
+            Status = DocumentStatus.Draft
+        };
+        _docRepo.Setup(r => r.GetByIdAsync(30)).ReturnsAsync(doc);
+
+        var caseRepo = new Mock<ICaseRepository>();
+        caseRepo.Setup(r => r.GetWithDocumentsAsync(77)).ReturnsAsync((Case?)null);
+
+        var caseService = new CaseService(
+            caseRepo.Object,
+            Mock.Of<IRepository<CaseCategory>>(),
+            Mock.Of<IRepository<District>>(),
+            Mock.Of<MuktoAin.Domain.Interfaces.Services.IEncryptionService>());
+
+        var controller = new DocumentController(
+            Mock.Of<ILogger<DocumentController>>(),
+            _docRepo.Object,
+            null,
+            caseService)
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+
+        var result = await controller.Preview(30);
+
+        Assert.IsType<ForbidResult>(result);
+    }
+
+    [Fact]
+    public async Task Download_WhenCaseServicePresentAndUserUnauthorized_ReturnsForbid()
+    {
+        var doc = new GeneratedDocument
+        {
+            DocumentId = 30,
+            CaseId = 77,
+            Status = DocumentStatus.Approved
+        };
+        _docRepo.Setup(r => r.GetByIdAsync(30)).ReturnsAsync(doc);
+
+        var caseRepo = new Mock<ICaseRepository>();
+        caseRepo.Setup(r => r.GetWithDocumentsAsync(77)).ReturnsAsync((Case?)null);
+
+        var caseService = new CaseService(
+            caseRepo.Object,
+            Mock.Of<IRepository<CaseCategory>>(),
+            Mock.Of<IRepository<District>>(),
+            Mock.Of<MuktoAin.Domain.Interfaces.Services.IEncryptionService>());
+
+        var controller = new DocumentController(
+            Mock.Of<ILogger<DocumentController>>(),
+            _docRepo.Object,
+            null,
+            caseService)
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+
+        var result = await controller.Download(30);
+
+        Assert.IsType<ForbidResult>(result);
+    }
 }
+
