@@ -141,7 +141,7 @@
 - [ ] **[S-3.2]** Benchmark Runner (Zero-Shot Baseline Evaluation) — *Shads* `[Blocked by: S-3.1] [Unblocks: S-3.3]`
 - [ ] **[S-3.3]** Few-Shot IRAC Prompt Assembly & Re-Evaluation — *Shads* `[Blocked by: S-3.2]`
 - [x] ~~**[A-3.3]** Business Logic Unit Tests & Security Edge-Case Tests — *Arpita* `[Blocked by: A-2.1 to A-2.7]`~~ — 294 unit tests passing across all Arpita services (`CaseService` state machine & PII encryption, `DocumentGenerator` & all 4 templates, `DocumentService` lifecycle & PDF download gate, `LawyerReviewService` review queue, claim concurrency optimistic locks, review submission validation & ownership guards, `LawyerVerificationService`, `AdminAnalyticsService` anonymization); full suite verified clean.
-- [ ] **[A-3.5]** `ModerationService.cs` (Submission Blocklist Filter) — *Arpita* `[Blocked by: T-1.12]`
+- [x] ~~**[A-3.5]** `ModerationService.cs` (Submission Blocklist Filter) — *Arpita* `[Blocked by: T-1.12]`~~ — implemented `IModerationService` and `ModerationService` with keyword blocklist filtering across Bangla and English; registered in DI; verified by 20 new unit tests (314 unit tests total passing).
 - [ ] **[A-3.6]** `docs/attribution-CC-BY-SA-4.0.md` (Acts + QA Dataset Licenses) — *Arpita* — *(no blockers)*
 - [ ] **[T-3.3]** Repository & DB Integration Tests — *Tultul* `[Blocked by: T-1.12]`
 - [ ] **[T-3.5]** `docs/architecture.md` (Clean Arch, ERD, Retrieval Pipeline) — *Tultul* — *(no blockers, update as architecture evolves)*

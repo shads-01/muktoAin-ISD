@@ -200,6 +200,10 @@ builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IAdminAnalyticsService, AdminAnalyticsService>();
 builder.Services.AddScoped<AdminAnalyticsService>();
 
+// A-3.5 (Step 3.5): Submission content moderation service
+builder.Services.AddScoped<IModerationService, ModerationService>();
+builder.Services.AddScoped<ModerationService>();
+
 // A-2.2, A-2.3 & A-3.1 (Steps 3.1-3.3): Document generation engine and all 4 templates
 builder.Services.AddScoped<IDocumentTemplate, LabourComplaintTemplate>();
 builder.Services.AddScoped<IDocumentTemplate, GeneralDiaryTemplate>();
