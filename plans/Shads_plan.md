@@ -890,3 +890,87 @@ Once Tultul's PR lands → execute the SQL scripts in SSMS, wire Identity, start
 Deferred items live in TODOS.md (Qdrant SDK spike, ScenarioMapping retrieval-boost depth, Program.cs merge convention, CI FTS-image choice).
 
 NO UNRESOLVED DECISIONS
+
+---
+
+## Checkpoint 3 — New Tasks (2026-09 Redistribution)
+
+> **📋 MANDATORY implementation plans (docs/superpowers/plans/) — do NOT author your own:**
+> AI coding agents executing Shads's remaining tasks MUST follow the linked superpowers implementation plans task-by-task (exact code, file paths, test expectations, step order). Do NOT re-derive, summarize, or replace them with your own plan. If a plan looks outdated vs. the code, STOP and report to Shads.
+>
+> | Tasks | Implementation Plan |
+> |---|---|
+> | AUD-1, AUD-2, AUD-3, AUD-5, AUD-6, AUD-9, AUD-10, AUD-12 | `docs/superpowers/plans/2026-09-12-security-audit-fixes-shads.md` |
+> | S-3.5 (Localization middleware) | `docs/superpowers/plans/2026-09-12-localization-resx.md` |
+>
+> The task summaries below are **orientation only** — the linked plans are the source of truth. S-3.5 is not described below (tracked in `plans/Dependency_plan.md` only).
+
+### Reassigned Away (see other plans)
+
+> The following S-* tasks were reassigned from Shads to rebalance team code contributions:
+> - **S-3.1 / S-3.2 / S-3.3** (QA Benchmark chain) → **Arpita** (`Arpita_plan.md`)
+> - **S-3.4** (Dockerfile & CI/CD) → **Hrittika** (`Tultul_plan.md`)
+> - **S-3.8 / S-3.9** (deployment-guide.md / README.md) → **Arpita** (`Arpita_plan.md`)
+
+### Audit Report Fixes (Shads-Assigned)
+
+> Source: `docs/PROJECT_AUDIT_REPORT.md` — 5 critical findings already fixed in R-28 + PR#51/#52. These are the remaining Medium/Low fixes assigned to Shads.
+
+#### AUD-1: CSRF Tokens on Chat/Payment Controllers
+
+1. Add `[ValidateAntiForgeryToken]` to all POST actions in `ChatController` and `PaymentController`.
+2. In `wwwroot/assets/js/chat.js`, wire `RequestVerificationToken` into all `fetch()` POST calls (`/Chat/Ask`, `/Chat/Commit`, `/Chat/New`).
+3. In `wwwroot/assets/js/main.js`, wire the token into `/Payment/TopUp` and `/Payment/Honorarium` fetch calls.
+4. Verify: existing unit tests still pass; manually test chat submit + payment with browser DevTools confirming the token header is present.
+
+#### AUD-2: Data Protection Key Ring Persistence
+
+1. In `Program.cs`, replace bare `builder.Services.AddDataProtection()` with:
+   ```csharp
+   builder.Services.AddDataProtection()
+       .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "keys")))
+       .SetApplicationName("MuktoAin");
+   ```
+2. Add `keys/` to `.gitignore`.
+3. Verify: restart app, confirm existing encrypted `Case.Title`/`Description` remain readable.
+
+#### AUD-3: AiBudgetService TOCTOU Race Fix
+
+1. Replace `TryReserveTurnAsync` check-only logic with an atomic INSERT reservation row (or `UPDLOCK` pattern).
+2. Verify: write a unit test simulating concurrent calls confirming only one succeeds.
+
+#### AUD-5: Rate Limiting Middleware
+
+1. Add `builder.Services.AddRateLimiter(...)` in `Program.cs` with policies for:
+   - `/Account/Login`, `/Account/Register`: 5 req/min per IP
+   - `/Chat/Ask`: 10 req/min per user
+   - `/Payment/*`: 5 req/min per user
+2. Add `app.UseRateLimiter()` in the pipeline.
+3. Verify: build clean, unit tests pass.
+
+#### AUD-6: Security Headers Middleware
+
+1. Add middleware in `Program.cs` (or a custom `SecurityHeadersMiddleware`):
+   - `X-Content-Type-Options: nosniff`
+   - `X-Frame-Options: DENY`
+   - `Referrer-Policy: strict-origin-when-cross-origin`
+   - Basic CSP header
+2. Verify: check response headers in browser DevTools.
+
+#### AUD-9: Dead `documentType` Parameter Cleanup
+
+1. Remove `DocumentType` from `ChatCommitRequest`.
+2. Remove the unused `documentType` parameter from `ChatService.CommitToCaseAsync`.
+3. Verify: build clean, existing tests pass.
+
+#### AUD-10: Mock Data Fallback Removal
+
+1. Remove `GetMockDocument(int id)` method from `DocumentController`.
+2. Remove optional nullable constructor params (`IRepository<GeneratedDocument>? docRepo = null`).
+3. Verify: build clean, existing tests pass.
+
+#### AUD-12: Dashboard Log Severity Fix
+
+1. In `AdminController.BuildAdminDashboardViewModelAsync`, change `_logger.LogInformation(...)` to `_logger.LogError(...)` in the catch block.
+2. Verify: build clean.
+

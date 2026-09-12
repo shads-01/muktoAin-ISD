@@ -112,7 +112,6 @@ public class AdminController : Controller
     /// Live endpoint for tracking Qdrant embedding and upload progress.
     /// </summary>
     [HttpGet]
-    [AllowAnonymous]
     public async Task<IActionResult> EmbeddingProgress()
     {
         if (!_cachedTotalChunks.HasValue || _cachedTotalChunks.Value == 0)
@@ -149,7 +148,6 @@ public class AdminController : Controller
     /// Admin Dashboard, mirroring EmbeddingProgress()'s pattern above.
     /// </summary>
     [HttpGet]
-    [AllowAnonymous]
     public IActionResult GeminiKeyStatus()
     {
         var snapshot = _geminiClient.Snapshot();

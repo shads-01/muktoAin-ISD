@@ -64,6 +64,77 @@ public class PaymentControllerTests
         Assert.IsType<NotFoundObjectResult>(result);
     }
 
+    [Fact]
+    public async Task Honorarium_WhenUserDoesNotOwnCase_ReturnsForbid()
+    {
+        var caseRepo = new Mock<ICaseRepository>();
+        caseRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(new Case
+        {
+            CaseId = 10,
+            UserId = 999 // Different user
+        });
+
+        var paymentService = new PaymentService(
+            _orderRepo.Object,
+            Mock.Of<IRepository<PayoutRequest>>(),
+            Mock.Of<IRepository<LawyerProfile>>(),
+            caseRepo.Object,
+            NewUserManager());
+
+        var controller = new PaymentController(
+            paymentService,
+            _orderRepo.Object,
+            Mock.Of<ILogger<PaymentController>>(),
+            caseRepo.Object)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext
+                {
+                    User = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(new[]
+                    {
+                        new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "123")
+                    }))
+                }
+            }
+        };
+
+        var result = await controller.Honorarium(new HonorariumPaymentRequest { CaseId = 10, Amount = 500 });
+
+        Assert.IsType<ForbidResult>(result);
+    }
+
+    [Fact]
+    public async Task Status_WhenUserDoesNotOwnOrder_ReturnsForbid()
+    {
+        _orderRepo.Setup(r => r.GetByIdAsync(50)).ReturnsAsync(new PaymentOrder
+        {
+            PaymentOrderId = 50,
+            UserId = 999 // Different user
+        });
+
+        var controller = new PaymentController(
+            Mock.Of<PaymentService>(),
+            _orderRepo.Object,
+            Mock.Of<ILogger<PaymentController>>())
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext
+                {
+                    User = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(new[]
+                    {
+                        new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "123")
+                    }))
+                }
+            }
+        };
+
+        var result = await controller.Status(50);
+
+        Assert.IsType<ForbidResult>(result);
+    }
+
     private static UserManager<User> NewUserManager()
     {
         var store = new Mock<IUserStore<User>>();

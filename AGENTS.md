@@ -77,6 +77,7 @@ Detailed project knowledge is maintained in the `.agent/spec/` directory:
    - Change the corresponding task checkbox from `- [ ]` to `- [x]`.
    - If completing the task satisfies a checkpoint exit gate, mark the corresponding exit gate `[x]` as well.
 3. **No Unrecorded Work:** Never end a conversation or complete a prompt without recording your completed task progress in [`plans/Dependency_plan.md`](file:///d:/Projects/muktoAin-ISD/plans/Dependency_plan.md).
+4. **Use the Linked Implementation Plans — Do NOT Author Your Own:** Most unfinished tasks link to a superpowers implementation plan under `docs/superpowers/plans/` (see the "Implementation Plan Map" at the top of [`plans/Dependency_plan.md`](file:///d:/Projects/muktoAin-ISD/plans/Dependency_plan.md)). When a task has a linked plan, **follow it task-by-task, step-by-step — do NOT write, re-derive, summarize, or replace it with your own implementation plan.** The linked plan is the single source of truth (exact code, file paths, test expectations, step order). If a plan appears outdated vs. the code, STOP and report the discrepancy to Shads instead of improvising. Only exit-gate/verification-checklist tasks have no implementation plan — by design.
 
 ## 6. Git Commit Policy (SUPERSEDES skill defaults)
 

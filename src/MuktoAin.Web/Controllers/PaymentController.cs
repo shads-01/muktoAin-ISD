@@ -12,16 +12,19 @@ public class PaymentController : Controller
 {
     private readonly PaymentService _paymentService;
     private readonly IRepository<PaymentOrder> _orderRepo;
+    private readonly ICaseRepository? _caseRepo;
     private readonly ILogger<PaymentController> _logger;
 
     public PaymentController(
         PaymentService paymentService,
         IRepository<PaymentOrder> orderRepo,
-        ILogger<PaymentController> logger)
+        ILogger<PaymentController> logger,
+        ICaseRepository? caseRepo = null)
     {
         _paymentService = paymentService;
         _orderRepo = orderRepo;
         _logger = logger;
+        _caseRepo = caseRepo;
     }
 
     private int? CurrentUserId()
@@ -38,9 +41,27 @@ public class PaymentController : Controller
             return BadRequest(new { success = false, message = "Invalid case ID or amount" });
         }
 
+        var userId = CurrentUserId();
+
+        if (_caseRepo != null)
+        {
+            var caseEntity = await _caseRepo.GetByIdAsync(body.CaseId);
+            if (caseEntity == null)
+            {
+                return NotFound(new { success = false, message = "Case not found" });
+            }
+
+            var isAdmin = User.IsInRole("Admin");
+            var isOwner = (caseEntity.UserId.HasValue && caseEntity.UserId == userId)
+                          || (!caseEntity.UserId.HasValue && !string.IsNullOrEmpty(body.TrackingCode) && caseEntity.AnonymousTrackingCode == body.TrackingCode);
+            if (!isAdmin && !isOwner)
+            {
+                return Forbid();
+            }
+        }
+
         try
         {
-            var userId = CurrentUserId();
             var order = await _paymentService.CreateHonorariumOrderAsync(body.CaseId, userId, body.Amount);
 
             // In sandbox mode, immediately mark Paid with sandbox reference
@@ -107,6 +128,14 @@ public class PaymentController : Controller
             return NotFound(new { success = false, message = "Order not found" });
         }
 
+        var userId = CurrentUserId();
+        var isAdmin = User.IsInRole("Admin");
+        var isOrderOwner = order.UserId.HasValue && order.UserId == userId;
+        if (!isAdmin && !isOrderOwner)
+        {
+            return Forbid();
+        }
+
         return Json(new
         {
             success = true,
@@ -126,6 +155,7 @@ public class HonorariumPaymentRequest
 {
     public int CaseId { get; set; }
     public decimal Amount { get; set; }
+    public string? TrackingCode { get; set; }
 }
 
 public class TopUpPaymentRequest

@@ -21,4 +21,17 @@ public class AdminControllerTests
         Assert.NotNull(attribute);
         Assert.Equal("Admin", attribute!.Roles);
     }
+
+    [Fact]
+    public void TelemetryEndpoints_DoNotAllowAnonymous()
+    {
+        var progressMethod = typeof(AdminController).GetMethod(nameof(AdminController.EmbeddingProgress));
+        Assert.NotNull(progressMethod);
+        Assert.False(progressMethod!.IsDefined(typeof(AllowAnonymousAttribute), inherit: true));
+
+        var keyStatusMethod = typeof(AdminController).GetMethod(nameof(AdminController.GeminiKeyStatus));
+        Assert.NotNull(keyStatusMethod);
+        Assert.False(keyStatusMethod!.IsDefined(typeof(AllowAnonymousAttribute), inherit: true));
+    }
 }
+
