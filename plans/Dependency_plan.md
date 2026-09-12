@@ -142,10 +142,10 @@
 - [ ] **[S-3.3]** Few-Shot IRAC Prompt Assembly & Re-Evaluation — *Shads* `[Blocked by: S-3.2]`
 - [x] ~~**[A-3.3]** Business Logic Unit Tests & Security Edge-Case Tests — *Arpita* `[Blocked by: A-2.1 to A-2.7]`~~ — 294 unit tests passing across all Arpita services (`CaseService` state machine & PII encryption, `DocumentGenerator` & all 4 templates, `DocumentService` lifecycle & PDF download gate, `LawyerReviewService` review queue, claim concurrency optimistic locks, review submission validation & ownership guards, `LawyerVerificationService`, `AdminAnalyticsService` anonymization); full suite verified clean.
 - [x] ~~**[A-3.5]** `ModerationService.cs` (Submission Blocklist Filter) — *Arpita* `[Blocked by: T-1.12]`~~ — implemented `IModerationService` and `ModerationService` with keyword blocklist filtering across Bangla and English; registered in DI; verified by 20 new unit tests (314 unit tests total passing).
-- [ ] **[A-3.6]** `docs/attribution-CC-BY-SA-4.0.md` (Acts + QA Dataset Licenses) — *Arpita* — *(no blockers)*
+- [x] ~~**[A-3.6]** `docs/attribution-CC-BY-SA-4.0.md` (Acts + QA Dataset Licenses) — *Arpita* — *(no blockers)*~~ — dataset licenses, modifications, and open data compliance fully documented in `docs/attribution-CC-BY-SA-4.0.md` per CC BY-SA 4.0 and CC BY 4.0.
 - [ ] **[T-3.3]** Repository & DB Integration Tests — *Tultul* `[Blocked by: T-1.12]`
 - [ ] **[T-3.5]** `docs/architecture.md` (Clean Arch, ERD, Retrieval Pipeline) — *Tultul* — *(no blockers, update as architecture evolves)*
-- [ ] **[A-3.4]** Checkpoint 3 Arpita Exit Gate — *Arpita* `[Blocked by: A-3.1 to A-3.3, A-3.5, A-3.6]`
+- [x] ~~**[A-3.4]** Checkpoint 3 Arpita Exit Gate — *Arpita* `[Blocked by: A-3.1 to A-3.3, A-3.5, A-3.6]`~~ — all Checkpoint 3 deliverables assigned to Arpita (all 4 document templates, `AdminAnalyticsService`, `ModerationService`, 314 unit tests covering business logic & security edge cases, and attribution documentation) completed, verified, and passing.
 - [ ] **[T-3.4]** Checkpoint 3 Tultul Exit Gate — *Tultul* `[Blocked by: T-3.1 to T-3.3, T-3.5]`
 
 ### 4. Packaging, Localization & Final Release
