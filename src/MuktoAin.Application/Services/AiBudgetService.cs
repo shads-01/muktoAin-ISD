@@ -1,6 +1,7 @@
 using MuktoAin.Application.DTOs;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
+using MuktoAin.Domain.Interfaces;
 using MuktoAin.Domain.Interfaces.Repositories;
 
 namespace MuktoAin.Application.Services;
@@ -16,10 +17,11 @@ public class AiBudgetService
     private const int SignedInDailyLimit = 30;
 
     private readonly IRepository<AiLog> _logRepo;
+    private readonly IAiTurnReservationStore _reservationStore;
 
-    public AiBudgetService(IRepository<AiLog> logRepo)
-    {
+    public AiBudgetService(IRepository<AiLog> logRepo, IAiTurnReservationStore reservationStore)    {
         _logRepo = logRepo;
+        _reservationStore = reservationStore;
     }
 
     private static bool IsPacificDaylight =>
@@ -52,11 +54,20 @@ public class AiBudgetService
         return new QuotaSnapshotDto(Math.Max(0, limit - used), limit, userId.HasValue);
     }
 
+    // AUD-3: atomic reserve-before-call. The reservation row (written by the
+    // store in one T-SQL statement) is an AI_LOG row, so GetRemainingToday
+    // counts it immediately — a second concurrent request hits the wall here
+    // instead of after both Gemini calls have already fired.
     public async Task<bool> TryReserveTurnAsync(int? userId, string? sessionKey)
     {
-        var snapshot = await GetRemainingToday(userId, sessionKey);
-        return snapshot.RemainingToday > 0;
+        var since = PacificMidnightUtc();
+        var limit = DailyLimitFor(userId.HasValue);
+        return await _reservationStore.TryReserveAsync(since, limit);
     }
+
+    // Gives a reserved turn back when the turn turned out to be free
+    // (cache hit / retrieval-only — no model call was made).
+    public Task ReleaseReservationAsync() => _reservationStore.ReleaseOneAsync();
 
     public Task<QuotaSnapshotDto> RecordTurnUsed(int? userId, string? sessionKey)
     {
