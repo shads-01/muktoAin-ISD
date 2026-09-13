@@ -59,6 +59,12 @@ public static class SeedDemoUsers
 
             logger.LogInformation("Seeded demo citizen {Email} (role {Role}).", CitizenEmail, UserRole.Citizen);
         }
+        else if (!await userManager.CheckPasswordAsync(citizen, CitizenPassword))
+        {
+            var token = await userManager.GeneratePasswordResetTokenAsync(citizen);
+            await userManager.ResetPasswordAsync(citizen, token, CitizenPassword);
+            logger.LogInformation("Synchronized password for demo citizen {Email}.", CitizenEmail);
+        }
 
         // Seeding the citizen may have failed above and thrown; only reach the
         // lawyer when the citizen branch completed. Recheck the lawyer login
@@ -102,6 +108,12 @@ public static class SeedDemoUsers
             logger.LogInformation(
                 "Seeded demo lawyer {Email} (role {Role}) with Pending LawyerProfile {BarNumber}.",
                 LawyerEmail, UserRole.Lawyer, DemoBarRegistrationNumber);
+        }
+        else if (!await userManager.CheckPasswordAsync(lawyer, LawyerPassword))
+        {
+            var token = await userManager.GeneratePasswordResetTokenAsync(lawyer);
+            await userManager.ResetPasswordAsync(lawyer, token, LawyerPassword);
+            logger.LogInformation("Synchronized password for demo lawyer {Email}.", LawyerEmail);
         }
     }
 }

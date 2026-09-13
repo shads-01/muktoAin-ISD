@@ -5,6 +5,8 @@
    IDEMPOTENT: safe to re-run; every CREATE is guarded.
    Execute in SSMS against the MuktoAin database.
    ============================================================ */
+USE MuktoAin;
+GO
 SET NOCOUNT ON;
 GO
 -- Filtered indexes (CHAT_SESSION.SessionKey below) require QUOTED_IDENTIFIER ON.

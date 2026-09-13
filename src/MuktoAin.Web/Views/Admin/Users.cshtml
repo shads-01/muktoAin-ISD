@@ -57,7 +57,10 @@
                             else
                             {
                                 <form asp-action="Suspend" method="post" style="display:inline"
-                                      data-confirm="Suspend this account? Login will be blocked.">
+                                      data-confirm="এই অ্যাকাউন্টটি স্থগিত করবেন? লগইন সাময়িকভাবে বন্ধ থাকবে। / Suspend this account? Login will be blocked."
+                                      data-confirm-title="অ্যাকাউন্ট স্থগিতকরণ / Suspend Account"
+                                      data-confirm-ok="স্থগিত করুন / Suspend"
+                                      data-confirm-cancel="বাতিল / Cancel">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="userId" value="@u.UserId" />
                                     <input type="hidden" name="suspend" value="true" />

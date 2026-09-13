@@ -49,7 +49,10 @@
                             else if (o.Status == "Paid")
                             {
                                 <form asp-action="RefundOrder" method="post" style="display:inline"
-                                      data-confirm="Refund this order (sandbox) and reverse the ledger?">
+                                      data-confirm="এই অর্ডারের টাকা রিফান্ড (স্যান্ডবক্স) করে লেজার সমন্বয় করবেন? / Refund this order (sandbox) and reverse the ledger?"
+                                      data-confirm-title="রিফান্ড নিশ্চিতকরণ / Refund Confirmation"
+                                      data-confirm-ok="রিফান্ড করুন / Refund"
+                                      data-confirm-cancel="বাতিল / Cancel">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="orderId" value="@o.PaymentOrderId" />
                                     <button class="btn btn-danger-outline btn-sm" type="submit">Refund</button>

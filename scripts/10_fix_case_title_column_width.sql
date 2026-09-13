@@ -1,5 +1,7 @@
 /* Widen CASE.Title for encrypted values.
   Matches Description's NVARCHAR(MAX) capacity. Safe to re-run in SSMS. */
+USE MuktoAin;
+GO
 SET NOCOUNT ON;
 GO
 

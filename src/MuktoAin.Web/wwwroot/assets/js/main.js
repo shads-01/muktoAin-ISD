@@ -1683,12 +1683,190 @@
       });
     });
 
-    /* demo confirm dialogs [data-confirm] */
-    document.querySelectorAll("[data-confirm]").forEach(function (el) {
-      el.addEventListener("click", function (e) {
-        if (!window.confirm(el.dataset.confirm)) e.preventDefault();
+    /* ---------- Custom Themed Confirm Dialog ---------- */
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    window.showConfirmDialog = function (options) {
+      options = options || {};
+      var msg = options.message || "";
+      var title = options.title || (currentLang === "en" ? "Please Confirm" : "নিশ্চিতকরণ");
+      var okText = options.okText || (currentLang === "en" ? "Confirm" : "নিশ্চিত করুন");
+      var cancelText = options.cancelText || (currentLang === "en" ? "Cancel" : "বাতিল");
+      var isDanger = !!options.isDanger;
+      var iconName = options.icon || (isDanger ? "alert-triangle" : "shield-check");
+      var iconClass = isDanger ? "danger" : "primary";
+
+      // Remove any existing confirm modal
+      var old = document.getElementById("global-confirm-modal");
+      if (old) old.remove();
+
+      var bd = document.createElement("div");
+      bd.className = "modal-backdrop open";
+      bd.id = "global-confirm-modal";
+      bd.setAttribute("role", "dialog");
+      bd.setAttribute("aria-modal", "true");
+      bd.style.zIndex = "120";
+
+      bd.innerHTML =
+        '<div class="modal confirm-modal" style="box-shadow: var(--shadow-lg);">' +
+          '<div class="modal-handle"></div>' +
+          '<div class="modal-head" style="margin-bottom: 8px;">' +
+            '<div style="display: flex; align-items: center; gap: 10px;">' +
+              '<div class="confirm-modal-icon ' + iconClass + '">' +
+                icon(iconName) +
+              '</div>' +
+              '<div>' +
+                '<span class="kicker" style="font-size: 11px; margin-bottom: 2px; color: var(--' + (isDanger ? "danger" : "primary") + ');">' +
+                  (isDanger ? (currentLang === "en" ? "Action Warning" : "সতর্কতা") : (currentLang === "en" ? "Confirmation" : "নিশ্চিতকরণ")) +
+                '</span>' +
+                '<h3 style="font-size: 17px; margin: 0; font-weight: 700;">' + escapeHtml(title) + '</h3>' +
+              '</div>' +
+            '</div>' +
+            '<button class="icon-btn" type="button" aria-label="Close" data-confirm-action="cancel">' + icon("x") + '</button>' +
+          '</div>' +
+          '<div class="confirm-modal-body">' +
+            escapeHtml(msg) +
+          '</div>' +
+          '<div class="row" style="justify-content: flex-end; gap: 10px; margin-top: 4px;">' +
+            '<button class="btn btn-outline btn-sm" type="button" data-confirm-action="cancel">' + escapeHtml(cancelText) + '</button>' +
+            '<button class="btn ' + (isDanger ? "btn-danger" : "btn-primary") + ' btn-sm" type="button" data-confirm-action="ok">' + escapeHtml(okText) + '</button>' +
+          '</div>' +
+        '</div>';
+
+      document.body.appendChild(bd);
+      renderIcons(bd);
+
+      function closeDialog() {
+        document.removeEventListener("keydown", onKey);
+        bd.classList.remove("open");
+        setTimeout(function () { bd.remove(); }, 200);
+      }
+
+      function onKey(e) {
+        if (e.key === "Escape") {
+          closeDialog();
+          if (typeof options.onCancel === "function") options.onCancel();
+        }
+      }
+      document.addEventListener("keydown", onKey);
+
+      bd.addEventListener("click", function (e) {
+        if (e.target === bd) {
+          closeDialog();
+          if (typeof options.onCancel === "function") options.onCancel();
+        }
       });
-    });
+
+      bd.querySelectorAll('[data-confirm-action="cancel"]').forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          closeDialog();
+          if (typeof options.onCancel === "function") options.onCancel();
+        });
+      });
+
+      var okBtn = bd.querySelector('[data-confirm-action="ok"]');
+      if (okBtn) {
+        okBtn.focus();
+        okBtn.addEventListener("click", function () {
+          closeDialog();
+          if (typeof options.onConfirm === "function") options.onConfirm();
+        });
+      }
+    };
+
+    /* Intercept [data-confirm] buttons and forms with website-themed confirm dialog */
+    document.addEventListener("click", function (e) {
+      var target = e.target.closest("[data-confirm]");
+      if (!target) return;
+
+      if (target._confirmed) {
+        target._confirmed = false;
+        return;
+      }
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      var rawMsg = currentLang === "en" 
+        ? (target.dataset.confirmEn || target.dataset.confirm || "") 
+        : (target.dataset.confirmBn || target.dataset.confirm || "");
+
+      if (rawMsg.indexOf(" / ") !== -1) {
+        var parts = rawMsg.split(" / ");
+        rawMsg = currentLang === "en" ? (parts[1] || parts[0]) : parts[0];
+      }
+
+      var rawTitle = currentLang === "en"
+        ? (target.dataset.confirmTitleEn || target.dataset.confirmTitle || "")
+        : (target.dataset.confirmTitleBn || target.dataset.confirmTitle || "");
+
+      if (rawTitle.indexOf(" / ") !== -1) {
+        var tparts = rawTitle.split(" / ");
+        rawTitle = currentLang === "en" ? (tparts[1] || tparts[0]) : tparts[0];
+      }
+
+      var rawOk = currentLang === "en"
+        ? (target.dataset.confirmOkEn || target.dataset.confirmOk || "")
+        : (target.dataset.confirmOkBn || target.dataset.confirmOk || "");
+
+      if (rawOk.indexOf(" / ") !== -1) {
+        var okParts = rawOk.split(" / ");
+        rawOk = currentLang === "en" ? (okParts[1] || okParts[0]) : okParts[0];
+      }
+
+      var rawCancel = currentLang === "en"
+        ? (target.dataset.confirmCancelEn || target.dataset.confirmCancel || "")
+        : (target.dataset.confirmCancelBn || target.dataset.confirmCancel || "");
+
+      if (rawCancel.indexOf(" / ") !== -1) {
+        var cParts = rawCancel.split(" / ");
+        rawCancel = currentLang === "en" ? (cParts[1] || cParts[0]) : cParts[0];
+      }
+
+      var isDanger = target.classList.contains("btn-danger") || 
+                     target.classList.contains("btn-danger-outline") || 
+                     (target.querySelector && target.querySelector(".btn-danger, .btn-danger-outline") !== null) ||
+                     target.dataset.confirmDanger === "true" ||
+                     (target.getAttribute("aria-label") === "Delete") ||
+                     (rawMsg.toLowerCase().indexOf("delete") !== -1 || rawMsg.toLowerCase().indexOf("suspend") !== -1 || rawMsg.toLowerCase().indexOf("refund") !== -1 || rawMsg.toLowerCase().indexOf("withdraw") !== -1);
+
+      window.showConfirmDialog({
+        message: rawMsg,
+        title: rawTitle || (isDanger ? (currentLang === "en" ? "Warning" : "সতর্কতা") : (currentLang === "en" ? "Confirmation" : "নিশ্চিতকরণ")),
+        okText: rawOk || (currentLang === "en" ? "Confirm" : "নিশ্চিত করুন"),
+        cancelText: rawCancel || (currentLang === "en" ? "Cancel" : "বাতিল"),
+        isDanger: isDanger,
+        onConfirm: function () {
+          target._confirmed = true;
+          if (target.tagName === "FORM") {
+            if (typeof target.requestSubmit === "function") {
+              target.requestSubmit(e.target);
+            } else {
+              target.submit();
+            }
+          } else if (target.type === "submit" && target.closest("form")) {
+            var f = target.closest("form");
+            if (typeof f.requestSubmit === "function") {
+              f.requestSubmit(target);
+            } else {
+              f.submit();
+            }
+          } else if (target.tagName === "A" && target.href) {
+            window.location.href = target.href;
+          } else {
+            target.click();
+          }
+        }
+      });
+    }, true);
 
     /* composer autogrow */
     document.querySelectorAll(".composer textarea, textarea.autogrow").forEach(function (ta) {

@@ -51,7 +51,10 @@
                         <td class="muted">@m.Notes</td>
                         <td>
                             <form asp-action="DeleteScenario" method="post" style="display:inline"
-                                  data-confirm="Delete this mapping?">
+                                  data-confirm="এই ম্যাপিংটি মুছে ফেলতে চান? / Delete this mapping?"
+                                  data-confirm-title="ম্যাপিং মুছে ফেলা / Delete Mapping"
+                                  data-confirm-ok="মুছে ফেলুন / Delete"
+                                  data-confirm-cancel="বাতিল / Cancel">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="mappingId" value="@m.MappingId" />
                                 <button class="icon-btn" type="submit" aria-label="Delete"><i data-lucide="trash-2"></i></button>
