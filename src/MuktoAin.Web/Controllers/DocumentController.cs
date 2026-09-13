@@ -10,16 +10,19 @@ namespace MuktoAin.Web.Controllers;
 
 public class DocumentController : Controller
 {
-    private readonly IRepository<GeneratedDocument>? _docRepo;
-    private readonly DocumentService? _documentService;
-    private readonly CaseService? _caseService;
+    private readonly IRepository<GeneratedDocument> _docRepo;
+    private readonly DocumentService _documentService;
+    private readonly CaseService _caseService;
     private readonly ILogger<DocumentController> _logger;
 
+    // AUD-10: all dependencies are required — the old optional/nullable
+    // parameters let the ownership check silently disappear from Preview and
+    // Download depending on what the DI container happened to provide.
     public DocumentController(
         ILogger<DocumentController> logger,
-        IRepository<GeneratedDocument>? docRepo = null,
-        DocumentService? documentService = null,
-        CaseService? caseService = null)
+        IRepository<GeneratedDocument> docRepo,
+        DocumentService documentService,
+        CaseService caseService)
     {
         _logger = logger;
         _docRepo = docRepo;
@@ -30,7 +33,7 @@ public class DocumentController : Controller
     [HttpGet]
     public async Task<IActionResult> Preview(int id, string? code = null)
     {
-        if (id <= 0 || _docRepo == null)
+        if (id <= 0)
         {
             return NotFound();
         }
@@ -41,16 +44,13 @@ public class DocumentController : Controller
             return NotFound();
         }
 
-        if (_caseService != null)
+        var currentUserId = GetCurrentUserId();
+        var currentRole = GetCurrentUserRole();
+        var trackingCode = ResolveTrackingCode(doc.CaseId, code);
+        var caseDetail = await _caseService.GetCaseDetailAsync(doc.CaseId, currentUserId, currentRole, trackingCode);
+        if (caseDetail == null)
         {
-            var currentUserId = GetCurrentUserId();
-            var currentRole = GetCurrentUserRole();
-            var trackingCode = ResolveTrackingCode(doc.CaseId, code);
-            var caseDetail = await _caseService.GetCaseDetailAsync(doc.CaseId, currentUserId, currentRole, trackingCode);
-            if (caseDetail == null)
-            {
-                return Forbid();
-            }
+            return Forbid();
         }
 
         var isApproved = doc.Status == DocumentStatus.Approved;
@@ -72,7 +72,7 @@ public class DocumentController : Controller
     [HttpGet]
     public async Task<IActionResult> Download(int id, string? code = null)
     {
-        if (id <= 0 || _docRepo == null)
+        if (id <= 0)
         {
             return NotFound();
         }
@@ -83,28 +83,19 @@ public class DocumentController : Controller
             return NotFound();
         }
 
-        if (_caseService != null)
+        var currentUserId = GetCurrentUserId();
+        var currentRole = GetCurrentUserRole();
+        var trackingCode = ResolveTrackingCode(doc.CaseId, code);
+        var caseDetail = await _caseService.GetCaseDetailAsync(doc.CaseId, currentUserId, currentRole, trackingCode);
+        if (caseDetail == null)
         {
-            var currentUserId = GetCurrentUserId();
-            var currentRole = GetCurrentUserRole();
-            var trackingCode = ResolveTrackingCode(doc.CaseId, code);
-            var caseDetail = await _caseService.GetCaseDetailAsync(doc.CaseId, currentUserId, currentRole, trackingCode);
-            if (caseDetail == null)
-            {
-                return Forbid();
-            }
+            return Forbid();
         }
 
         if (doc.Status != DocumentStatus.Approved)
         {
             TempData["Error"] = "পিডিএফ ডাউনলোড শুধুমাত্র একজন সনদপ্রাপ্ত আইনজীবীর অনুমোদনের পরই সম্ভব। / PDF download is available only after verified lawyer approval.";
             TempData["ErrorEn"] = "PDF download is available only after a verified lawyer approves this document.";
-            return RedirectToAction(nameof(Preview), new { id, code });
-        }
-
-        if (_documentService == null)
-        {
-            TempData["Error"] = "পিডিএফ পরিষেবা উপলব্ধ নেই। / PDF export service is unavailable.";
             return RedirectToAction(nameof(Preview), new { id, code });
         }
 

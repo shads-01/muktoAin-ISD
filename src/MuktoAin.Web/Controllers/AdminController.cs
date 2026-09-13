@@ -581,7 +581,9 @@ public class AdminController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogInformation("Dashboard aggregate build failed: {Message}", ex.Message);
+            // AUD-12: an aggregate-query failure is a real error — log it at
+            // error level so it trips alerting instead of disappearing.
+            _logger.LogError(ex, "Dashboard aggregate build failed");
             model.AuditLogs = new List<SystemAuditLogItemViewModel>();
         }
 

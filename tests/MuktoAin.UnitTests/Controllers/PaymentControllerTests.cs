@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -7,6 +8,7 @@ using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Interfaces.Repositories;
 using MuktoAin.Web.Controllers;
+using Xunit;
 
 namespace MuktoAin.UnitTests.Controllers;
 
@@ -29,7 +31,11 @@ public class PaymentControllerTests
             Mock.Of<ICaseRepository>(),
             NewUserManager());
 
-        _controller = new PaymentController(paymentService, _orderRepo.Object, Mock.Of<ILogger<PaymentController>>());
+        _controller = new PaymentController(
+            paymentService,
+            _orderRepo.Object,
+            Mock.Of<ILogger<PaymentController>>(),
+            Mock.Of<ICaseRepository>());
     }
 
     [Theory]
@@ -113,10 +119,22 @@ public class PaymentControllerTests
             UserId = 999 // Different user
         });
 
-        var controller = new PaymentController(
-            Mock.Of<PaymentService>(),
+        // PaymentService is a concrete class with required ctor params, so
+        // Mock.Of<PaymentService>() can't proxy it — build it for real with
+        // mocked repositories (Status never touches PaymentService on the
+        // Forbid path).
+        var paymentService = new PaymentService(
             _orderRepo.Object,
-            Mock.Of<ILogger<PaymentController>>())
+            Mock.Of<IRepository<PayoutRequest>>(),
+            Mock.Of<IRepository<LawyerProfile>>(),
+            Mock.Of<ICaseRepository>(),
+            NewUserManager());
+
+        var controller = new PaymentController(
+            paymentService,
+            _orderRepo.Object,
+            Mock.Of<ILogger<PaymentController>>(),
+            Mock.Of<ICaseRepository>())
         {
             ControllerContext = new ControllerContext
             {
@@ -148,5 +166,18 @@ public class PaymentControllerTests
             new IdentityErrorDescriber(),
             null!,
             Mock.Of<ILogger<UserManager<User>>>()).Object;
+    }
+
+    // AUD-1 (CA5391): see ChatControllerTests for rationale.
+    [Theory]
+    [InlineData(nameof(PaymentController.Honorarium))]
+    [InlineData(nameof(PaymentController.TopUp))]
+    public void PostActions_CarryValidateAntiForgeryToken(string actionName)
+    {
+        var method = typeof(PaymentController).GetMethod(actionName)!;
+
+        Assert.True(
+            method.GetCustomAttributes(typeof(ValidateAntiForgeryTokenAttribute), inherit: false).Any(),
+            $"PaymentController.{actionName} is missing [ValidateAntiForgeryToken].");
     }
 }
