@@ -319,6 +319,7 @@ public class ChatService
         string? notificationEmail,
         bool isAnonymous,
         int? userId,
+        string? language = null,
         CancellationToken ct = default)
     {
         var session = await _sessionRepo.GetByIdAsync(chatSessionId)
@@ -348,7 +349,7 @@ public class ChatService
             DistrictId = districtId,
             Title = _encryptionService.Encrypt(title),
             Description = _encryptionService.Encrypt(unifiedDescription),
-            Language = "bn",
+            Language = language == "en" ? "en" : "bn",
             Status = CaseStatus.Submitted,
             IsAnonymous = isAnonymous,
             AnonymousTrackingCode = trackingCode,

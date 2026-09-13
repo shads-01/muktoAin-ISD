@@ -247,6 +247,7 @@ public class ChatController : Controller
                 body.NotificationEmail,
                 body.IsAnonymous,
                 CurrentUserId(),
+                body.Language,
                 HttpContext.RequestAborted);
 
             if (result.AnonymousTrackingCode != null)
@@ -299,4 +300,5 @@ public class ChatCommitRequest
     public string Title { get; set; } = string.Empty;
     public string? NotificationEmail { get; set; }
     public bool IsAnonymous { get; set; }
+    public string? Language { get; set; }
 }
