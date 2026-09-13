@@ -319,7 +319,6 @@ public class ChatService
         string? notificationEmail,
         bool isAnonymous,
         int? userId,
-        string documentType,
         CancellationToken ct = default)
     {
         var session = await _sessionRepo.GetByIdAsync(chatSessionId)
