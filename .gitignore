@@ -520,7 +520,11 @@ template-frontend/
 UI.md
 UI_SPEC.md
 Copy_Paste_Plan.md
+docs/
 
 # Scratch files
 .agent/scratch/
+
+# Data Protection key ring (AUD-2) — never commit encryption keys
+keys/
 
