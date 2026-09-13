@@ -9,6 +9,12 @@
     var thread, input, sendBtn, quotaNote, welcome;
 
     function el(id) { return document.getElementById(id); }
+
+    // AUD-1: antiforgery token emitted by _Layout.cshtml on every page.
+    function csrfToken() {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute("content") : "";
+    }
     function bn(n) { try { return Number(n).toLocaleString("bn-BD"); } catch (e) { return String(n); } }
     function scrollBottom() {
         var sc = document.querySelector(".chat-scroll");
@@ -238,7 +244,7 @@
 
         fetch("/Chat/Ask", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "RequestVerificationToken": csrfToken() },
             body: JSON.stringify({
                 chatSessionId: state.chatSessionId,
                 question: question,
@@ -288,15 +294,14 @@
         btn.textContent = "…";
         fetch("/Chat/Commit", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "RequestVerificationToken": csrfToken() },
             body: JSON.stringify({
                 chatSessionId: state.chatSessionId,
                 categoryId: parseInt(el("draft-category").value, 10),
                 districtId: parseInt(el("draft-district").value, 10),
                 title: el("draft-title-input").value,
                 notificationEmail: el("draft-email").value || null,
-                isAnonymous: el("draft-anonymous").checked,
-                documentType: el("draft-doc-type").value
+                isAnonymous: el("draft-anonymous").checked
             })
         })
         .then(function (r) { return r.json(); })
@@ -380,7 +385,7 @@
     function ensureSession() {
         fetch("/Chat/New", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "RequestVerificationToken": csrfToken() },
             body: "{}"
         })
         .then(function (r) { return r.json(); })
@@ -472,7 +477,7 @@
                 try {
                     var res = await fetch("/Payment/TopUp", {
                         method: "POST",
-                        headers: { "Content-Type": "application/json" },
+                        headers: { "Content-Type": "application/json", "RequestVerificationToken": csrfToken() },
                         body: JSON.stringify({ amount: amount })
                     });
                     var data = await res.json();

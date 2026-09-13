@@ -374,9 +374,11 @@ document.addEventListener("DOMContentLoaded", function () {
         if (window.lucide) lucide.createIcons();
 
         try {
+            var csrfMeta = document.querySelector('meta[name="csrf-token"]');
             var res = await fetch("/Payment/Honorarium", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json",
+                           "RequestVerificationToken": (csrfMeta ? csrfMeta.getAttribute("content") : "") },
                 body: JSON.stringify({ caseId: @Model.CaseId, amount: amount, trackingCode: '@Model.TrackingCode' })
             });
             var data = await res.json();

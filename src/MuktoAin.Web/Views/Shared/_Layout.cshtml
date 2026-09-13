@@ -1,5 +1,10 @@
 @using Microsoft.Extensions.DependencyInjection
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
+    // AUD-1: single antiforgery token per page, exposed to the vanilla-JS
+    // fetch() calls (chat.js + inline scripts) via the meta tag in <head>.
+    var antiforgeryToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var isAdmin = User.IsInRole("Admin");
     var isLawyer = User.IsInRole("Lawyer");
@@ -46,6 +51,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] | মুক্ত আইন — MuktoAin</title>
     <meta name="description" content="মুক্ত আইন (MuktoAin) — বাংলাদেশের নাগরিকদের জন্য AI-সহায়ক আইনি তথ্য ও নথি প্রস্তুতকরণ প্ল্যাটফর্ম।" />
+    <meta name="csrf-token" content="@antiforgeryToken" />
     
     <!-- Early theme init to prevent flash -->
     <script>
