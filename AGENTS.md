@@ -81,7 +81,7 @@ Detailed project knowledge is maintained in the `.agent/spec/` directory:
 
 ## 6. Git Commit Policy (SUPERSEDES skill defaults)
 
-**NEVER commit, stage, push, or amend — ever.** All plan/skill "commit after every step" instructions are **disabled for AI agents** on this repository. **Shads (the human) is the sole committer** and performs all git operations manually.
+**NEVER commit, stage, push, or amend automatically — ever.** All plan/skill "auto commit after every step" instructions are **disabled for AI agents** on this repository. 
 
-- If a plan document contains `git commit` steps, **skip them** — leave changes in the working tree for Shads to review and commit.
+- If a plan document contains `git commit` steps, **skip them** — leave changes in the working tree and ask for confirmation before committing.
 - `plans/Dependency_plan.md` progress updates (rule 5 above) remain mandatory; only the git operations are delegated to the human.
