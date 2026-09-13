@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Interfaces.Repositories;
@@ -12,14 +13,16 @@ public class PaymentController : Controller
 {
     private readonly PaymentService _paymentService;
     private readonly IRepository<PaymentOrder> _orderRepo;
-    private readonly ICaseRepository? _caseRepo;
+    private readonly ICaseRepository _caseRepo;
     private readonly ILogger<PaymentController> _logger;
 
+    // AUD-10: required dependency — the old optional `caseRepo = null` made
+    // the Honorarium case-ownership check silently optional.
     public PaymentController(
         PaymentService paymentService,
         IRepository<PaymentOrder> orderRepo,
         ILogger<PaymentController> logger,
-        ICaseRepository? caseRepo = null)
+        ICaseRepository caseRepo)
     {
         _paymentService = paymentService;
         _orderRepo = orderRepo;
@@ -34,6 +37,8 @@ public class PaymentController : Controller
     }
 
     [HttpPost]
+    [EnableRateLimiting("payment")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Honorarium([FromBody] HonorariumPaymentRequest body)
     {
         if (body == null || body.CaseId <= 0 || body.Amount <= 0)
@@ -43,21 +48,18 @@ public class PaymentController : Controller
 
         var userId = CurrentUserId();
 
-        if (_caseRepo != null)
+        var caseEntity = await _caseRepo.GetByIdAsync(body.CaseId);
+        if (caseEntity == null)
         {
-            var caseEntity = await _caseRepo.GetByIdAsync(body.CaseId);
-            if (caseEntity == null)
-            {
-                return NotFound(new { success = false, message = "Case not found" });
-            }
+            return NotFound(new { success = false, message = "Case not found" });
+        }
 
-            var isAdmin = User.IsInRole("Admin");
-            var isOwner = (caseEntity.UserId.HasValue && caseEntity.UserId == userId)
-                          || (!caseEntity.UserId.HasValue && !string.IsNullOrEmpty(body.TrackingCode) && caseEntity.AnonymousTrackingCode == body.TrackingCode);
-            if (!isAdmin && !isOwner)
-            {
-                return Forbid();
-            }
+        var isAdmin = User.IsInRole("Admin");
+        var isOwner = (caseEntity.UserId.HasValue && caseEntity.UserId == userId)
+                      || (!caseEntity.UserId.HasValue && !string.IsNullOrEmpty(body.TrackingCode) && caseEntity.AnonymousTrackingCode == body.TrackingCode);
+        if (!isAdmin && !isOwner)
+        {
+            return Forbid();
         }
 
         try
@@ -86,6 +88,8 @@ public class PaymentController : Controller
     }
 
     [HttpPost]
+    [EnableRateLimiting("payment")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> TopUp([FromBody] TopUpPaymentRequest body)
     {
         if (body == null || body.Amount <= 0)

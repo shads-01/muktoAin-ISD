@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using MuktoAin.Application.DTOs;
 using MuktoAin.Application.Services;
 
@@ -41,6 +42,7 @@ public class ChatController : Controller
 
     // Start (or resume) a session. Body: { "firstMessage": "..." } (optional)
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> New([FromBody] ChatNewRequest? body)
     {
         var session = await _chatService.GetOrCreateSessionAsync(
@@ -50,6 +52,8 @@ public class ChatController : Controller
 
     // Ask a question. Body: { chatSessionId, question, language? }
     [HttpPost]
+    [EnableRateLimiting("chat")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Ask([FromBody] ChatAskRequest? body)
     {
         if (body == null || string.IsNullOrWhiteSpace(body.Question) || body.ChatSessionId <= 0)
@@ -70,10 +74,29 @@ public class ChatController : Controller
         // FromCache=true when served from ANSWER_CACHE without any model call;
         // only a MISS consumes budget.
         var language = string.IsNullOrWhiteSpace(body.Language) ? "bn" : body.Language;
+
+        // AUD-3: reserve BEFORE the metered call so two concurrent asks
+        // cannot both pass a stale count (TOCTOU). The reservation IS an
+        // AI_LOG row that GetRemainingToday counts; cache hits and
+        // retrieval-only turns release it right after AskAsync.
+        if (!await _budgetService.TryReserveTurnAsync(userId, key))
+        {
+            var wall = await _budgetService.GetRemainingToday(userId, key);
+            return Json(new
+            {
+                tier = "wall",
+                remainingToday = wall.RemainingToday,
+                dailyLimit = wall.DailyLimit
+            });
+        }
+
         var turn = await _chatService.AskAsync(body.ChatSessionId, body.Question, language, allowCapped: false);
 
         if (turn.FromCache)
         {
+            // No model call was made — give the reserved turn back.
+            await _budgetService.ReleaseReservationAsync();
+
             var cacheQuota = await _budgetService.GetRemainingToday(userId, key);
             await _chatService.AppendMessageAsync(body.ChatSessionId, "user", body.Question, null);
             await _chatService.AppendMessageAsync(
@@ -98,19 +121,14 @@ public class ChatController : Controller
             });
         }
 
-        // Cache miss. Retrieval-only answers make no model call (they're the
-        // ladder's free tier — including when quota is exhausted mid-flight),
-        // so only a real AI turn consumes budget.
-        if (!turn.RetrievalOnly && !await _budgetService.TryReserveTurnAsync(userId, key))
-        {
-            var wall = await _budgetService.GetRemainingToday(userId, key);
-            return Json(new
-            {
-                tier = "wall",
-                remainingToday = wall.RemainingToday,
-                dailyLimit = wall.DailyLimit
-            });
-        }
+        // AUD-3: the release rule is symmetric — the orchestration pipeline
+        // writes its own counted AI_LOG row on every completed real turn, so
+        // the (reserved) sentinel must be released on ALL completed paths
+        // (cache hit, retrieval-only, AND success). Keeping it on success
+        // would double-charge every real turn (guests 10 -> 5 effective).
+        // Only a mid-flight exception keeps the reservation — one turn lost,
+        // the conservative direction.
+        await _budgetService.ReleaseReservationAsync();
 
         var quota = turn.RetrievalOnly
             ? await _budgetService.GetRemainingToday(userId, key)
@@ -201,6 +219,7 @@ public class ChatController : Controller
 
     // Generate Draft commit. Body: all modal fields.
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Commit([FromBody] ChatCommitRequest? body)
     {
         if (body == null || body.ChatSessionId <= 0 || body.CategoryId <= 0 || body.DistrictId <= 0)
@@ -228,7 +247,6 @@ public class ChatController : Controller
                 body.NotificationEmail,
                 body.IsAnonymous,
                 CurrentUserId(),
-                body.DocumentType,
                 HttpContext.RequestAborted);
 
             if (result.AnonymousTrackingCode != null)
@@ -281,5 +299,4 @@ public class ChatCommitRequest
     public string Title { get; set; } = string.Empty;
     public string? NotificationEmail { get; set; }
     public bool IsAnonymous { get; set; }
-    public string DocumentType { get; set; } = "LabourComplaint";
 }

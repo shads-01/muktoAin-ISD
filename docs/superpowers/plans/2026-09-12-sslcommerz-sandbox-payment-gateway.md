@@ -1039,7 +1039,7 @@ Expected: PASS, full suite (the existing count was 187/187 before this feature p
 Append a new entry under the `🎨 Redesign Wave` section (matching the existing `- [x] **[R-N]** ... — *Author*.` format used by R-1 through R-27):
 
 ```markdown
-- [x] **[R-28]** Sandbox payments switched from an instant-`Paid` stub to a real SSLCommerz sandbox integration (FR-24) — Honorarium/Top-Up now redirect the citizen through SSLCommerz's actual sandbox checkout (real bKash/Rocket/Nagad/card test screens, same PIN `12121`/OTP `123456` as each wallet's own sandbox), confirmed server-side via `PaymentController.Success` calling SSLCommerz's Validation API before `PaymentService.ConfirmPaymentAsync` marks the order `Paid`; added `IPaymentGatewayClient`/`SslCommerzGatewayClient`, `PaymentOrder.TransactionId`, and `scripts/11_add_payment_order_transaction_id.sql`.
+- [x] **[R-29]** Sandbox payments switched from an instant-`Paid` stub to a real SSLCommerz sandbox integration (FR-24) — Honorarium/Top-Up now redirect the citizen through SSLCommerz's actual sandbox checkout (real bKash/Rocket/Nagad/card test screens, same PIN `12121`/OTP `123456` as each wallet's own sandbox), confirmed server-side via `PaymentController.Success` calling SSLCommerz's Validation API before `PaymentService.ConfirmPaymentAsync` marks the order `Paid`; added `IPaymentGatewayClient`/`SslCommerzGatewayClient`, `PaymentOrder.TransactionId`, and `scripts/11_add_payment_order_transaction_id.sql`.
 ```
 
 ---

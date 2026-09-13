@@ -103,20 +103,11 @@ public class CaseController : Controller
         await chatService.AppendMessageAsync(session.ChatSessionId, "user",
             $"বিষয়: {vm.Title}\nবিভাগ: {vm.Categories.FirstOrDefault(c => c.Value == vm.CategoryId.ToString())?.Text ?? vm.CategoryId.ToString()}\nবিবরণ: {vm.Description}", null);
 
-        var categoryEntity = await _categoryRepo.GetByIdAsync(vm.CategoryId);
-        var catName = categoryEntity?.Name ?? "";
-        var documentType = catName switch
-        {
-            var n when n.Contains("শ্রম") || n.Contains("Labour", StringComparison.OrdinalIgnoreCase) => "LabourComplaint",
-            var n when n.Contains("ডায়েরি") || n.Contains("Diary", StringComparison.OrdinalIgnoreCase) => "GeneralDiary",
-            var n when n.Contains("তথ্য") || n.Contains("Information", StringComparison.OrdinalIgnoreCase) => "RtiRequest",
-            var n when n.Contains("ভোক্তা") || n.Contains("Consumer", StringComparison.OrdinalIgnoreCase) => "ConsumerComplaint",
-            _ => "LabourComplaint"
-        };
-
         MuktoAin.Application.DTOs.ChatCommitResultDto result;
         try
         {
+            // AUD-9: documentType was threaded here but never read — the
+            // DocumentGenerator re-derives the real type from Case.CategoryId.
             result = await chatService.CommitToCaseAsync(
                 session.ChatSessionId,
                 vm.CategoryId,
@@ -124,8 +115,7 @@ public class CaseController : Controller
                 vm.Title,
                 notificationEmail: null,
                 vm.IsAnonymous,
-                currentUserId,
-                documentType);
+                currentUserId);
         }
         catch (Exception)
         {

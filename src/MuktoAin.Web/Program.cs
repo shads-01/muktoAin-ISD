@@ -1,4 +1,8 @@
+using System.Security.Claims;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MuktoAin.Application.Documents;
@@ -16,6 +20,7 @@ using MuktoAin.Infrastructure.Search;
 using MuktoAin.Infrastructure.Security;
 using MuktoAin.Infrastructure.VectorStore;
 using MuktoAin.Web.Auth;
+using MuktoAin.Web.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,6 +85,42 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Home/AccessDenied";
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
+});
+
+// AUD-5: per-route throttling (audit: nothing limits Login/Register brute
+// force, Chat/Ask metered-model spam, or payment endpoints). Fixed windows,
+// partitioned per IP for auth and per user (falling back to IP for guests)
+// for chat/payment. Rejections return the default 429 via UseStatusCodePages.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("auth", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+
+    options.AddPolicy("chat", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            PartitionKey(httpContext),
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+
+    options.AddPolicy("payment", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            PartitionKey(httpContext),
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1)
+            }));
 });
 
 builder.Services.AddTransient<
@@ -156,7 +197,14 @@ builder.Services.AddScoped<CategoryService>();
 builder.Services.AddSingleton<DisclaimerInjector>();
 
 // S-1.7: Data Protection + field-level PII encryption.
-builder.Services.AddDataProtection();
+// AUD-2: persist the key ring under ContentRootPath/keys and pin the
+// application name. Without this, every container redeploy rotates the key
+// (the default path is ephemeral in the shipped Dockerfile) and encrypted
+// Case.Title/Description become permanently unreadable ciphertext.
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(
+        new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "keys")))
+    .SetApplicationName("MuktoAin.Web");
 builder.Services.AddScoped<IEncryptionService, EncryptionService>();
 
 // S-1.8: Embedding batch job — indexes un-embedded chunks into Qdrant.
@@ -231,6 +279,9 @@ builder.Services.AddSingleton<MuktoAin.Domain.Interfaces.Services.IPdfExporter>(
 builder.Services.AddScoped<LawyerVerificationService>();
 
 // Frontend redesign 2026-09: chat-first home + AI budget
+// AUD-3: atomic chat-turn reservation store (single-statement SQL with
+// UPDLOCK/HOLDLOCK — see AiTurnReservationStore for the TOCTOU rationale).
+builder.Services.AddScoped<IAiTurnReservationStore, AiTurnReservationStore>();
 builder.Services.AddScoped<AiBudgetService>();
 builder.Services.AddScoped<ChatService>();
 
@@ -252,6 +303,9 @@ else
 }
 
 app.UseStatusCodePagesWithReExecute("/Home/Error", "?statusCode={0}");
+
+// AUD-6: security headers on every response (incl. static files + error pages).
+app.UseMiddleware<SecurityHeadersMiddleware>();
 
 app.UseSession();
 
@@ -338,6 +392,14 @@ app.UseRouting();
 
 // S-1.1: authentication must run before authorization.
 app.UseAuthentication();
+
+// AUD-5: endpoint-scoped limiter policies require UseRouting to have matched
+// the endpoint first. Runs AFTER authentication so PartitionKey can read the
+// signed-in user's claims — placing it before UseAuthentication would leave
+// HttpContext.User empty and silently degrade the chat/payment policies to
+// per-IP (every user behind shared NAT/CGNAT would share one budget).
+app.UseRateLimiter();
+
 app.UseAuthorization();
 
 app.MapControllerRoute(
@@ -345,3 +407,9 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+// AUD-5: per-user partition for the chat/payment policies; guests fall back
+// to their remote IP so anonymous floods are still bounded.
+static string PartitionKey(HttpContext httpContext) =>
+    httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+    ?? "ip:" + (httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
