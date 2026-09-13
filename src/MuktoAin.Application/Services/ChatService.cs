@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using MuktoAin.Application.DTOs;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
@@ -27,6 +28,7 @@ public class ChatService
     private readonly IEncryptionService _encryptionService;
     private readonly IScenarioMappingRepository _scenarioRepo;
     private readonly IKeywordSectionSearch _keywordSearch;
+    private readonly IRepository<CaseCategory> _categoryRepo;
 
     public ChatService(
         IRepository<ChatSession> sessionRepo,
@@ -38,7 +40,8 @@ public class ChatService
         DocumentService documentService,
         IEncryptionService encryptionService,
         IScenarioMappingRepository scenarioRepo,
-        IKeywordSectionSearch keywordSearch)
+        IKeywordSectionSearch keywordSearch,
+        IRepository<CaseCategory> categoryRepo)
     {
         _sessionRepo = sessionRepo;
         _messageRepo = messageRepo;
@@ -50,6 +53,7 @@ public class ChatService
         _encryptionService = encryptionService;
         _scenarioRepo = scenarioRepo;
         _keywordSearch = keywordSearch;
+        _categoryRepo = categoryRepo;
     }
 
     // ---------- session management ----------
@@ -309,6 +313,92 @@ public class ChatService
             FromCache: false, RetrievalOnly: true, Tier: "retrieval-only");
     }
 
+    // ---------- category suggestion (Generate Draft modal default) ----------
+
+    // CASE_CATEGORY.CommonActions/CommonActionsEn hold formal legal phrasing
+    // ("Written claim for unpaid or delayed wages") that shares almost no
+    // vocabulary with how citizens actually describe their problem in chat
+    // ("my boss hasn't paid my salary") -- verified against a real turn, DB
+    // words alone scored 0 for every category. So this scores WORD overlap
+    // against the DB text PLUS a curated conversational synonym list per
+    // category, and returns null (placeholder stays) when nothing scores.
+    private static readonly Dictionary<int, string[]> CategorySynonyms = new()
+    {
+        [1] = new[] // Labour Complaint
+        {
+            "salary", "wage", "wages", "pay", "paid", "unpaid", "overtime", "bonus",
+            "fired", "fire", "dismiss", "dismissed", "dismissal", "terminate", "terminated",
+            "termination", "employer", "boss", "workplace", "factory", "worker", "employee",
+            "job", "labour", "labor", "maternity", "injury", "accident", "harassment",
+            "বেতন", "মজুরি", "চাকরি", "বরখাস্ত", "শ্রমিক", "মালিক", "কারখানা", "ছাঁটাই", "কর্মচারী"
+        },
+        [2] = new[] // General Diary (GD)
+        {
+            "lost", "stolen", "theft", "steal", "stole", "missing", "threat", "threaten",
+            "threatened", "harassment", "police", "id", "nid", "passport", "certificate",
+            "robbery", "robbed", "kidnap", "assault", "attacked", "diary",
+            "হারিয়ে", "চুরি", "নিখোঁজ", "হুমকি", "থানা", "জিডি", "ছিনতাই"
+        },
+        [3] = new[] // RTI Request
+        {
+            "information", "rti", "government", "office", "budget", "records", "record",
+            "documents", "document", "decision", "minutes", "report", "authority", "public",
+            "তথ্য", "অধিকার", "সরকারি", "দপ্তর", "বাজেট", "প্রতিবেদন"
+        },
+        [4] = new[] // Consumer Complaint
+        {
+            "product", "price", "refund", "overcharge", "overcharged", "expired", "fake",
+            "counterfeit", "fraud", "shop", "shopkeeper", "warranty", "defective", "quality",
+            "receipt", "purchase", "bought", "পণ্য", "মূল্য", "দোকান", "ভেজাল", "প্রতারণা", "দাম"
+        }
+    };
+
+    public async Task<int?> SuggestCategoryAsync(int chatSessionId)
+    {
+        var messages = await GetMessagesAsync(chatSessionId);
+        var text = string.Join(" ", messages.Where(m => m.Role == "user").Select(m => m.Content));
+        var textWords = ExtractWords(text);
+        if (textWords.Count == 0) return null;
+
+        var categories = await _categoryRepo.GetAllAsync();
+        int? bestCategoryId = null;
+        var bestScore = 0;
+        foreach (var cat in categories)
+        {
+            var catWords = ExtractWords(string.Join(" ", cat.Name, cat.NameBn, cat.CommonActions, cat.CommonActionsEn));
+            if (CategorySynonyms.TryGetValue(cat.CategoryId, out var synonyms))
+                catWords.UnionWith(synonyms);
+
+            var score = textWords.Count(w => catWords.Contains(w));
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestCategoryId = cat.CategoryId;
+            }
+        }
+        return bestScore > 0 ? bestCategoryId : null;
+    }
+
+    private static readonly HashSet<string> CategoryStopWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "a", "an", "the", "for", "and", "or", "of", "to", "in", "on", "at", "is", "are",
+        "was", "were", "this", "that", "with", "from", "by"
+    };
+
+    // Unicode letter+mark runs (2+ chars), minus English stopwords -- \p{M} is
+    // required alongside \p{L} because Bangla vowel signs/virama (matras, e.g.
+    // the ে in বেতন) are combining MARKS, not letters: [\p{L}]+ alone splits
+    // বেতন into "ব"+"তন" and never matches the whole word. Works across
+    // Bangla/English/Banglish without a language-specific tokenizer.
+    private static HashSet<string> ExtractWords(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        return Regex.Matches(s, @"[\p{L}\p{M}]{2,}")
+            .Select(m => m.Value)
+            .Where(w => !CategoryStopWords.Contains(w))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
     // ---------- commit ([Generate Draft]) ----------
 
     public async Task<ChatCommitResultDto> CommitToCaseAsync(
@@ -359,14 +449,30 @@ public class ChatService
         };
         await _caseRepo.AddAsync(caseEntity);
         await _caseRepo.SaveChangesAsync();
+        var encryptedTitle = caseEntity.Title;
+        var encryptedDescription = caseEntity.Description;
 
-        // Case-critical generation (NOT metered as a chat turn — marker absent)
+        // Case-critical generation (NOT metered as a chat turn — marker absent).
+        // ExplainRightsAsync and the document templates (e.g. RtiRequestTemplate
+        // embeds Description verbatim into the letter body) need PLAINTEXT, so
+        // the same tracked entity is temporarily set back to plaintext here.
+        // caseEntity/loaded/DocumentService's own lookup all resolve to the
+        // SAME EF-tracked instance (identity map, shared scoped DbContext), so
+        // this plaintext WOULD otherwise get persisted as-is by
+        // GenerateDocumentAsync's internal SaveChangesAsync -- silently
+        // defeating the field-level PII encryption on every committed case.
+        // Restore + re-save the ciphertext immediately after, so the DB never
+        // keeps Title/Description in plaintext once this method returns.
         var loaded = await _caseRepoTyped.GetWithDocumentsAsync(caseEntity.CaseId) ?? caseEntity;
         loaded.Title = title;
         loaded.Description = unifiedDescription;
 
         var explanation = await _rightsService.ExplainRightsAsync(loaded, ct);
         var doc = await _documentService.GenerateDocumentAsync(caseEntity.CaseId, explanation);
+
+        loaded.Title = encryptedTitle;
+        loaded.Description = encryptedDescription;
+        await _caseRepo.SaveChangesAsync();
 
         session.Status = ChatSessionStatus.Committed;
         session.CommittedCaseId = caseEntity.CaseId;
