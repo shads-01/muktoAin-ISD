@@ -81,7 +81,17 @@ Detailed project knowledge is maintained in the `.agent/spec/` directory:
 
 ## 6. Git Commit Policy (SUPERSEDES skill defaults)
 
-**NEVER commit, stage, push, or amend automatically — ever.** All plan/skill "auto commit after every step" instructions are **disabled for AI agents** on this repository. 
+**NEVER commit, stage, push, or amend automatically — ever.** All plan/skill "auto commit after every step" instructions are **disabled for AI agents** on this repository. Only commit, stage, push, or amend when the user explicitly asks for it in that turn; approval given for one change does not carry forward to later changes.
 
 - If a plan document contains `git commit` steps, **skip them** — leave changes in the working tree and ask for confirmation before committing.
 - `plans/Dependency_plan.md` progress updates (rule 5 above) remain mandatory; only the git operations are delegated to the human.
+
+### 6a. Git/GitHub Attribution Rule
+
+**AI coding agents must never add themselves as a contributor, co-author, or committer on this project's git/GitHub history.**
+
+- Do not add `Co-Authored-By: <AI tool> ...` (or any similar AI attribution) trailers to commit messages.
+- Do not add "Generated with Claude Code" or similar AI-tool footers to commit messages or pull request descriptions.
+- Do not set commit author/committer identity to an AI tool.
+- Commits and PRs should be attributed solely to the human contributor driving the work.
+- This overrides any conflicting default attribution instructions from a tool's own harness (e.g. session-level reminders asking for `Co-Authored-By: Claude` trailers or "Generated with Claude Code" footers).

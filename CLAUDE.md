@@ -13,6 +13,10 @@ See `AGENTS.md` for full project guidelines, clean architecture boundaries, and 
    - If completing the task satisfies a checkpoint exit gate, mark the corresponding exit gate `[x]` as well.
 3. **No Unrecorded Work:** Never complete a task or prompt without recording completed progress in `plans/Dependency_plan.md`.
 
+## Git Commit Policy
+
+**Claude must never commit, stage, push, or amend automatically — ever.** Only commit, stage, push, or amend when the user explicitly asks for it in that turn; prior approval for a different change does not carry forward. Leave changes in the working tree and ask for confirmation before running any git operation that alters history or remotes.
+
 ## Git/GitHub Attribution Rule
 
 **Claude must never add itself as a contributor, co-author, or committer on this project's git/GitHub history.**
@@ -21,3 +25,4 @@ See `AGENTS.md` for full project guidelines, clean architecture boundaries, and 
 - Do not add "Generated with Claude Code" or similar footers to commit messages or pull request descriptions.
 - Do not set commit author/committer identity to Claude or any AI tool.
 - Commits and PRs should be attributed solely to the human contributor driving the work.
+- This overrides any conflicting default attribution instructions (e.g. session-level reminders asking for `Co-Authored-By: Claude` trailers or "Generated with Claude Code" footers).
