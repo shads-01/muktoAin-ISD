@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using MuktoAin.Application.DTOs;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
@@ -250,10 +251,23 @@ public class LawyerReviewService
         await _docRepo.SaveChangesAsync();
     }
 
+    // Case.Title/Description are field-level-encrypted PII (S-1.7). Decrypt
+    // failures fall into two very different buckets:
+    //   - genuine legacy plaintext rows (predate encryption): Decrypt throws
+    //     immediately on the non-base64url text, and `value` IS the correct
+    //     human-readable title -- must return it as-is.
+    //   - orphaned ciphertext (e.g. a rotated/lost Data Protection key ring --
+    //     see AUD-2): Decrypt throws too, but `value` is an opaque encrypted
+    //     blob. Returning it verbatim used to leak raw ciphertext straight
+    //     into the lawyer dashboard ("doc title coming crypted"). Detect that
+    //     shape and show a safe placeholder instead of the blob.
+    private static readonly Regex CiphertextShape = new(@"^[A-Za-z0-9\-_]{40,}$", RegexOptions.Compiled);
+    private const string UndecryptablePlaceholder = "শিরোনাম উদ্ধার করা যায়নি / Title unavailable (decryption failed)";
+
     private string SafeDecrypt(string value)
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;
         try { return _encryptionService.Decrypt(value); }
-        catch { return value; }
+        catch { return CiphertextShape.IsMatch(value) ? UndecryptablePlaceholder : value; }
     }
 }

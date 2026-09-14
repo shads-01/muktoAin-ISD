@@ -107,6 +107,28 @@ public class LawyerReviewServiceTests
         Assert.Empty(result);
     }
 
+    // AUD-2 fallout: a title encrypted under a since-rotated/lost Data
+    // Protection key throws on Decrypt just like legacy plaintext does, but
+    // must NOT leak the raw ciphertext blob into the lawyer dashboard.
+    [Fact]
+    public async Task GetHistoryAsync_UndecryptableCiphertextTitle_ShowsPlaceholderNotRawBlob()
+    {
+        var opaqueCiphertext = "CfDJ8" + new string('A', 80);
+        _encryptionService.Setup(e => e.Decrypt(opaqueCiphertext))
+            .Throws(new System.Security.Cryptography.CryptographicException("key not found in the key ring"));
+        SetUpDocumentAndCase(1, 10, opaqueCiphertext, 1, "RTI Request");
+        _reviewRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<LawyerReview>
+        {
+            new() { ReviewId = 1, DocumentId = 1, LawyerProfileId = 5, Decision = ReviewDecision.Approved, Comments = "ok", ReviewedAt = new DateTime(2026, 9, 1) }
+        });
+
+        var result = await _service.GetHistoryAsync(lawyerProfileId: 5);
+
+        var item = Assert.Single(result);
+        Assert.DoesNotContain(opaqueCiphertext, item.CaseTitle);
+        Assert.Contains("Title unavailable", item.CaseTitle);
+    }
+
     [Fact]
     public async Task GetHistoryAsync_ApprovedReview_UsesContentFinalAndIncludesDistrict()
     {

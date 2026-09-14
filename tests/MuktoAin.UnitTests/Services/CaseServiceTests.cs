@@ -62,6 +62,63 @@ public class CaseServiceTests
         Assert.Equal("Encrypted Description", detail.Description);
     }
 
+    // AUD-2 fallout: a title encrypted under a since-rotated/lost Data
+    // Protection key throws on Decrypt just like legacy plaintext does, but
+    // must NOT show the raw ciphertext blob to the user.
+    [Fact]
+    public async Task GetCaseDetailAsync_UndecryptableCiphertext_ShowsPlaceholderNotRawBlob()
+    {
+        var opaqueCiphertext = "CfDJ8" + new string('A', 80); // opaque base64url blob shape
+        _encryptionService.Setup(e => e.Decrypt(opaqueCiphertext))
+            .Throws(new System.Security.Cryptography.CryptographicException("key not found in the key ring"));
+        var caseEntity = new Case
+        {
+            CaseId = 1,
+            Title = opaqueCiphertext,
+            Description = "ENC_Encrypted Description",
+            CategoryId = 1,
+            DistrictId = 1,
+            Status = CaseStatus.Submitted,
+            UserId = 42,
+            IsAnonymous = false
+        };
+        SetupLookups(caseEntity);
+        _caseRepo.Setup(r => r.GetWithDocumentsAsync(1)).ReturnsAsync(caseEntity);
+
+        var detail = await _service.GetCaseDetailAsync(1, 42, UserRole.Citizen);
+
+        Assert.NotNull(detail);
+        Assert.DoesNotContain(opaqueCiphertext, detail!.Title);
+        Assert.Contains("Title unavailable", detail.Title);
+    }
+
+    // A genuinely unencrypted legacy row still throws on Decrypt (not valid
+    // base64url) but must keep showing its real, human-readable title.
+    [Fact]
+    public async Task GetCaseDetailAsync_LegacyPlaintextTitle_ShowsRawTitleAsIs()
+    {
+        _encryptionService.Setup(e => e.Decrypt("বেতন পরিশোধে অস্বীকৃতি"))
+            .Throws(new FormatException("not valid base64url"));
+        var caseEntity = new Case
+        {
+            CaseId = 1,
+            Title = "বেতন পরিশোধে অস্বীকৃতি",
+            Description = "ENC_Encrypted Description",
+            CategoryId = 1,
+            DistrictId = 1,
+            Status = CaseStatus.Submitted,
+            UserId = 42,
+            IsAnonymous = false
+        };
+        SetupLookups(caseEntity);
+        _caseRepo.Setup(r => r.GetWithDocumentsAsync(1)).ReturnsAsync(caseEntity);
+
+        var detail = await _service.GetCaseDetailAsync(1, 42, UserRole.Citizen);
+
+        Assert.NotNull(detail);
+        Assert.Equal("বেতন পরিশোধে অস্বীকৃতি", detail!.Title);
+    }
+
     [Fact]
     public async Task SubmitCaseAsync_IdentifiedCase_HasNoTrackingCodeAndOwnerSet()
     {
