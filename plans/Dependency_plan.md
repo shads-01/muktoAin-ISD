@@ -7,9 +7,9 @@
 > - **`[A-#.#]`** = **Arpita** (Document Generation, Review Gate & Admin · `Arpita_plan.md`)
 > - **`[E-#.#]`** = **Erin** (Frontend Razor Views & Mock Integration · `Erin_plan.md`)
 > - **`[AUD-#]`** = Audit Report Fixes (from `docs/PROJECT_AUDIT_REPORT.md`)
-> - **`[TIER-#]`** = Admin Tiers / SuperAdmin plan (`docs/superpowers/plans/2026-09-12-admin-tiers.md`) — *Hrittika*
+> - **`[TIER-#]`** = Admin Tiers / SuperAdmin plan (`docs/superpowers/plans/2026-09-12-admin-tiers.md`) — *Arpita* (swapped from Hrittika, 2026-09-14)
 > - **`[NOTIF-#]`** = In-App Notifications plan (`docs/superpowers/plans/2026-09-12-notifications.md`) — *Hrittika*
-> - **`[SSL-#]`** = SSLCommerz Sandbox Payment Gateway plan (`docs/superpowers/plans/2026-09-12-sslcommerz-sandbox-payment-gateway.md`) — *Arpita*
+> - **`[SSL-#]`** = SSLCommerz Sandbox Payment Gateway plan (`docs/superpowers/plans/2026-09-12-sslcommerz-sandbox-payment-gateway.md`) — *Hrittika* (swapped from Arpita, 2026-09-14)
 > - **`[A-3.7+`** = New Arpita line-rebalancing tasks (2026-09)
 
 ---
@@ -24,15 +24,15 @@
 
 | Implementation Plan | Covers Tasks | Owner |
 |---|---|---|
-| `2026-09-12-admin-tiers.md` | TIER-1 → TIER-6 | Hrittika |
+| `2026-09-12-admin-tiers.md` | TIER-1 → TIER-6 | Arpita |
 | `2026-09-12-notifications.md` | NOTIF-1 → NOTIF-7 | Hrittika |
 | `2026-09-12-acts-scenario-management.md` | T-3.1, T-3.2 | Hrittika |
 | `2026-09-12-repository-db-integration-tests.md` | T-3.3 | Hrittika |
 | `2026-09-12-docker-cicd.md` | S-3.4 | Hrittika |
 | `2026-09-12-project-documentation-pack.md` | T-3.5 (Task 1), S-3.8 (Task 2), S-3.9 (Task 3), A-3.8 (Task 4), A-3.10 (Task 5) | Hrittika + Arpita |
-| `2026-09-12-sslcommerz-sandbox-payment-gateway.md` | SSL-1 → SSL-5 | Arpita |
+| `2026-09-12-sslcommerz-sandbox-payment-gateway.md` | SSL-1 → SSL-5 | Hrittika |
 | `2026-09-12-qa-benchmark-chain.md` | S-3.1, S-3.2, S-3.3 | Arpita |
-| `2026-09-12-admin-audit-trail-and-payment-hardening.md` | AUD-7, AUD-8, AUD-11 | Arpita |
+| `2026-09-12-admin-audit-trail-and-payment-hardening.md` | AUD-7, AUD-8 (Arpita); AUD-11 (Hrittika) | Arpita + Hrittika |
 | `2026-09-12-arpita-hardening-and-tests.md` | A-3.7, A-3.9, A-3.11, A-3.12 | Arpita |
 | `2026-09-12-security-audit-fixes-shads.md` | AUD-1, AUD-2, AUD-3, AUD-5, AUD-6, AUD-9, AUD-10, AUD-12 | Shads |
 | `2026-09-12-rowversion-concurrency-aud4.md` | AUD-4 | Hrittika |
@@ -248,10 +248,10 @@
 >
 > **⚠️ SQL script numbering coordination** — `scripts/` only goes up to `10_` today, but three pending plans each claim `scripts/11_*`. Execute in this order and renumber on conflict if a plan lands out of sequence:
 > - `scripts/11_notifications_table.sql` → NOTIF-2 (Hrittika)
-> - `scripts/12_add_user_issuperadmin.sql` → TIER-1 (Hrittika)
+> - `scripts/12_add_user_issuperadmin.sql` → TIER-1 (Arpita)
 > - `scripts/13_add_rowversion_columns.sql` → AUD-4 (Hrittika)
 > - `scripts/14_add_admin_audit_log.sql` → AUD-7 (Arpita)
-> - `scripts/15_add_payment_order_transaction_id.sql` → SSL-4 (Arpita) — the SSLCommerz plan doc says `11_add_payment_order_transaction_id.sql`; use `15_` instead
+> - `scripts/15_add_payment_order_transaction_id.sql` → SSL-4 (Hrittika) — the SSLCommerz plan doc says `11_add_payment_order_transaction_id.sql`; use `15_` instead
 > - `scripts/11_document_translation.sql` (from `docs/superpowers/plans/2026-09-10-document-styling-language-toggle.md`) — ⚠️ that plan is NOT yet merged to `main` (its commits live only on the unmerged `worktree-document-styling-language-toggle` branch); when it lands, renumber its script to the next free number (currently `16_`)
 
 - [x] ~~**[AUD-1]** CSRF Tokens on Chat/Payment Controllers (+ client JS `chat.js`/`main.js`) — *Shads* `[Blocked by: R-28]` — add `[ValidateAntiForgeryToken]` to ChatController and PaymentController POST actions; wire `RequestVerificationToken` into JS fetch calls (~100 lines) → **[Full plan](file:///c:/Users/HP/Desktop/Projects/muktoAin-ISD/docs/superpowers/plans/2026-09-12-security-audit-fixes-shads.md)** (Task 1) — follow it; do NOT author your own plan~~ — implemented per plan Task 1: `[ValidateAntiForgeryToken]` on `New`/`Ask`/`Commit` + `Honorarium`/`TopUp`; `csrf-token` meta tag emitted from `_Layout.cshtml` via `IAntiforgery.GetAndStoreTokens`; `csrfToken()` helper wired into all 4 `chat.js` POST fetches + the `Case/Result.cshtml` Honorarium inline fetch; 5 reflection attribute tests green (329/329 suite). NOTE: browser live-smoke (Step 9) deferred — this machine has no SQL Server/appsettings.Development.json; Shads to re-run on the dev box. Also fixed pre-existing R-28-era test breakage discovered en route (namespace drift + session/TempData fixtures + unproxyable `Mock.Of<PaymentService>`)
@@ -264,7 +264,7 @@
 - [ ] **[AUD-8]** Pagination Fixes: Lawyer Queue + Admin Users/AiLogs — *Arpita* `[Blocked by: A-2.7]` — add offset/limit paging to `GetQueueAsync`, Admin Users, and AiLogs views (~200 lines) → **[Full plan](file:///c:/Users/HP/Desktop/Projects/muktoAin-ISD/docs/superpowers/plans/2026-09-12-admin-audit-trail-and-payment-hardening.md)** (Tasks 8–10) — follow it; do NOT author your own plan
 - [x] ~~**[AUD-9]** Dead `documentType` Parameter Cleanup — *Shads* — remove unused `ChatCommitRequest.DocumentType` threading (~20 lines) → **[Full plan](file:///c:/Users/HP/Desktop/Projects/muktoAin-ISD/docs/superpowers/plans/2026-09-12-security-audit-fixes-shads.md)** (Task 6) — follow it; do NOT author your own plan~~ — implemented per plan Task 6: dropped the 8th `string documentType` param from `ChatService.CommitToCaseAsync`, removed `ChatCommitRequest.DocumentType`, deleted the category→documentType derivation in `CaseController.Submit` (`_categoryRepo` kept — still used by `PopulateDropdownsAsync`), removed `documentType` from the `chat.js` Commit payload and the dead `#draft-doc-type` select from `Home/Index.cshtml`. `rg` sweep confirms only legitimate `GeneratedDocument.DocumentType` enum usage remains. 340/340 tests pass (compiler verified all call sites)
 - [x] ~~**[AUD-10]** Mock Data Fallback Removal in DocumentController — *Shads* — remove `GetMockDocument` and optional nullable DI params (~30 lines) → **[Full plan](file:///c:/Users/HP/Desktop/Projects/muktoAin-ISD/docs/superpowers/plans/2026-09-12-security-audit-fixes-shads.md)** (Task 7) — follow it; do NOT author your own plan~~ — implemented per plan Task 7: deleted `MockData.cs` (rg confirmed zero references); `DocumentController` + `PaymentController` ctors now require ALL deps (ownership checks unconditional — null guards and the `_documentService == null` fallback branch removed); test fixtures rebuilt (authenticated owner 42 + `SetupOwnedCase` helper + `CaseService`-backed ownership). Gap-fixes vs plan: `CaseCategory` has `Name` (plan's `NameBn`/`NameEn` don't exist) and the fixture context needs `TestSession` (ResolveTrackingCode reads Session on the happy path). 340/340 tests pass incl. the IDOR Forbid regressions
-- [ ] **[AUD-11]** PaymentService Idempotency Guards — *Arpita* — add `Status` check before `MarkPaidAsync`/`RefundAsync` to prevent double-processing (~80 lines) → **[Full plan](file:///c:/Users/HP/Desktop/Projects/muktoAin-ISD/docs/superpowers/plans/2026-09-12-admin-audit-trail-and-payment-hardening.md)** (Task 1) — follow it; do NOT author your own plan
+- [ ] **[AUD-11]** PaymentService Idempotency Guards — *Hrittika* (swapped from Arpita, 2026-09-14) — add `Status` check before `MarkPaidAsync`/`RefundAsync` to prevent double-processing (~80 lines) → **[Full plan](file:///c:/Users/HP/Desktop/Projects/muktoAin-ISD/docs/superpowers/plans/2026-09-12-admin-audit-trail-and-payment-hardening.md)** (Task 1) — follow it; do NOT author your own plan
 - [x] ~~**[AUD-12]** Dashboard Log Severity Fix — *Shads* — change `LogInformation` → `LogError` in `BuildAdminDashboardViewModelAsync` catch (~10 lines) → **[Full plan](file:///c:/Users/HP/Desktop/Projects/muktoAin-ISD/docs/superpowers/plans/2026-09-12-security-audit-fixes-shads.md)** (Task 8) — follow it; do NOT author your own plan~~ — implemented per plan Task 8: `_logger.LogError(ex, "Dashboard aggregate build failed")` (structured `ex` logging preserves the stack trace; the health-probe catches at lines ~627/~661 intentionally stay `LogInformation` per plan's out-of-scope note). 340/340 tests pass
 
 ---
@@ -274,12 +274,12 @@
 > **Full plan:** [`docs/superpowers/plans/2026-09-12-admin-tiers.md`](file:///c:/Users/HP/Desktop/Projects/muktoAin-ISD/docs/superpowers/plans/2026-09-12-admin-tiers.md) (44 steps)
 > **AI agents:** Follow the implementation plan above task-by-task.
 
-- [ ] **[TIER-1]** Domain + Infrastructure — `User.IsSuperAdmin` column + SQL script `scripts/12_add_user_issuperadmin.sql` — *Hrittika* (~30 lines)
-- [ ] **[TIER-2]** `UserRoleClaimsTransformation` IsSuperAdmin claim + `SuperAdminOnly` authorization policy — *Hrittika* `[Blocked by: TIER-1]` (~60 lines)
-- [ ] **[TIER-3]** `UserManagementService` SuperAdmin methods + mutual-immutability guard — *Hrittika* `[Blocked by: TIER-2]` (~150 lines)
-- [ ] **[TIER-4]** Admin Users view updates (SuperAdmin management UI) — *Hrittika* `[Blocked by: TIER-3]` (~180 lines)
-- [ ] **[TIER-5]** Unit tests for all SuperAdmin flows — *Hrittika* `[Blocked by: TIER-3]` (~150 lines)
-- [ ] **[TIER-6]** Seed SuperAdmin + exit gate — *Hrittika* `[Blocked by: TIER-4, TIER-5]` (~52 lines)
+- [ ] **[TIER-1]** Domain + Infrastructure — `User.IsSuperAdmin` column + SQL script `scripts/12_add_user_issuperadmin.sql` — *Arpita* (swapped from Hrittika, 2026-09-14) (~30 lines)
+- [ ] **[TIER-2]** `UserRoleClaimsTransformation` IsSuperAdmin claim + `SuperAdminOnly` authorization policy — *Arpita* `[Blocked by: TIER-1]` (~60 lines)
+- [ ] **[TIER-3]** `UserManagementService` SuperAdmin methods + mutual-immutability guard — *Arpita* `[Blocked by: TIER-2]` (~150 lines)
+- [ ] **[TIER-4]** Admin Users view updates (SuperAdmin management UI) — *Arpita* `[Blocked by: TIER-3]` (~180 lines)
+- [ ] **[TIER-5]** Unit tests for all SuperAdmin flows — *Arpita* `[Blocked by: TIER-3]` (~150 lines)
+- [ ] **[TIER-6]** Seed SuperAdmin + exit gate — *Arpita* `[Blocked by: TIER-4, TIER-5]` (~52 lines)
 
 ---
 
@@ -303,11 +303,11 @@
 > **Full plan:** [`docs/superpowers/plans/2026-09-12-sslcommerz-sandbox-payment-gateway.md`](file:///c:/Users/HP/Desktop/Projects/muktoAin-ISD/docs/superpowers/plans/2026-09-12-sslcommerz-sandbox-payment-gateway.md) (26 steps)
 > **AI agents:** Follow the implementation plan above task-by-task.
 
-- [ ] **[SSL-1]** `IPaymentGatewayClient` port (Domain) + `SslCommerzGatewayClient` adapter (Infrastructure) — *Arpita* (~200 lines)
-- [ ] **[SSL-2]** `PaymentService` — `CreateCheckoutSessionAsync`/`ConfirmPaymentAsync` integration — *Arpita* `[Blocked by: SSL-1]` (~150 lines)
-- [ ] **[SSL-3]** `PaymentController` — Success/Fail/Cancel callbacks + UI updates — *Arpita* `[Blocked by: SSL-2]` (~200 lines)
-- [ ] **[SSL-4]** Schema additions (`PaymentOrder` columns) + `SslCommerz` config section — *Arpita* `[Blocked by: SSL-1]` (~60 lines)
-- [ ] **[SSL-5]** Unit tests for gateway client + payment flow — *Arpita* `[Blocked by: SSL-2, SSL-3]` (~131 lines)
+- [ ] **[SSL-1]** `IPaymentGatewayClient` port (Domain) + `SslCommerzGatewayClient` adapter (Infrastructure) — *Hrittika* (swapped from Arpita, 2026-09-14) (~200 lines)
+- [ ] **[SSL-2]** `PaymentService` — `CreateCheckoutSessionAsync`/`ConfirmPaymentAsync` integration — *Hrittika* `[Blocked by: SSL-1]` (~150 lines)
+- [ ] **[SSL-3]** `PaymentController` — Success/Fail/Cancel callbacks + UI updates — *Hrittika* `[Blocked by: SSL-2]` (~200 lines)
+- [ ] **[SSL-4]** Schema additions (`PaymentOrder` columns) + `SslCommerz` config section — *Hrittika* `[Blocked by: SSL-1]` (~60 lines)
+- [ ] **[SSL-5]** Unit tests for gateway client + payment flow — *Hrittika* `[Blocked by: SSL-2, SSL-3]` (~131 lines)
 
 ---
 

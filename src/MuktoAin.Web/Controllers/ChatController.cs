@@ -217,6 +217,24 @@ public class ChatController : Controller
         });
     }
 
+    // Draft modal's category default: keyword-matches the conversation against
+    // each category's name/common-actions. Returns null when nothing matches.
+    [HttpGet]
+    public async Task<IActionResult> SuggestCategory(int id)
+    {
+        var session = await _chatService.GetSessionAsync(id);
+        if (session == null) return NotFound(new { error = "Session not found" });
+
+        var userId = CurrentUserId();
+        var key = SessionKey();
+        var allowed = session.UserId == userId
+                      || (session.UserId == null && session.SessionKey == key);
+        if (!allowed) return Forbid();
+
+        var categoryId = await _chatService.SuggestCategoryAsync(id);
+        return Json(new { categoryId });
+    }
+
     // Generate Draft commit. Body: all modal fields.
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -247,6 +265,7 @@ public class ChatController : Controller
                 body.NotificationEmail,
                 body.IsAnonymous,
                 CurrentUserId(),
+                body.Language,
                 HttpContext.RequestAborted);
 
             if (result.AnonymousTrackingCode != null)
@@ -299,4 +318,5 @@ public class ChatCommitRequest
     public string Title { get; set; } = string.Empty;
     public string? NotificationEmail { get; set; }
     public bool IsAnonymous { get; set; }
+    public string? Language { get; set; }
 }

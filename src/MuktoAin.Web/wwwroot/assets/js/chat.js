@@ -286,6 +286,18 @@
         var modal = el("draft-modal");
         if (modal) modal.classList.add("open");
         renderIcons();
+
+        var catSel = el("draft-category");
+        if (catSel && state.chatSessionId) {
+            fetch("/Chat/SuggestCategory?id=" + state.chatSessionId)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data && data.categoryId && el("draft-category").value === "") {
+                    el("draft-category").value = String(data.categoryId);
+                }
+            })
+            .catch(function () {});
+        }
     }
 
     function submitDraft() {
@@ -301,7 +313,8 @@
                 districtId: parseInt(el("draft-district").value, 10),
                 title: el("draft-title-input").value,
                 notificationEmail: el("draft-email").value || null,
-                isAnonymous: el("draft-anonymous").checked
+                isAnonymous: el("draft-anonymous").checked,
+                language: curLang()
             })
         })
         .then(function (r) { return r.json(); })
