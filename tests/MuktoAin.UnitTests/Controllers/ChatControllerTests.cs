@@ -38,7 +38,8 @@ public class ChatControllerTests
             null!,
             Mock.Of<IEncryptionService>(),
             Mock.Of<IScenarioMappingRepository>(),
-            Mock.Of<MuktoAin.Domain.Interfaces.Services.IKeywordSectionSearch>());
+            Mock.Of<MuktoAin.Domain.Interfaces.Services.IKeywordSectionSearch>(),
+            Mock.Of<IRepository<CaseCategory>>());
 
         var budgetService = new AiBudgetService(
             Mock.Of<IRepository<AiLog>>(), DefaultReservationStore().Object);
@@ -169,7 +170,8 @@ public class ChatControllerTests
             null!,
             Mock.Of<IEncryptionService>(),
             Mock.Of<IScenarioMappingRepository>(),
-            Mock.Of<IKeywordSectionSearch>());
+            Mock.Of<IKeywordSectionSearch>(),
+            Mock.Of<IRepository<CaseCategory>>());
         var controller = new ChatController(chatService, new AiBudgetService(Mock.Of<IRepository<AiLog>>(), store.Object))
         {
             ControllerContext = _controller.ControllerContext
@@ -215,7 +217,8 @@ public class ChatControllerTests
             null!,
             Mock.Of<IEncryptionService>(),
             Mock.Of<IScenarioMappingRepository>(),
-            Mock.Of<IKeywordSectionSearch>());
+            Mock.Of<IKeywordSectionSearch>(),
+            Mock.Of<IRepository<CaseCategory>>());
         var controller = new ChatController(chatService, new AiBudgetService(Mock.Of<IRepository<AiLog>>(), store.Object))
         {
             ControllerContext = _controller.ControllerContext
