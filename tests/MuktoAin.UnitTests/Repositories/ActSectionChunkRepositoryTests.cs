@@ -53,4 +53,24 @@ public class ActSectionChunkRepositoryTests
 
         Assert.Equal(3, result.Count());
     }
+
+    [Fact]
+    public async Task GetByActIdAsync_ReturnsAllChunksOfTheAct_RegardlessOfEmbedState()
+    {
+        using var context = TestDbContextFactory.Create();
+        var act = new Act { Title = "Labour Act", Year = 2006 };
+        var section = new ActSection { Act = act, OrdinalPosition = 1, SectionText = "text" };
+        context.Acts.Add(act);
+        context.ActSections.Add(section);
+        context.ActSectionChunks.AddRange(
+            new ActSectionChunk { Section = section, ChunkOrder = 1, ChunkText = "a", TokenCount = 1, VectorId = "v-1", ContentHash = "h1", LastEmbeddedAt = DateTime.UtcNow },
+            new ActSectionChunk { Section = section, ChunkOrder = 2, ChunkText = "b", TokenCount = 1 });
+        await context.SaveChangesAsync();
+
+        var repo = new ActSectionChunkRepository(context);
+
+        var chunks = (await repo.GetByActIdAsync(act.ActId)).ToList();
+
+        Assert.Equal(2, chunks.Count);
+    }
 }

@@ -104,4 +104,25 @@ public class ActSectionChunkRepository : Repository<ActSectionChunk>, IActSectio
             await _context.SaveChangesAsync(ct);
         }
     }
+
+    public async Task<IEnumerable<ActSectionChunk>> GetByActIdAsync(int actId)
+        => await _dbSet
+            .AsNoTracking()
+            .Where(c => c.Section.ActId == actId)
+            .OrderBy(c => c.ChunkId)
+            .ToListAsync();
+
+    public async Task MarkStaleAsync(int chunkId, string contentHash)
+    {
+        // Single round-trip UPDATE (same ExecuteUpdateAsync pattern as
+        // UpdateEmbeddingInfoAsync). Nulling VectorId re-enrolls the chunk in the
+        // EmbeddingBatchJob's filtered-index work query; LastEmbeddedAt is cleared
+        // because the row is no longer represented in Qdrant.
+        await _dbSet
+            .Where(c => c.ChunkId == chunkId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(c => c.VectorId, (string?)null)
+                .SetProperty(c => c.ContentHash, contentHash)
+                .SetProperty(c => c.LastEmbeddedAt, (DateTime?)null));
+    }
 }

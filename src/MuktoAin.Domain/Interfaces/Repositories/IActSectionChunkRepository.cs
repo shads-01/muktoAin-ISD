@@ -19,4 +19,14 @@ public interface IActSectionChunkRepository : IRepository<ActSectionChunk>
     {
         return Task.WhenAll(updates.Select(u => UpdateEmbeddingInfoAsync(u.chunkId, u.vectorId, u.contentHash)));
     }
+
+    /// <summary>T-3.1: every chunk of an act in any embed state — the re-index
+    /// scan and the pre-delete Qdrant vector cleanup both stream from here.</summary>
+    Task<IEnumerable<ActSectionChunk>> GetByActIdAsync(int actId);
+
+    /// <summary>T-3.1 staleness stamp: clears the Qdrant pointer so the
+    /// EmbeddingBatchJob's "VectorId IS NULL" work query re-embeds the chunk,
+    /// and stores the recomputed hash. ExecuteUpdateAsync is not translatable
+    /// on InMemory — T-3.3 integration coverage.</summary>
+    Task MarkStaleAsync(int chunkId, string contentHash);
 }
