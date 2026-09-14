@@ -247,6 +247,9 @@ builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 // T-3.1: admin Acts CRUD + SHA-256 content-hash re-indexing (FR-17, wires to E-3.2).
 builder.Services.AddScoped<IActsManagementService, ActsManagementService>();
 
+// T-3.2: admin CRUD over FR-18 scenario keyword boosts (wires to E-3.2).
+builder.Services.AddScoped<IScenarioMappingService, ScenarioMappingService>();
+
 // A-3.2: Admin analytics service (FR-16)
 builder.Services.AddScoped<IAdminAnalyticsService, AdminAnalyticsService>();
 builder.Services.AddScoped<AdminAnalyticsService>();
