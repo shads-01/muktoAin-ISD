@@ -42,6 +42,20 @@ public static class SeedAdminUser
         var existing = await userManager.FindByEmailAsync(email);
         if (existing is not null)
         {
+            if (!await userManager.CheckPasswordAsync(existing, password))
+            {
+                var token = await userManager.GeneratePasswordResetTokenAsync(existing);
+                var resetResult = await userManager.ResetPasswordAsync(existing, token, password);
+                if (resetResult.Succeeded)
+                {
+                    logger.LogInformation("Synchronized password for admin user {Email}.", email);
+                }
+                else
+                {
+                    var errors = string.Join("; ", resetResult.Errors.Select(e => $"{e.Code}: {e.Description}"));
+                    logger.LogWarning("Failed to synchronize password for admin user {Email}: {Errors}", email, errors);
+                }
+            }
             return;
         }
 

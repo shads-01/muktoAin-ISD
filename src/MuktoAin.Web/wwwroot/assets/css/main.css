@@ -923,6 +923,17 @@ details.acc .acc-body.cited-body {
    confirmation-dialog modal, and its body text needs its own typography since
    .r-snippet is scoped to .result-item and doesn't apply outside it. */
 .modal.reading-modal { max-width: 720px; }
+.modal.confirm-modal { max-width: 450px; }
+.confirm-modal-icon {
+  width: 38px; height: 38px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2); border: 1px solid var(--border); flex: none;
+}
+.confirm-modal-icon.primary { color: var(--primary); }
+.confirm-modal-icon.danger { color: var(--danger); }
+.confirm-modal-body {
+  padding: 10px 0 16px; font-size: 14px; line-height: 1.6; color: var(--ink-2);
+}
 .section-full-text {
   font-size: 16px; line-height: 1.85; color: var(--ink);
   background: var(--surface-2); border: 1px solid var(--border);

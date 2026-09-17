@@ -1,6 +1,8 @@
 /* Fix CHAT_SESSION.SessionKey uniqueness.
   Use a filtered unique index so multiple logged-in sessions can have NULL
   SessionKey values while guest keys remain unique. Safe to re-run in SSMS. */
+USE MuktoAin;
+GO
 SET NOCOUNT ON;
 GO
 -- Required for filtered indexes.

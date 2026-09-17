@@ -42,7 +42,10 @@
                                 <input type="hidden" name="lawyerProfileId" value="@l.LawyerProfileId" />
                                 <input type="hidden" name="approve" value="true" />
                                 <button class="btn btn-outline btn-sm" type="submit"
-                                        data-confirm="Approve this lawyer? Queue access unlocks.">Approve</button>
+                                        data-confirm="আইনজীবীর আবেদন অনুমোদন করতে চান? রিভিউ কিউ অ্যাক্সেস সক্রিয় হবে। / Approve this lawyer? Review queue access will be activated."
+                                        data-confirm-title="আইনজীবী অনুমোদন / Approve Lawyer"
+                                        data-confirm-ok="অনুমোদন করুন / Approve"
+                                        data-confirm-cancel="বাতিল / Cancel">Approve</button>
                             </form>
                             <button class="btn btn-danger-outline btn-sm" type="button"
                                     data-open-modal="#reject-@l.LawyerProfileId">Reject</button>
