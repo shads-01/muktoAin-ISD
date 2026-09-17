@@ -115,7 +115,8 @@ public class CaseController : Controller
                 vm.Title,
                 notificationEmail: null,
                 vm.IsAnonymous,
-                currentUserId);
+                currentUserId,
+                lang);
         }
         catch (Exception)
         {

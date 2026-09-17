@@ -35,4 +35,10 @@ public class ActSectionRepository : Repository<ActSection>, IActSectionRepositor
             .Include(s => s.Act)
             .ToListAsync();
     }
+
+    public async Task<int> CountCaseReferencesAsync(int actId)
+        => await _context.CaseActReferences.CountAsync(r => r.Section.ActId == actId);
+
+    public async Task<int> CountScenarioMappingsAsync(int actId)
+        => await _context.ScenarioMappings.CountAsync(m => m.Section.ActId == actId);
 }

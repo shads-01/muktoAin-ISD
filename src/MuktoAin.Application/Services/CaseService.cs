@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using MuktoAin.Application.DTOs;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
@@ -138,6 +139,16 @@ public class CaseService
         );
     }
 
+    // Two very different decrypt-failure buckets (see AUD-2 / S-1.7):
+    //   - genuine legacy plaintext rows -- `value` IS the correct
+    //     human-readable text, must be returned as-is.
+    //   - orphaned ciphertext (rotated/lost Data Protection key ring) --
+    //     `value` is an opaque encrypted blob. Returning it verbatim used to
+    //     leak raw ciphertext straight into citizen/lawyer pages ("doc title
+    //     coming crypted"). Detect that shape and show a safe placeholder.
+    private static readonly Regex CiphertextShape = new(@"^[A-Za-z0-9\-_]{40,}$", RegexOptions.Compiled);
+    private const string UndecryptablePlaceholder = "শিরোনাম উদ্ধার করা যায়নি / Title unavailable (decryption failed)";
+
     private string SafeDecrypt(string value)
     {
         if (string.IsNullOrEmpty(value))
@@ -152,7 +163,7 @@ public class CaseService
         catch
         {
             // Graceful fallback for unencrypted legacy rows
-            return value;
+            return CiphertextShape.IsMatch(value) ? UndecryptablePlaceholder : value;
         }
     }
 }
