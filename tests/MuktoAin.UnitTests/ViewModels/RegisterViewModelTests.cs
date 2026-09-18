@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using MuktoAin.Web.ViewModels;
 
 namespace MuktoAin.UnitTests.ViewModels;
@@ -8,6 +9,11 @@ namespace MuktoAin.UnitTests.ViewModels;
 // tests pin the Bangladesh-specific format that replaces it here too.
 public class RegisterViewModelTests
 {
+    public RegisterViewModelTests()
+    {
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en");
+    }
+
     private static List<ValidationResult> ValidatePhoneNumber(string? phoneNumber)
     {
         var model = new RegisterViewModel { PhoneNumber = phoneNumber };

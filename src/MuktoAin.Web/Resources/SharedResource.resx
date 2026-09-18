@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="AppName" xml:space="preserve">
+    <value>MuktoAin</value>
+  </data>
+  <data name="AppTagline" xml:space="preserve">
+    <value>Know your legal rights in plain language, auto-draft verified documents</value>
+  </data>
+  <data name="SubmitCase" xml:space="preserve">
+    <value>Submit a Case</value>
+  </data>
+  <data name="TrackCase" xml:space="preserve">
+    <value>Track Case</value>
+  </data>
+  <data name="SearchLaws" xml:space="preserve">
+    <value>Search Laws</value>
+  </data>
+  <data name="Login" xml:space="preserve">
+    <value>Sign In</value>
+  </data>
+  <data name="Register" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="About" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="DisclaimerSummary" xml:space="preserve">
+    <value>MuktoAin provides general legal information, not formal legal advice. Every document is reviewed by a verified lawyer.</value>
+  </data>
+  <data name="IdentityError_PasswordTooShort" xml:space="preserve">
+    <value>Password must be at least 8 characters.</value>
+  </data>
+  <data name="IdentityError_PasswordRequiresUpper" xml:space="preserve">
+    <value>Password must have at least one uppercase letter (A-Z).</value>
+  </data>
+  <data name="IdentityError_PasswordRequiresLower" xml:space="preserve">
+    <value>Password must have at least one lowercase letter (a-z).</value>
+  </data>
+  <data name="IdentityError_PasswordRequiresDigit" xml:space="preserve">
+    <value>Password must have at least one digit (0-9).</value>
+  </data>
+  <data name="IdentityError_PasswordRequiresNonAlphanumeric" xml:space="preserve">
+    <value>Password must have at least one special character (e.g. @, #, !).</value>
+  </data>
+  <data name="IdentityError_PasswordRequiresUniqueChars" xml:space="preserve">
+    <value>Password must use more unique characters.</value>
+  </data>
+  <data name="IdentityError_UserAlreadyHasPassword" xml:space="preserve">
+    <value>This account already has a password set.</value>
+  </data>
+  <data name="IdentityError_DuplicateUserName" xml:space="preserve">
+    <value>An account with this email is already registered.</value>
+  </data>
+  <data name="IdentityError_DuplicateEmail" xml:space="preserve">
+    <value>An account with this email is already registered.</value>
+  </data>
+  <data name="IdentityError_InvalidEmail" xml:space="preserve">
+    <value>Please enter a valid email address.</value>
+  </data>
+  <data name="Account_InvalidCredentials" xml:space="preserve">
+    <value>The email or password is incorrect.</value>
+  </data>
+  <data name="Account_Suspended" xml:space="preserve">
+    <value>Your account has been suspended. Please contact support.</value>
+  </data>
+  <data name="Account_Lockout" xml:space="preserve">
+    <value>Account temporarily locked due to too many failed attempts. Please try again later.</value>
+  </data>
+  <data name="Account_BarRegistrationRequired" xml:space="preserve">
+    <value>Bar Registration Number is required for lawyer accounts.</value>
+  </data>
+  <data name="Register_FullName_Required" xml:space="preserve">
+    <value>Full Name is required</value>
+  </data>
+  <data name="Register_FullName_MaxLength" xml:space="preserve">
+    <value>Maximum 100 characters</value>
+  </data>
+  <data name="Register_Email_Required" xml:space="preserve">
+    <value>Email is required</value>
+  </data>
+  <data name="Register_Email_Invalid" xml:space="preserve">
+    <value>Please enter a valid email</value>
+  </data>
+  <data name="Register_Phone_Invalid" xml:space="preserve">
+    <value>Please enter a valid Bangladeshi mobile number (e.g. 01XXXXXXXXX)</value>
+  </data>
+  <data name="Register_Password_Required" xml:space="preserve">
+    <value>Password is required</value>
+  </data>
+  <data name="Register_Password_Length" xml:space="preserve">
+    <value>Minimum 8 characters (max 100)</value>
+  </data>
+  <data name="Register_Password_Policy" xml:space="preserve">
+    <value>Password needs a lowercase, an uppercase, a digit and a special character (e.g. @, #, !)</value>
+  </data>
+  <data name="Register_Password_Mismatch" xml:space="preserve">
+    <value>Passwords do not match</value>
+  </data>
+</root>

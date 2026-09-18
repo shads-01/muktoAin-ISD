@@ -12,30 +12,43 @@ public class SharedResource
     private static readonly ResourceManager ResourceManager =
         new("MuktoAin.Web.Resources.SharedResource", typeof(SharedResource).Assembly);
 
+    private static string? GetStringSafe(string name)
+    {
+        try
+        {
+            return ResourceManager.GetString(name, CultureInfo.CurrentUICulture)
+                ?? ResourceManager.GetString(name, CultureInfo.InvariantCulture);
+        }
+        catch (MissingManifestResourceException)
+        {
+            return null;
+        }
+    }
+
     public static string? Register_FullName_Required =>
-        ResourceManager.GetString(nameof(Register_FullName_Required), CultureInfo.CurrentUICulture);
+        GetStringSafe(nameof(Register_FullName_Required));
 
     public static string? Register_FullName_MaxLength =>
-        ResourceManager.GetString(nameof(Register_FullName_MaxLength), CultureInfo.CurrentUICulture);
+        GetStringSafe(nameof(Register_FullName_MaxLength));
 
     public static string? Register_Email_Required =>
-        ResourceManager.GetString(nameof(Register_Email_Required), CultureInfo.CurrentUICulture);
+        GetStringSafe(nameof(Register_Email_Required));
 
     public static string? Register_Email_Invalid =>
-        ResourceManager.GetString(nameof(Register_Email_Invalid), CultureInfo.CurrentUICulture);
+        GetStringSafe(nameof(Register_Email_Invalid));
 
     public static string? Register_Phone_Invalid =>
-        ResourceManager.GetString(nameof(Register_Phone_Invalid), CultureInfo.CurrentUICulture);
+        GetStringSafe(nameof(Register_Phone_Invalid));
 
     public static string? Register_Password_Required =>
-        ResourceManager.GetString(nameof(Register_Password_Required), CultureInfo.CurrentUICulture);
+        GetStringSafe(nameof(Register_Password_Required));
 
     public static string? Register_Password_Length =>
-        ResourceManager.GetString(nameof(Register_Password_Length), CultureInfo.CurrentUICulture);
+        GetStringSafe(nameof(Register_Password_Length));
 
     public static string? Register_Password_Policy =>
-        ResourceManager.GetString(nameof(Register_Password_Policy), CultureInfo.CurrentUICulture);
+        GetStringSafe(nameof(Register_Password_Policy));
 
     public static string? Register_Password_Mismatch =>
-        ResourceManager.GetString(nameof(Register_Password_Mismatch), CultureInfo.CurrentUICulture);
+        GetStringSafe(nameof(Register_Password_Mismatch));
 }
