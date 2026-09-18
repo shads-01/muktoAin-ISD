@@ -3,7 +3,11 @@
    IDEMPOTENT: safe to re-run; the ALTER is guarded.
    Execute in SSMS against the MuktoAin database.
    ============================================================ */
+USE MuktoAin;
+GO
 SET NOCOUNT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[USER]') AND name = N'IsSuperAdmin')
