@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MuktoAin.Application.DTOs;
 using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
 using MuktoAin.Infrastructure.Ai;
 using MuktoAin.Infrastructure.Data;
+using MuktoAin.Web.Auth;
 using MuktoAin.Web.ViewModels;
 using Qdrant.Client;
 
@@ -182,13 +184,15 @@ public class AdminController : Controller
         var vm = new AdminUsersViewModel
         {
             RoleFilter = role ?? "All",
+            ViewerIsSuperAdmin = User.HasClaim("IsSuperAdmin", "true"),
             Users = filtered.Select(u => new AdminUserRowViewModel
             {
                 UserId = u.UserId,
                 FullName = u.FullName,
                 Email = u.Email,
                 Role = u.Role,
-                Status = u.Status
+                Status = u.Status,
+                IsSuperAdmin = u.IsSuperAdmin
             }).ToList()
         };
         return View(vm);
@@ -214,6 +218,92 @@ public class AdminController : Controller
             TempData["Success"] = suspend ? "অ্যাকাউন্ট স্থগিত হয়েছে।" : "অ্যাকাউন্ট পুনরায় চালু হয়েছে।";
             TempData["SuccessEn"] = suspend ? "Account suspended." : "Account reactivated.";
         }
+        return RedirectToAction(nameof(Users));
+    }
+
+    [HttpGet]
+    [Authorize(Policy = "SuperAdminOnly")]
+    public IActionResult CreateAdmin() => View(new CreateAdminViewModel());
+
+    [HttpPost]
+    [Authorize(Policy = "SuperAdminOnly")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateAdmin(CreateAdminViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var actingSuperAdminId = int.TryParse(
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var id) ? id : 0;
+
+        AdminAccountResultDto result;
+        try
+        {
+            result = await _userManagement.CreateAdminAsync(
+                model.FullName, model.Email, model.AsSuperAdmin, actingSuperAdminId);
+        }
+        catch (IdentityCreationFailedException ex)
+        {
+            // Same per-field mapping AccountController.Register already uses for
+            // the identical UserManager.CreateAsync failure shape.
+            foreach (var error in ex.Errors)
+            {
+                var (field, message) = IdentityErrorMapper.Map(error);
+                ModelState.AddModelError(field ?? string.Empty, message);
+            }
+            return View(model);
+        }
+
+        var resetUrl = Url.Action("ResetPassword", "Account",
+            new { email = model.Email, token = result.PasswordResetUrl }, Request.Scheme);
+
+        TempData["Success"] = "নতুন অ্যাডমিন তৈরি হয়েছে — রিসেট লিংকটি নিরাপদে পাঠান।";
+        TempData["SuccessEn"] = "New admin created — relay the reset link securely.";
+        TempData["Info"] = resetUrl;
+        TempData["InfoEn"] = resetUrl;
+        return RedirectToAction(nameof(Users));
+    }
+
+    [HttpPost]
+    [Authorize(Policy = "SuperAdminOnly")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SuspendAdmin(int userId, bool suspend)
+    {
+        var actingSuperAdminId = int.TryParse(
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var id) ? id : 0;
+        var ok = await _userManagement.SetAdminStatusAsync(
+            userId, suspend ? AccountStatus.Suspended : AccountStatus.Active, actingSuperAdminId);
+
+        if (!ok)
+        {
+            TempData["Error"] = "এই অ্যাডমিনের অবস্থা পরিবর্তন করা যাবে না (SuperAdmin সুরক্ষিত)।";
+            TempData["ErrorEn"] = "This admin's status cannot be changed (SuperAdmin protected).";
+        }
+        else
+        {
+            TempData["Success"] = suspend ? "অ্যাডমিন স্থগিত হয়েছে।" : "অ্যাডমিন পুনরায় চালু হয়েছে।";
+            TempData["SuccessEn"] = suspend ? "Admin suspended." : "Admin reactivated.";
+        }
+        return RedirectToAction(nameof(Users));
+    }
+
+    [HttpPost]
+    [Authorize(Policy = "SuperAdminOnly")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PromoteAdmin(int userId)
+    {
+        var actingSuperAdminId = int.TryParse(
+            User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var id) ? id : 0;
+        var ok = await _userManagement.PromoteToSuperAdminAsync(userId, actingSuperAdminId);
+
+        TempData[ok ? "Success" : "Error"] = ok
+            ? "অ্যাডমিনকে সুপার অ্যাডমিনে উন্নীত করা হয়েছে।"
+            : "উন্নীত করা যায়নি (ইতিমধ্যে সুপার অ্যাডমিন)।";
+        TempData[ok ? "SuccessEn" : "ErrorEn"] = ok
+            ? "Admin promoted to SuperAdmin."
+            : "Could not promote (already a SuperAdmin).";
         return RedirectToAction(nameof(Users));
     }
 
@@ -449,6 +539,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = "SuperAdminOnly")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RefundOrder(int orderId)
     {
@@ -458,6 +549,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = "SuperAdminOnly")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ApprovePayout(int payoutRequestId)
     {
@@ -467,6 +559,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
+    [Authorize(Policy = "SuperAdminOnly")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> MarkOrderPaid(int orderId)
     {

@@ -15,7 +15,23 @@
         <span class="kicker"><i data-lucide="users"></i> FR-18</span>
         <h1 class="page-title">User Management</h1>
         <p class="page-sub">Suspend or restore accounts. Admin accounts are protected from modification.</p>
+        @if (Model.ViewerIsSuperAdmin)
+        {
+            <a asp-action="CreateAdmin" class="btn btn-primary btn-sm">+ Create Admin</a>
+        }
     </div>
+
+    @if (TempData["Info"] is string resetLink)
+    {
+        <div style="background: rgba(30, 130, 60, 0.1); border: 1px solid rgba(30, 130, 60, 0.3); border-left: 4px solid #1e823c; padding: 14px 18px; border-radius: 6px; margin-bottom: 20px;">
+            <strong style="color: #1e823c;">🔑 নতুন অ্যাডমিন সক্রিয়করণ / অ্যাক্টিভেশন লিংক:</strong><br />
+            <span style="font-size: 0.9rem; color: var(--text-muted, #555);">নতুন অ্যাডমিনকে পাসওয়ার্ড সেট করার জন্য নিচের লিংকটি পাঠান:</span>
+            <div style="margin-top: 8px; display: flex; gap: 8px; align-items: center;">
+                <input type="text" value="@resetLink" id="adminResetUrlInput" readonly style="flex: 1; padding: 6px 10px; font-family: monospace; font-size: 0.85rem; border: 1px solid var(--border, #ccc); border-radius: 4px; background: var(--bg-card, #fff);" />
+                <button type="button" class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('adminResetUrlInput').value); this.innerText='কপি হয়েছে!';">Copy Link</button>
+            </div>
+        </div>
+    }
 
     <div class="chip-row" style="margin-bottom: 16px">
         @foreach (var f in new[] { "All", "Citizen", "Lawyer", "Admin" })
@@ -43,7 +59,44 @@
                         <td>
                             @if (u.Role == "Admin")
                             {
-                                <span class="badge badge-neutral" title="Protected">Protected</span>
+                                if (u.IsSuperAdmin)
+                                {
+                                    <span class="badge badge-neutral" title="SuperAdmin — Protected">SuperAdmin</span>
+                                }
+                                else if (Model.ViewerIsSuperAdmin)
+                                {
+                                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                        @if (u.Status == "Suspended")
+                                        {
+                                            <form asp-action="SuspendAdmin" method="post" style="display:inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="userId" value="@u.UserId" />
+                                                <input type="hidden" name="suspend" value="false" />
+                                                <button class="btn btn-outline btn-sm" type="submit">Activate</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="SuspendAdmin" method="post" style="display:inline"
+                                                  data-confirm="Suspend this admin? Login will be blocked.">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="userId" value="@u.UserId" />
+                                                <input type="hidden" name="suspend" value="true" />
+                                                <button class="btn btn-danger-outline btn-sm" type="submit">Suspend</button>
+                                            </form>
+                                        }
+                                        <form asp-action="PromoteAdmin" method="post" style="display:inline"
+                                              data-confirm="Promote this admin to SuperAdmin? This cannot be undone through the app.">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@u.UserId" />
+                                            <button class="btn btn-outline btn-sm" type="submit">Promote</button>
+                                        </form>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-neutral" title="Protected">Protected</span>
+                                }
                             }
                             else if (u.Status == "Suspended")
                             {

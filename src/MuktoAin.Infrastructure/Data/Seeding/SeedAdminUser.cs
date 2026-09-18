@@ -65,6 +65,7 @@ public static class SeedAdminUser
             UserName = email,
             Email = email,
             Role = UserRole.Admin,
+            IsSuperAdmin = true,
             AccountStatus = AccountStatus.Active,
             PreferredLanguage = "bn",
             EmailConfirmed = true,
