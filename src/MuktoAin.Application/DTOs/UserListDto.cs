@@ -6,4 +6,5 @@ public record UserListDto(
     string FullName,
     string Email,
     string Role,
-    string Status);
+    string Status,
+    bool IsSuperAdmin);

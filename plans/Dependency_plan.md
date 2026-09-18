@@ -274,12 +274,12 @@
 > **Full plan:** [`docs/superpowers/plans/2026-09-12-admin-tiers.md`](file:///c:/Users/HP/Desktop/Projects/muktoAin-ISD/docs/superpowers/plans/2026-09-12-admin-tiers.md) (44 steps)
 > **AI agents:** Follow the implementation plan above task-by-task.
 
-- [ ] **[TIER-1]** Domain + Infrastructure — `User.IsSuperAdmin` column + SQL script `scripts/12_add_user_issuperadmin.sql` — *Arpita* (swapped from Hrittika, 2026-09-14) (~30 lines)
-- [ ] **[TIER-2]** `UserRoleClaimsTransformation` IsSuperAdmin claim + `SuperAdminOnly` authorization policy — *Arpita* `[Blocked by: TIER-1]` (~60 lines)
-- [ ] **[TIER-3]** `UserManagementService` SuperAdmin methods + mutual-immutability guard — *Arpita* `[Blocked by: TIER-2]` (~150 lines)
-- [ ] **[TIER-4]** Admin Users view updates (SuperAdmin management UI) — *Arpita* `[Blocked by: TIER-3]` (~180 lines)
-- [ ] **[TIER-5]** Unit tests for all SuperAdmin flows — *Arpita* `[Blocked by: TIER-3]` (~150 lines)
-- [ ] **[TIER-6]** Seed SuperAdmin + exit gate — *Arpita* `[Blocked by: TIER-4, TIER-5]` (~52 lines)
+- [x] ~~**[TIER-1]** Domain + Infrastructure — `User.IsSuperAdmin` column + SQL script `scripts/12_add_user_issuperadmin.sql` — *Arpita* (swapped from Hrittika, 2026-09-14) (~30 lines)~~ — added `User.IsSuperAdmin` property, EF configuration in `UserConfiguration.cs`, and idempotent migration script `scripts/12_add_user_issuperadmin.sql`
+- [x] ~~**[TIER-2]** `UserRoleClaimsTransformation` IsSuperAdmin claim + `SuperAdminOnly` authorization policy — *Arpita* `[Blocked by: TIER-1]` (~60 lines)~~ — projected `IsSuperAdmin` claim in `UserRoleClaimsTransformation` and registered `SuperAdminOnly` policy in `Program.cs`; verified by unit tests
+- [x] ~~**[TIER-3]** `UserManagementService` SuperAdmin methods + mutual-immutability guard — *Arpita* `[Blocked by: TIER-2]` (~150 lines)~~ — added `CreateAdminAsync`, `SetAdminStatusAsync`, `PromoteToSuperAdminAsync`, `IdentityCreationFailedException`, and mutual-immutability guard rails in `UserManagementService`; updated DTOs (`UserListDto` with 6-arg record, `AdminAccountResultDto`)
+- [x] ~~**[TIER-4]** Admin Users view updates (SuperAdmin management UI) — *Arpita* `[Blocked by: TIER-3]` (~180 lines)~~ — updated `AdminPageViewModels.cs` (`ViewerIsSuperAdmin`, `IsSuperAdmin`), mapped in `AdminController.Users`, updated `Views/Admin/Users.cshtml` with SuperAdmin badge, SuspendAdmin and PromoteAdmin actions, and created `Views/Admin/CreateAdmin.cshtml`
+- [x] ~~**[TIER-5]** Unit tests for all SuperAdmin flows — *Arpita* `[Blocked by: TIER-3]` (~150 lines)~~ — comprehensive unit tests added in `UserRoleClaimsTransformationSuperAdminTests.cs`, `UserManagementServiceTests.cs`, `AdminControllerTests.cs`, and `SeedAdminUserTests.cs` (all 405 unit tests passing)
+- [x] ~~**[TIER-6]** Seed SuperAdmin + exit gate — *Arpita* `[Blocked by: TIER-4, TIER-5]` (~52 lines)~~ — bootstrap admin seeded with `IsSuperAdmin = true` in `SeedAdminUser.cs`, gated financial actions (`RefundOrder`, `ApprovePayout`, `MarkOrderPaid`) behind `SuperAdminOnly` policy; end-to-end verified cleanly
 
 ---
 

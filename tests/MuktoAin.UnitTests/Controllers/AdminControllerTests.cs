@@ -1,5 +1,7 @@
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using MuktoAin.Web.Controllers;
+using Xunit;
 
 namespace MuktoAin.UnitTests.Controllers;
 
@@ -33,5 +35,27 @@ public class AdminControllerTests
         Assert.NotNull(keyStatusMethod);
         Assert.False(keyStatusMethod!.IsDefined(typeof(AllowAnonymousAttribute), inherit: true));
     }
-}
 
+    [Theory]
+    [InlineData(nameof(AdminController.CreateAdmin))]
+    [InlineData(nameof(AdminController.SuspendAdmin))]
+    [InlineData(nameof(AdminController.PromoteAdmin))]
+    [InlineData(nameof(AdminController.RefundOrder))]
+    [InlineData(nameof(AdminController.ApprovePayout))]
+    [InlineData(nameof(AdminController.MarkOrderPaid))]
+    public void Action_IsGatedBySuperAdminOnlyPolicy(string actionName)
+    {
+        var methods = typeof(AdminController).GetMethods()
+            .Where(m => m.Name == actionName)
+            .ToList();
+
+        Assert.NotEmpty(methods);
+        Assert.All(methods, m =>
+        {
+            var attr = m.GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true)
+                .Cast<AuthorizeAttribute>()
+                .SingleOrDefault(a => a.Policy == "SuperAdminOnly");
+            Assert.NotNull(attr);
+        });
+    }
+}
