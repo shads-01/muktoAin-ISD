@@ -1,0 +1,52 @@
+@model MuktoAin.Web.ViewModels.CreateAdminViewModel
+@{
+    ViewData["Title"] = "Create Admin — MuktoAin";
+    ViewData["IsAdminPage"] = true;
+}
+
+<main class="container" id="main" style="max-width: 560px;">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+        <span class="sep">/</span>
+        <a asp-controller="Admin" asp-action="Users">Users</a>
+        <span class="sep">/</span>
+        <span>Create Admin</span>
+    </nav>
+
+    <div class="page-head">
+        <h1 class="page-title">Create Admin</h1>
+        <p class="page-sub">SuperAdmin only. A random password is generated and a reset link is shown below — relay it to the new admin out-of-band.</p>
+    </div>
+
+    <div class="card" style="padding: 20px;">
+        <form asp-action="CreateAdmin" method="post">
+            @Html.AntiForgeryToken()
+            @* All, not ModelOnly: IdentityErrorMapper can map a password-policy
+               failure to a "Password" field, but this form has no Password
+               input (the system generates one) — ModelOnly would only show
+               string.Empty-keyed errors and silently drop that one. *@
+            <div asp-validation-summary="All" class="text-danger"></div>
+
+            <div class="form-group">
+                <label asp-for="FullName"></label>
+                <input asp-for="FullName" class="form-control" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="form-group" style="margin-top: 12px;">
+                <label>
+                    <input asp-for="AsSuperAdmin" type="checkbox" />
+                    <span asp-for="AsSuperAdmin"></span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 16px;">Create Admin</button>
+        </form>
+    </div>
+</main>

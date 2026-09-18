@@ -184,13 +184,15 @@ public class AdminController : Controller
         var vm = new AdminUsersViewModel
         {
             RoleFilter = role ?? "All",
+            ViewerIsSuperAdmin = User.HasClaim("IsSuperAdmin", "true"),
             Users = filtered.Select(u => new AdminUserRowViewModel
             {
                 UserId = u.UserId,
                 FullName = u.FullName,
                 Email = u.Email,
                 Role = u.Role,
-                Status = u.Status
+                Status = u.Status,
+                IsSuperAdmin = u.IsSuperAdmin
             }).ToList()
         };
         return View(vm);

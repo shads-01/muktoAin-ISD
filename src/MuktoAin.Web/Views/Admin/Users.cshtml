@@ -15,6 +15,10 @@
         <span class="kicker"><i data-lucide="users"></i> FR-18</span>
         <h1 class="page-title">User Management</h1>
         <p class="page-sub">Suspend or restore accounts. Admin accounts are protected from modification.</p>
+        @if (Model.ViewerIsSuperAdmin)
+        {
+            <a asp-action="CreateAdmin" class="btn btn-primary btn-sm">+ Create Admin</a>
+        }
     </div>
 
     <div class="chip-row" style="margin-bottom: 16px">
@@ -43,7 +47,44 @@
                         <td>
                             @if (u.Role == "Admin")
                             {
-                                <span class="badge badge-neutral" title="Protected">Protected</span>
+                                if (u.IsSuperAdmin)
+                                {
+                                    <span class="badge badge-neutral" title="SuperAdmin — Protected">SuperAdmin</span>
+                                }
+                                else if (Model.ViewerIsSuperAdmin)
+                                {
+                                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                        @if (u.Status == "Suspended")
+                                        {
+                                            <form asp-action="SuspendAdmin" method="post" style="display:inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="userId" value="@u.UserId" />
+                                                <input type="hidden" name="suspend" value="false" />
+                                                <button class="btn btn-outline btn-sm" type="submit">Activate</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="SuspendAdmin" method="post" style="display:inline"
+                                                  data-confirm="Suspend this admin? Login will be blocked.">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="userId" value="@u.UserId" />
+                                                <input type="hidden" name="suspend" value="true" />
+                                                <button class="btn btn-danger-outline btn-sm" type="submit">Suspend</button>
+                                            </form>
+                                        }
+                                        <form asp-action="PromoteAdmin" method="post" style="display:inline"
+                                              data-confirm="Promote this admin to SuperAdmin? This cannot be undone through the app.">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@u.UserId" />
+                                            <button class="btn btn-outline btn-sm" type="submit">Promote</button>
+                                        </form>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-neutral" title="Protected">Protected</span>
+                                }
                             }
                             else if (u.Status == "Suspended")
                             {
