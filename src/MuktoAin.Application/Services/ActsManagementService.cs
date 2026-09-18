@@ -19,6 +19,7 @@ public class ActsManagementService : IActsManagementService
     private readonly IActSectionRepository _sectionRepo;
     private readonly IActSectionChunkRepository _chunkRepo;
     private readonly IVectorStore _vectorStore;
+    private readonly IRepository<AnswerCache> _cacheRepo;
     private readonly ILogger<ActsManagementService> _logger;
 
     private const int MaxPageSize = 100;
@@ -28,13 +29,30 @@ public class ActsManagementService : IActsManagementService
         IActSectionRepository sectionRepo,
         IActSectionChunkRepository chunkRepo,
         IVectorStore vectorStore,
+        IRepository<AnswerCache> cacheRepo,
         ILogger<ActsManagementService> logger)
     {
         _actRepo = actRepo;
         _sectionRepo = sectionRepo;
         _chunkRepo = chunkRepo;
         _vectorStore = vectorStore;
+        _cacheRepo = cacheRepo;
         _logger = logger;
+    }
+
+    // A7: when law text changes (stale chunks on re-index, act deletion), all
+    // cached rights explanations are potentially wrong — drop the whole
+    // ANSWER_CACHE so the next question regenerates fresh. CitedJson doesn't
+    // carry act ids, so a per-act purge would require a schema change; a full
+    // clear is correct and rare.
+    private async Task InvalidateAnswerCacheAsync()
+    {
+        var rows = await _cacheRepo.GetAllAsync();
+        foreach (var row in rows)
+        {
+            await _cacheRepo.DeleteAsync(row);
+        }
+        await _cacheRepo.SaveChangesAsync();
     }
 
     public async Task<ActPageDto> GetActsAsync(string? keyword, int page, int pageSize)
@@ -211,6 +229,7 @@ public class ActsManagementService : IActsManagementService
         }
 
         await _actRepo.DeleteWithChildrenAsync(actId);
+        await InvalidateAnswerCacheAsync();
         return ActDeleteResultDto.Ok();
     }
 
@@ -243,6 +262,13 @@ public class ActsManagementService : IActsManagementService
             // keeps the dedupe scan's "hash matches, skip" check correct.
             await _chunkRepo.MarkStaleAsync(chunk.ChunkId, hash);
             stale++;
+        }
+
+        // Only clear when the law text actually changed — a no-op re-index
+        // (all fresh/pending) must not nuke a warm cache.
+        if (stale > 0)
+        {
+            await InvalidateAnswerCacheAsync();
         }
 
         return new ActReindexResultDto(actId, fresh + stale + pending, fresh, stale, pending);

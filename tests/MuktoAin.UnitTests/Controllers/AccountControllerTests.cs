@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,7 @@ using Moq;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
+using MuktoAin.UnitTests.Localization;
 using MuktoAin.Web.Controllers;
 using MuktoAin.Web.ViewModels;
 
@@ -22,22 +24,27 @@ public class AccountControllerTests
     private readonly Mock<UserManager<User>> _userManager;
     private readonly Mock<SignInManager<User>> _signInManager;
     private readonly Mock<IRepository<LawyerProfile>> _lawyerProfileRepo;
+    private readonly Mock<IChatHistoryRepository> _chatHistory = new();
     private readonly AccountController _controller;
 
     public AccountControllerTests()
     {
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en");
+
         _lawyerProfileRepo = new Mock<IRepository<LawyerProfile>>();
         _lawyerProfileRepo.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
 
         _userManager = NewUserManager();
         _signInManager = NewSignInManager(_userManager.Object);
 
-        var httpContext = new DefaultHttpContext();
+        var httpContext = new DefaultHttpContext { Session = new TestSession() };
         _controller = new AccountController(
             _signInManager.Object,
             _userManager.Object,
             _lawyerProfileRepo.Object,
-            Mock.Of<ILogger<AccountController>>())
+            Mock.Of<ILogger<AccountController>>(),
+            TestStringLocalizer.Create(),
+            _chatHistory.Object)
         {
             ControllerContext = new ControllerContext { HttpContext = httpContext },
             TempData = new TempDataDictionary(httpContext, Mock.Of<ITempDataProvider>())
@@ -365,6 +372,23 @@ public class AccountControllerTests
         var redirect = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal(nameof(AccountController.Profile), redirect.ActionName);
         Assert.True(_controller.TempData.ContainsKey("Success"));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Login_AdoptsOnlyAfterSuccessfulAuthentication(bool success)
+    {
+        _controller.HttpContext.Session.SetString("mkt-chatkey", "synthetic-key");
+        var user = new User { Id = 42, Role = UserRole.Citizen, AccountStatus = AccountStatus.Active };
+        _userManager.Setup(m => m.FindByEmailAsync("synthetic@example.test")).ReturnsAsync(user);
+        _signInManager.Setup(m => m.PasswordSignInAsync(user, "Synthetic1!", false, true))
+            .ReturnsAsync(success ? Microsoft.AspNetCore.Identity.SignInResult.Success
+                : Microsoft.AspNetCore.Identity.SignInResult.Failed);
+        await _controller.Login(new LoginViewModel
+            { Email = "synthetic@example.test", Password = "Synthetic1!" });
+        _chatHistory.Verify(r => r.AdoptGuestSessionsAsync(42, "synthetic-key",
+            It.IsAny<CancellationToken>()), success ? Times.Once() : Times.Never());
     }
 
     private static Mock<UserManager<User>> NewUserManager()

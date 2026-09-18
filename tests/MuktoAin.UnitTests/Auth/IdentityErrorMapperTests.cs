@@ -1,13 +1,20 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Identity;
+using MuktoAin.UnitTests.Localization;
 using MuktoAin.Web.Auth;
 
 namespace MuktoAin.UnitTests.Auth;
 
 // Covers the non-Identity logic added to AccountController's Register action:
-// translating Identity's default IdentityResult error codes into bilingual,
+// translating Identity's default IdentityResult error codes into localized,
 // field-targeted ModelState messages (see IdentityErrorMapper).
 public class IdentityErrorMapperTests
 {
+    public IdentityErrorMapperTests()
+    {
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en");
+    }
+
     [Theory]
     [InlineData("PasswordTooShort")]
     [InlineData("PasswordRequiresUpper")]
@@ -20,7 +27,8 @@ public class IdentityErrorMapperTests
     {
         var error = new IdentityError { Code = code, Description = "original" };
 
-        var (field, message) = IdentityErrorMapper.Map(error);
+        var (field, message) =
+            IdentityErrorMapper.Map(error, TestStringLocalizer.Create());
 
         Assert.Equal("Password", field);
         Assert.Contains("Password", message, StringComparison.OrdinalIgnoreCase);
@@ -36,7 +44,8 @@ public class IdentityErrorMapperTests
     {
         var error = new IdentityError { Code = code, Description = "original" };
 
-        var (field, message) = IdentityErrorMapper.Map(error);
+        var (field, message) =
+            IdentityErrorMapper.Map(error, TestStringLocalizer.Create());
 
         Assert.Equal("Email", field);
         Assert.Contains("email", message, StringComparison.OrdinalIgnoreCase);
@@ -48,9 +57,37 @@ public class IdentityErrorMapperTests
     {
         var error = new IdentityError { Code = "ConcurrencyFailure", Description = "ugly english description" };
 
-        var (field, message) = IdentityErrorMapper.Map(error);
+        var (field, message) =
+            IdentityErrorMapper.Map(error, TestStringLocalizer.Create());
 
         Assert.Null(field);
         Assert.Equal("ugly english description", message);
+    }
+
+    [Fact]
+    public void Map_UnknownCode_FallsBackToIdentityDescription()
+    {
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en");
+        var error = new IdentityError { Code = "SomeUnknownCode", Description = "original" };
+
+        var (field, message) =
+            IdentityErrorMapper.Map(error, TestStringLocalizer.Create());
+
+        Assert.Null(field);
+        Assert.Equal("original", message);
+    }
+
+    [Theory]
+    [InlineData("PasswordTooShort", "Password")]
+    [InlineData("DuplicateEmail", "Email")]
+    public void Map_WithoutLocalizer_ReturnsFallbackBilingualMessage(string code, string expectedField)
+    {
+        var error = new IdentityError { Code = code, Description = "original" };
+
+        var (field, message) = IdentityErrorMapper.Map(error);
+
+        Assert.Equal(expectedField, field);
+        Assert.Contains("/", message);
+        Assert.DoesNotContain("original", message);
     }
 }

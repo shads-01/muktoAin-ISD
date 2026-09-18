@@ -720,7 +720,28 @@ details.acc .acc-body.cited-body {
 .unread-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--primary); flex: none; }
 
 /* ---------- Chat ---------- */
-.chat-shell { display: flex; flex-direction: column; height: calc(100dvh - 100px); min-height: 480px; }
+.chat-shell { position: relative; display: flex; flex-direction: row; height: calc(100dvh - 100px); min-height: 480px; }
+.chat-main { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
+.chat-main .chat-scroll { min-height: 0; padding-top: 58px; }
+.chat-side-toggle { position: absolute; top: 8px; left: 12px; z-index: 2; min-width: 44px; min-height: 44px; }
+.chat-side { position: fixed; inset: 0 auto 0 0; z-index: 101; width: min(320px, 88vw); background: var(--bg); color: var(--ink); border-right: 1px solid var(--border); padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow-md); }
+.chat-side[hidden], .chat-side-backdrop[hidden], #chat-committed[hidden], #chat-history-more[hidden], #chat-history-retry[hidden] { display: none; }
+.chat-side-backdrop { position: fixed; inset: 0; z-index: 100; background: var(--ink); opacity: .35; }
+.chat-side-list { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow-y: auto; gap: 6px; }
+.chat-side-item { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 10px; min-height: 44px; border: 1px solid transparent; border-radius: var(--radius-btn); color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+.chat-side-item:hover { background: var(--primary-soft); }
+.chat-side-item[aria-current="page"] { border-color: var(--border-strong); background: var(--primary-soft); }
+.chat-side-item:focus-visible, .chat-side button:focus-visible, .chat-side-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.chat-side .icon-btn, .chat-side .btn { min-width: 44px; min-height: 44px; }
+.chat-side-badge { color: var(--primary); font-size: 12px; }
+.chat-side-lock-icon { position: absolute; top: 12px; right: 10px; color: var(--ink-3); display: inline-flex; align-items: center; justify-content: center; cursor: help; }
+.chat-side-lock-icon i, .chat-side-lock-icon svg.lucide { width: 14px; height: 14px; }
+#chat-committed { margin-bottom: 16px; }
+@media (min-width: 900px) {
+  .chat-side { position: static; width: 280px; flex: 0 0 280px; z-index: auto; box-shadow: none; }
+  .chat-side-backdrop { display: none; }
+  .chat-shell:has(.chat-side:not([hidden])) .chat-side-toggle { left: 292px; }
+}
 .chat-scroll { flex: 1; overflow-y: auto; padding: 20px 14px 10px; scroll-behavior: smooth; }
 .chat-inner { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
 /* #chat-thread is where chat.js appends every bubble/card — it needs its own flex
@@ -736,13 +757,132 @@ details.acc .acc-body.cited-body {
   max-width: 88%; padding: 13px 16px; border-radius: 16px; font-size: 16px; line-height: 1.75;
   animation: rise .3s var(--ease) both; animation-delay: var(--d, 0s);
 }
+.bubble-wrap {
+  display: flex; flex-direction: column;
+}
+.bubble-wrap.user-wrap {
+  align-self: flex-end; align-items: flex-end; max-width: 88%;
+}
+.bubble-wrap.user-wrap .bubble.user {
+  max-width: 100%;
+}
 .bubble.user {
   align-self: flex-end; background: var(--primary); color: var(--on-primary);
   border-bottom-right-radius: 5px;
+  user-select: text; -webkit-user-select: text; cursor: text;
+}
+.bubble.user ::selection, .bubble.user::selection {
+  background: var(--gold); color: #111111;
 }
 .bubble.ai {
   align-self: flex-start; background: var(--surface); border: 1px solid var(--border);
   border-bottom-left-radius: 5px;
+  user-select: text; -webkit-user-select: text;
+}
+
+/* User prompt inline editing */
+.bubble-wrap.user-wrap .user-edit-box {
+  width: 100%;
+  min-width: min(500px, 85vw);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+  animation: rise .2s var(--ease) both;
+}
+.user-edit-textarea {
+  width: 100%;
+  min-height: 52px;
+  max-height: 240px;
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  padding: 8px 10px;
+  font-family: var(--font-doc);
+  font-size: 15px;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.user-edit-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-soft);
+}
+.user-edit-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.user-edit-actions .btn {
+  padding: 5px 12px;
+  font-size: 13px;
+  line-height: 1.3;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.user-edit-actions .btn i,
+.user-edit-actions .btn svg.lucide {
+  width: 13px;
+  height: 13px;
+}
+
+/* Claude-style action buttons (copy / edit) */
+.msg-actions {
+  display: flex; align-items: center; gap: 4px; margin-top: 4px;
+  opacity: 0; transition: opacity .15s ease;
+}
+.bubble-wrap.user-wrap .msg-actions {
+  justify-content: flex-end; margin-right: 2px;
+}
+.bubble.ai .msg-actions, .answer-card .msg-actions {
+  margin-top: 10px; justify-content: flex-start;
+}
+.bubble-wrap:hover .msg-actions,
+.bubble-wrap:focus-within .msg-actions,
+.bubble.ai:hover .msg-actions,
+.bubble.ai:focus-within .msg-actions,
+.answer-card:hover .msg-actions,
+.answer-card:focus-within .msg-actions {
+  opacity: 1;
+}
+@media (hover: none) {
+  .msg-actions { opacity: 0.85; }
+}
+.msg-action-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 8px; font-size: 12px; font-family: var(--font-ui);
+  color: var(--ink-2); background: transparent;
+  border: 1px solid transparent; border-radius: 6px;
+  cursor: pointer; transition: all .15s ease; line-height: 1;
+}
+.msg-action-btn:hover {
+  background: var(--surface-2); border-color: var(--border); color: var(--ink-heading);
+}
+.msg-action-btn:active { transform: scale(0.96); }
+.msg-action-btn i, .msg-action-btn svg.lucide { width: 13px; height: 13px; }
+.msg-action-btn.copied {
+  color: var(--primary); border-color: var(--primary-soft); background: var(--primary-soft);
+}
+.bubble .ai-reply-text {
+  font-family: var(--font-doc); font-size: 16px; line-height: 1.85;
+}
+.bubble .ai-reply-text > *:first-child { margin-top: 0; }
+.bubble .ai-reply-text > *:last-child { margin-bottom: 0; }
+.bubble .ai-reply-text p { margin: 0 0 8px; }
+.bubble .ai-reply-text ol, .bubble .ai-reply-text ul { margin: 0 0 8px; padding-left: 22px; }
+.bubble .ai-reply-text li { margin-bottom: 3px; }
+.bubble .ai-reply-text strong { color: var(--ink-heading); font-weight: 700; }
+.bubble .missing-info-hint {
+  margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--border);
 }
 .bubble .ai-disclaimer {
   display: block; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border);
@@ -832,6 +972,12 @@ details.acc .acc-body.cited-body {
 }
 .send-btn:hover { background: var(--primary-hover); }
 .send-btn:active { transform: scale(.94); }
+.composer-wrap.is-closed { opacity: 0.65; }
+.composer-wrap.is-closed .composer { background: var(--surface-2); border-color: var(--border); cursor: not-allowed; }
+.composer-wrap.is-closed textarea,
+.composer-wrap.is-closed .send-btn { cursor: not-allowed !important; pointer-events: auto !important; }
+.composer-wrap.is-closed .send-btn { background: var(--ink-3); transform: none !important; }
+.composer-wrap.is-closed .composer-mode { pointer-events: none; opacity: 0.5; }
 .typing { display: inline-flex; gap: 4px; padding: 15px 18px; }
 .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); display: inline-block; animation: pulseDot 1.1s infinite; }
 .typing i:nth-child(2) { animation-delay: .18s; }
@@ -1204,8 +1350,6 @@ details.acc .acc-body.cited-body {
 }
 
 /* ---------- Frontend redesign additions (2026-09-05) ---------- */
-.recent-chats { margin-bottom: 12px; }
-.recent-chats .tiny { display: block; margin-bottom: 6px; }
 .quota-note { text-align: right; padding: 4px 2px 0; }
 .answer-cached { color: var(--ink-3); }
 .unread-dot {
