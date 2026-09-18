@@ -13,5 +13,6 @@ public class ChatSessionConfiguration : IEntityTypeConfiguration<ChatSession>
         builder.HasIndex(s => s.SessionKey)
             .HasDatabaseName("IX_CHAT_SESSION_SessionKey")
             .HasFilter("[SessionKey] IS NOT NULL");
+        builder.Property(s => s.BlockedStreak).HasDefaultValue(0);
     }
 }

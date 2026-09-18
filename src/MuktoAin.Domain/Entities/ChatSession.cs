@@ -29,6 +29,10 @@ public class ChatSession
 
     public ChatSessionStatus Status { get; set; } = ChatSessionStatus.InProgress;
 
+    // Consecutive safety-blocked turns (layer-1 filter or layer-2 intent).
+    // A normal turn resets it; at ChatService's threshold the session locks.
+    public int BlockedStreak { get; set; }
+
     public int? CommittedCaseId { get; set; }
     public Case? CommittedCase { get; set; }
 
