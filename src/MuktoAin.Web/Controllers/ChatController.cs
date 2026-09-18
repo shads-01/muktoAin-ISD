@@ -16,6 +16,8 @@ namespace MuktoAin.Web.Controllers;
 [Route("[controller]/[action]")]
 public class ChatController : Controller
 {
+    public const int MaxQuestionLength = 2000;
+
     private const string ChatKeySessionName = "mkt-chatkey";
 
     private readonly ChatService _chatService;
@@ -68,6 +70,13 @@ public class ChatController : Controller
     {
         if (body == null || string.IsNullOrWhiteSpace(body.Question) || body.ChatSessionId <= 0)
             return BadRequest(new { error = "question and chatSessionId required" });
+
+        if (body.Question.Length > MaxQuestionLength)
+            return BadRequest(new
+            {
+                error = "Your message is too long. Please keep it under 2000 characters and try again.",
+                errorBn = "আপনার বার্তাটি অনেক দীর্ঘ। অনুগ্রহ করে ২০০০ অক্ষরের মধ্যে লিখে আবার চেষ্টা করুন।"
+            });
 
         var session = await _chatService.GetSessionAsync(body.ChatSessionId);
         if (session == null)
@@ -154,6 +163,8 @@ public class ChatController : Controller
         await _chatService.AppendMessageAsync(
             body.ChatSessionId, "assistant", turn.Answer, SerializeCited(turn.CitedSections));
 
+        var isSessionBlocked = session.Status == ChatSessionStatus.Blocked || session.BlockedStreak >= 3;
+
         return Json(new
         {
             tier = turn.Tier,
@@ -162,7 +173,8 @@ public class ChatController : Controller
             fromCache = turn.FromCache,
             retrievalOnly = turn.RetrievalOnly,
             blocked = turn.Blocked,
-            canDraft = turn.CanDraft,
+            sessionBlocked = isSessionBlocked,
+            canDraft = !isSessionBlocked && turn.CanDraft,
             suggestedCategoryId = turn.SuggestedCategoryId,
             caseFileJson = turn.CaseFileJson,
             missingInfo = turn.MissingInfo,
@@ -218,7 +230,8 @@ public class ChatController : Controller
         var categoryId = ChatService.MapCategory(ChatService.CaseFileString(cfJson, "category"));
         var hasDistrict = !string.IsNullOrWhiteSpace(ChatService.CaseFileString(cfJson, "district"));
         var committed = session.Status == ChatSessionStatus.Committed;
-        var canDraft = !committed && messages.Count > 0 && categoryId.HasValue && hasDistrict;
+        var blocked = session.Status == ChatSessionStatus.Blocked;
+        var canDraft = !committed && !blocked && messages.Count > 0 && categoryId.HasValue && hasDistrict;
 
         string? caseUrl = null;
         if (committed)
@@ -239,6 +252,7 @@ public class ChatController : Controller
             language = session.Language,
             canDraft = canDraft,
             committed,
+            blocked,
             caseId = committed ? session.CommittedCaseId : null,
             caseUrl,
             suggestedCategoryId = categoryId,

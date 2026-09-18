@@ -5,7 +5,7 @@
     "use strict";
 
     var state = { chatSessionId: 0, asking: false, loading: false, committed: false,
-        committing: false, caseFileJson: null, suggestedCategoryId: null, mode: "rights" };
+        committing: false, caseFileJson: null, suggestedCategoryId: null, mode: "rights", blocked: false };
     var navigationVersion = 0, historyVersion = 0, historyCursor = null;
     var historyLoading = false, historyFailedCursor = null;
     var desktop = window.matchMedia("(min-width: 900px)");
@@ -51,6 +51,7 @@
         state.loading = false;
         state.committing = false;
         state.committed = false;
+        state.blocked = false;
         state.caseFileJson = null;
         state.suggestedCategoryId = null;
         state.mode = "rights";
@@ -59,13 +60,20 @@
             input.value = "";
             input.style.height = "auto";
             input.disabled = false;
+            input.removeAttribute("title");
         }
-        if (sendBtn) sendBtn.disabled = false;
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.removeAttribute("title");
+        }
         if (welcome) welcome.style.display = "";
         var intro = el("chat-intro");
         if (intro) intro.hidden = false;
         var compWrap = document.querySelector(".composer-wrap");
-        if (compWrap) compWrap.hidden = false;
+        if (compWrap) {
+            compWrap.hidden = false;
+            compWrap.classList.remove("is-closed");
+        }
         var commBox = el("chat-committed");
         if (commBox) {
             commBox.hidden = true;
@@ -99,6 +107,46 @@
             chip.classList.toggle("active", chip.dataset.mode === "rights");
         });
         markActiveHistory();
+    }
+
+    function setChatBlocked(blocked) {
+        state.blocked = !!blocked;
+        var compWrap = document.querySelector(".composer-wrap");
+        if (state.blocked) {
+            if (compWrap) compWrap.classList.add("is-closed");
+            var closedText = curLang() === "en" ? "This conversation is closed." : "এই আলোচনাটি বন্ধ করা হয়েছে।";
+            if (input) {
+                input.disabled = true;
+                input.placeholder = closedText;
+                input.title = closedText;
+            }
+            if (sendBtn) {
+                sendBtn.disabled = true;
+                sendBtn.title = closedText;
+            }
+            var openEdit = document.querySelector(".user-edit-box");
+            if (openEdit) {
+                var cancelBtn = openEdit.querySelector(".btn-ghost");
+                if (cancelBtn) cancelBtn.click();
+                else openEdit.remove();
+            }
+            var dSug = thread ? thread.querySelector(".draft-card") : null;
+            if (dSug) dSug.remove();
+            var qR = thread ? thread.querySelector(".quick-replies") : null;
+            if (qR) qR.remove();
+        } else {
+            if (compWrap) compWrap.classList.remove("is-closed");
+            if (input) {
+                input.removeAttribute("title");
+                var defaultText = curLang() === "en" ? "Describe your legal issue..." : "আইনি সমস্যাটি লিখুন...";
+                input.placeholder = defaultText;
+                if (!state.committed && !state.asking && !state.loading) input.disabled = false;
+            }
+            if (sendBtn) {
+                sendBtn.removeAttribute("title");
+                if (!state.committed && !state.asking && !state.loading) sendBtn.disabled = false;
+            }
+        }
     }
 
     function replayError(id) {
@@ -175,6 +223,15 @@
         el.textContent = curLang() === "en" ? en : bn;
         return el;
     }
+
+    var LEGAL_DISCLAIMER_EN =
+        "⚠️ MuktoAin provides general legal information and document drafting assistance. " +
+        "This is NOT formal legal advice. Every document must be reviewed by a verified lawyer " +
+        "before use. For urgent legal matters, consult a qualified advocate.";
+
+    var LEGAL_DISCLAIMER_BN =
+        "⚠️ মুক্ত আইন সাধারণ আইনি তথ্য ও নথি প্রণয়নে সহায়তা প্রদান করে। এটি আনুষ্ঠানিক আইনি পরামর্শ নয়। " +
+        "প্রতিটি নথি ব্যবহারের পূর্বে একজন যাচাইকৃত আইনজীবী দ্বারা পর্যালোচনা করা আবশ্যক।";
     // Blocks below are built via innerHTML strings that hardcode Bangla text
     // alongside data-bn/data-en attributes (relying on main.js's toggle handler
     // to fix them up later). Without this, freshly-inserted nodes show Bangla
@@ -190,9 +247,12 @@
                 node.innerHTML = iconEl ? iconEl.outerHTML + " " + text : text;
             }
         });
+        root.querySelectorAll("[data-title-bn][data-title-en]").forEach(function (node) {
+            node.title = curLang() === "en" ? node.dataset.titleEn : node.dataset.titleBn;
+        });
     }
 
-    function copyText(text, btn) {
+    function copyText(text, btn, customToast) {
         if (!text) return;
         function done() {
             if (btn) {
@@ -208,7 +268,7 @@
                     renderIcons();
                 }, 1800);
             }
-            var msg = curLang() === "en" ? "Copied to clipboard ✓" : "ক্লিপবোর্ডে কপি হয়েছে ✓";
+            var msg = customToast || (curLang() === "en" ? "Copied to clipboard ✓" : "ক্লিপবোর্ডে কপি হয়েছে ✓");
             if (window.showToast) window.showToast(msg);
         }
 
@@ -238,7 +298,7 @@
     }
 
     function startInlineEdit(wrap, bubbleEl, actionsEl) {
-        if (state.asking || state.loading || state.committed || state.committing) return;
+        if (state.asking || state.loading || state.committed || state.committing || state.blocked) return;
 
         // If another bubble is already being edited, cancel it first
         var existingBox = thread.querySelector(".user-edit-box");
@@ -292,7 +352,7 @@
         applyLangToNode(saveBtn);
 
         function submit() {
-            if (state.asking || state.loading || state.committed || state.committing) return;
+            if (state.asking || state.loading || state.committed || state.committing || state.blocked) return;
             var newText = textarea.value.trim();
             if (!newText) {
                 textarea.focus();
@@ -302,6 +362,7 @@
             // Clean up the edit box and restore bubble with updated text
             editBox.remove();
             bubbleEl.textContent = newText;
+            wrap._rawText = newText;
             bubbleEl.style.display = "";
             actionsEl.style.display = "";
 
@@ -347,6 +408,7 @@
     function userBubble(text) {
         var wrap = document.createElement("div");
         wrap.className = "bubble-wrap user-wrap";
+        wrap._rawText = text;
 
         var d = document.createElement("div");
         d.className = "bubble user";
@@ -372,7 +434,7 @@
         editBtn.innerHTML = '<i data-lucide="edit-3"></i> <span data-bn="সম্পাদনা" data-en="Edit">সম্পাদনা</span>';
         applyLangToNode(editBtn);
         editBtn.addEventListener("click", function () { startInlineEdit(wrap, d, actions); });
-        if (!state.committed) actions.appendChild(editBtn);
+        if (!state.committed && !state.blocked) actions.appendChild(editBtn);
 
         wrap.appendChild(actions);
         thread.appendChild(wrap);
@@ -398,6 +460,8 @@
         var p = document.createElement("div");
         p.className = "ai-reply-text";
         var cleanAnswer = stripTrailingDisclaimers(data.answer || "");
+        wrap._rawMarkdown = cleanAnswer || data.answer || "";
+        wrap._missingInfo = data.missingInfo || [];
         if (window.marked && window.DOMPurify) {
             p.innerHTML = window.DOMPurify.sanitize(window.marked.parse(cleanAnswer));
         } else {
@@ -418,14 +482,10 @@
             wrap.appendChild(hint);
         }
 
-        // Compact disclaimer for conversational turns
+        // Disclaimer sensitive to BN/EN toggle
         var disc = document.createElement("small");
         disc.className = "ai-disclaimer";
-        disc.textContent = data.disclaimer
-            ? (data.disclaimer.length > 80
-                ? "⚠️ " + (curLang() === "en" ? "General legal information, not formal legal advice." : "সাধারণ আইনি তথ্য, আনুষ্ঠানিক আইনি পরামর্শ নয়।")
-                : data.disclaimer)
-            : "⚠️ " + (curLang() === "en" ? "General legal information, not formal legal advice." : "সাধারণ আইনি তথ্য, আনুষ্ঠানিক আইনি পরামর্শ নয়।");
+        bilingual(disc, LEGAL_DISCLAIMER_BN, LEGAL_DISCLAIMER_EN);
         wrap.appendChild(disc);
 
         var actions = document.createElement("div");
@@ -447,7 +507,7 @@
         retryBtn.innerHTML = '<i data-lucide="refresh-cw"></i> <span data-bn="আবার চেষ্টা করুন" data-en="Retry">আবার চেষ্টা করুন</span>';
         applyLangToNode(retryBtn);
         retryBtn.addEventListener("click", function () {
-            if (state.asking || state.loading || state.committed || state.committing) return;
+            if (state.asking || state.loading || state.committed || state.committing || state.blocked) return;
             var q = question;
             if (!q) {
                 var prev = wrap.previousElementSibling;
@@ -465,7 +525,7 @@
                 ask(q, { skipUserBubble: true });
             }
         });
-        if (!state.committed) actions.appendChild(retryBtn);
+        if (!state.committed && !state.blocked) actions.appendChild(retryBtn);
         wrap.appendChild(actions);
 
         thread.appendChild(wrap);
@@ -488,6 +548,8 @@
         var p = document.createElement("div");
         p.className = "answer-text";
         var cleanAnswer = stripTrailingDisclaimers(data.answer || "");
+        wrap._rawMarkdown = cleanAnswer || data.answer || "";
+        wrap._citedSections = data.citedSections || [];
         if (window.marked && window.DOMPurify) {
             p.innerHTML = window.DOMPurify.sanitize(window.marked.parse(cleanAnswer));
         } else {
@@ -524,11 +586,10 @@
             wrap.appendChild(ro);
         }
 
-        // data.disclaimer already comes back in the requested language and already
-        // carries its own leading icon (see Disclaimers.cs) — don't prepend another.
+        // Disclaimer sensitive to BN/EN toggle
         var disc = document.createElement("small");
         disc.className = "ai-disclaimer";
-        disc.textContent = data.disclaimer || "⚠️ সাধারণ আইনি তথ্য, আনুষ্ঠানিক আইনি পরামর্শ নয়।";
+        bilingual(disc, LEGAL_DISCLAIMER_BN, LEGAL_DISCLAIMER_EN);
         wrap.appendChild(disc);
 
         var actions = document.createElement("div");
@@ -550,7 +611,7 @@
         retryBtn.innerHTML = '<i data-lucide="refresh-cw"></i> <span data-bn="আবার চেষ্টা করুন" data-en="Retry">আবার চেষ্টা করুন</span>';
         applyLangToNode(retryBtn);
         retryBtn.addEventListener("click", function () {
-            if (state.asking || state.loading || state.committed || state.committing) return;
+            if (state.asking || state.loading || state.committed || state.committing || state.blocked) return;
             var q = question;
             if (!q) {
                 var prev = wrap.previousElementSibling;
@@ -568,18 +629,18 @@
                 ask(q, { skipUserBubble: true });
             }
         });
-        if (!state.committed) actions.appendChild(retryBtn);
+        if (!state.committed && !state.blocked) actions.appendChild(retryBtn);
         wrap.appendChild(actions);
 
         thread.appendChild(wrap);
-        quickReplies(!!data.canDraft);
-        if (data.canDraft) draftSuggestion();
+        if (!state.blocked) quickReplies(!!data.canDraft);
+        if (!state.blocked && data.canDraft) draftSuggestion();
         renderIcons();
         scrollBottom();
     }
 
     function quickReplies(canDraft) {
-        if (state.committed) return;
+        if (state.committed || state.blocked) return;
         var qr = document.createElement("div");
         qr.className = "quick-replies";
         var options = [];
@@ -605,7 +666,7 @@
     }
 
     function draftSuggestion() {
-        if (state.committed) return;
+        if (state.committed || state.blocked) return;
         var existing = thread.querySelector(".draft-card");
         if (existing) existing.remove();
 
@@ -744,11 +805,11 @@
         retryBtn.innerHTML = '<i data-lucide="refresh-cw"></i> <span data-bn="আবার চেষ্টা করুন" data-en="Retry">আবার চেষ্টা করুন</span>';
         applyLangToNode(retryBtn);
         retryBtn.addEventListener("click", function () {
-            if (state.asking || state.loading || state.committed || state.committing) return;
+            if (state.asking || state.loading || state.committed || state.committing || state.blocked) return;
             wrap.remove();
             if (retryQuestion) ask(retryQuestion, { skipUserBubble: true });
         });
-        if (!state.committed) actions.appendChild(retryBtn);
+        if (!state.committed && !state.blocked) actions.appendChild(retryBtn);
         wrap.appendChild(actions);
 
         thread.appendChild(wrap);
@@ -758,7 +819,7 @@
 
     function ask(question, options) {
         options = options || {};
-        if (state.asking || state.loading || state.committing || state.committed || !question || !question.trim()) return false;
+        if (state.asking || state.loading || state.committing || state.committed || state.blocked || !question || !question.trim()) return false;
         var version = navigationVersion;
         var id = state.chatSessionId;
         var mode = state.mode;
@@ -788,6 +849,20 @@
                 loadHistory(null);
                 if (!active(version, id)) return;
                 dots.remove();
+                if (data.sessionBlocked === true) {
+                    setChatBlocked(true);
+                    var activeItem = document.querySelector('.chat-side-item[data-chat-id="' + id + '"]');
+                    if (activeItem && !activeItem.querySelector('.chat-side-lock-icon')) {
+                        var lock = document.createElement("span");
+                        lock.className = "chat-side-lock-icon";
+                        lock.setAttribute("data-title-bn", "বন্ধ");
+                        lock.setAttribute("data-title-en", "Closed");
+                        lock.title = curLang() === "en" ? "Closed" : "বন্ধ";
+                        lock.innerHTML = '<i data-lucide="lock"></i>';
+                        activeItem.appendChild(lock);
+                        renderIcons();
+                    }
+                }
                 state.caseFileJson = data.caseFileJson == null ? null : data.caseFileJson;
                 state.suggestedCategoryId = data.suggestedCategoryId == null ? null : data.suggestedCategoryId;
                 if (data.tier === "wall") quotaWallCard();
@@ -805,7 +880,8 @@
             } finally {
                 if (active(version, id)) {
                     state.asking = false;
-                    sendBtn.disabled = state.committed || state.loading;
+                    sendBtn.disabled = state.committed || state.loading || state.blocked;
+                    if (state.blocked) input.disabled = true;
                 }
             }
         }
@@ -900,6 +976,127 @@
         renderIcons();
     }
 
+    // ---------- conversation export (markdown) ----------
+
+    function buildConversationMarkdown() {
+        if (!thread || !thread.children || thread.children.length === 0) return "";
+
+        var turns = [];
+        var currentTurn = 1;
+
+        for (var i = 0; i < thread.children.length; i++) {
+            var child = thread.children[i];
+
+            // Citizen / User message
+            if (child._rawText != null) {
+                turns.push("### Turn " + currentTurn + " — Citizen\n" + child._rawText.trim());
+                continue;
+            }
+
+            // Assistant message (conversational or answer-card)
+            if (child._rawMarkdown != null) {
+                var answerMd = child._rawMarkdown.trim();
+                var sectionLines = [];
+
+                if (child._citedSections && child._citedSections.length) {
+                    sectionLines.push("\n\n**Citations:**");
+                    child._citedSections.forEach(function (s) {
+                        var line = "- *" + (s.actTitle || "Act") + "*";
+                        if (s.sectionNumber) line += " — ধারা " + s.sectionNumber;
+                        sectionLines.push(line);
+                    });
+                }
+
+                if (child._missingInfo && child._missingInfo.length) {
+                    sectionLines.push("\n\n*Still needed info:* " + child._missingInfo.join(", "));
+                }
+
+                turns.push("### Turn " + currentTurn + " — Assistant\n" + answerMd + sectionLines.join("\n"));
+                currentTurn++;
+                continue;
+            }
+
+            // Fallback for user wrap if _rawText somehow wasn't set
+            if (child.classList && child.classList.contains("user-wrap")) {
+                var userTextEl = child.querySelector(".bubble.user");
+                if (userTextEl && userTextEl.textContent) {
+                    turns.push("### Turn " + currentTurn + " — Citizen\n" + userTextEl.textContent.trim());
+                }
+                continue;
+            }
+
+            // Error bubble
+            if (child.classList && child.classList.contains("error-bubble")) {
+                var errTextEl = child.querySelector(".ai-reply-text");
+                turns.push("### Turn " + currentTurn + " — Assistant (Error)\n" + (errTextEl ? errTextEl.textContent.trim() : "Connection error"));
+                currentTurn++;
+                continue;
+            }
+        }
+
+        if (turns.length === 0) return "";
+
+        // Resolve title
+        var title = "New Conversation";
+        if (state.chatSessionId) {
+            var activeHistoryLink = document.querySelector('[data-chat-id="' + state.chatSessionId + '"] span');
+            if (activeHistoryLink && activeHistoryLink.textContent) {
+                title = activeHistoryLink.textContent.trim();
+            } else {
+                title = "Chat Session #" + state.chatSessionId;
+            }
+        }
+
+        var lines = [
+            "# MuktoAin Conversation Transcript",
+            "- **Session ID**: " + (state.chatSessionId ? state.chatSessionId : "Unsaved"),
+            "- **Title**: " + title,
+            "- **Status**: " + (state.committed ? "Committed" : "InProgress"),
+            "- **Language**: " + curLang(),
+            "- **Exported At**: " + new Date().toISOString()
+        ];
+
+        if (state.caseFileJson && state.caseFileJson !== "{}" && state.caseFileJson.trim().length > 2) {
+            var prettyJson = state.caseFileJson;
+            try {
+                prettyJson = JSON.stringify(JSON.parse(state.caseFileJson), null, 2);
+            } catch (e) {}
+            lines.push("\n## Case File Slots (AI Intake)\n```json\n" + prettyJson + "\n```");
+        }
+
+        lines.push("\n---\n");
+        lines.push(turns.join("\n\n---\n\n"));
+        lines.push("\n");
+
+        return lines.join("\n");
+    }
+
+    function isMarkdownExportEnabled() {
+        var s = document.querySelector(".chat-shell");
+        return s ? s.getAttribute("data-enable-md-export") === "true" : false;
+    }
+
+    function copyConversationAsMarkdown(btn) {
+        if (!isMarkdownExportEnabled()) {
+            if (window.console && console.warn) {
+                console.warn("Conversation Markdown export is disabled. Enable DevFeatures:EnableConversationMarkdownExport in appsettings.Development.json or set ENABLE_CONVERSATION_MARKDOWN_EXPORT=true.");
+            }
+            return "";
+        }
+        var md = buildConversationMarkdown();
+        if (!md) {
+            var emptyMsg = curLang() === "en" ? "No conversation to copy." : "কপি করার মতো আলোচনা নেই।";
+            if (window.showToast) window.showToast(emptyMsg);
+            return "";
+        }
+        var targetBtn = btn || el("chat-copy-md") || el("chat-copy-md-sidebar");
+        var toastMsg = curLang() === "en"
+            ? "Conversation copied as Markdown ✓"
+            : "সম্পূর্ণ আলোচনা MD হিসেবে কপি হয়েছে ✓";
+        copyText(md, targetBtn, toastMsg);
+        return md;
+    }
+
     // ---------- history sidebar / URL navigation ----------
 
     async function loadHistory(cursor) {
@@ -937,6 +1134,15 @@
                     var badge = bilingual(document.createElement("span"), "মামলা", "Case");
                     badge.className = "chat-side-badge";
                     link.appendChild(badge);
+                } else if (c.status === "Blocked" || c.status === "blocked") {
+                    var lock = document.createElement("span");
+                    lock.className = "chat-side-lock-icon";
+                    lock.setAttribute("data-title-bn", "বন্ধ");
+                    lock.setAttribute("data-title-en", "Closed");
+                    lock.title = curLang() === "en" ? "Closed" : "বন্ধ";
+                    lock.innerHTML = '<i data-lucide="lock"></i>';
+                    link.appendChild(lock);
+                    renderIcons(link);
                 }
                 link.addEventListener("click", function (event) {
                     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
@@ -983,9 +1189,11 @@
             if (data.chatSessionId !== id || !Array.isArray(data.messages)) throw new Error("Invalid replay.");
             dots.remove();
             state.committed = data.committed === true;
+            state.blocked = data.blocked === true;
             state.caseFileJson = data.caseFileJson == null ? null : data.caseFileJson;
             state.suggestedCategoryId = data.suggestedCategoryId == null ? null : data.suggestedCategoryId;
             document.querySelector(".composer-wrap").hidden = state.committed;
+            setChatBlocked(state.blocked);
             var lastUserContent = "";
             data.messages.forEach(function (m) {
                 if (m.role === "user") { lastUserContent = m.content; userBubble(m.content); return; }
@@ -998,10 +1206,10 @@
                 else conversationalBubble(replayData, lastUserContent);
             });
             if (state.committed) renderCommitted(data);
-            else if (data.canDraft) draftSuggestion();
+            else if (!state.blocked && data.canDraft) draftSuggestion();
             state.loading = false;
-            input.disabled = state.committed;
-            sendBtn.disabled = state.committed;
+            input.disabled = state.committed || state.blocked;
+            sendBtn.disabled = state.committed || state.blocked;
             markActiveHistory();
         } catch (error) {
             if (!active(version, id)) return;
@@ -1113,10 +1321,10 @@
 
         // A2: mode chips actually switch behavior — "search" routes the
         // question through keyword section retrieval (FR-7).
-        document.querySelectorAll("#composer-mode .chip").forEach(function (chip) {
+        document.querySelectorAll("#composer-mode [data-mode]").forEach(function (chip) {
             chip.addEventListener("click", function () {
                 if (state.committed || state.loading || state.committing) return;
-                document.querySelectorAll("#composer-mode .chip").forEach(function (c) { c.classList.remove("active"); });
+                document.querySelectorAll("#composer-mode [data-mode]").forEach(function (c) { c.classList.remove("active"); });
                 chip.classList.add("active");
                 state.mode = chip.dataset.mode || "rights";
             });
@@ -1211,5 +1419,46 @@
         }).catch(function () {
             bilingual(quotaNote, "কোটা এখন দেখা যাচ্ছে না।", "Quota is temporarily unavailable.");
         });
+
+        // Copy conversation as Markdown (Dev Feature toggle)
+        if (isMarkdownExportEnabled()) {
+            // Keyboard shortcut (Alt + M / Option + M)
+            document.addEventListener("keydown", function (e) {
+                if (e.altKey && (e.key === "m" || e.key === "M" || e.code === "KeyM")) {
+                    e.preventDefault();
+                    copyConversationAsMarkdown();
+                }
+            });
+
+            // Global console helper for developers
+            window.copyChatAsMarkdown = function () {
+                var md = copyConversationAsMarkdown();
+                if (md && window.console && console.log) {
+                    console.log("=== MuktoAin Conversation Markdown ===\n" + md);
+                }
+                return md;
+            };
+        } else {
+            window.copyChatAsMarkdown = function () {
+                var msg = "Conversation Markdown export is disabled. Enable DevFeatures:EnableConversationMarkdownExport in appsettings.Development.json or set ENABLE_CONVERSATION_MARKDOWN_EXPORT=true.";
+                if (window.console && console.warn) console.warn(msg);
+                return null;
+            };
+        }
+
+        // Language observer: keep blocked state messages and title tooltips in sync when language toggles
+        if (window.MutationObserver) {
+            var langObserver = new MutationObserver(function (mutations) {
+                mutations.forEach(function (m) {
+                    if (m.attributeName === "lang") {
+                        applyLangToNode(document);
+                        if (state.blocked) {
+                            setChatBlocked(true);
+                        }
+                    }
+                });
+            });
+            langObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
+        }
     });
 })();

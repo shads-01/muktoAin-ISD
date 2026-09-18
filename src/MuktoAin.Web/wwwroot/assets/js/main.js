@@ -237,7 +237,7 @@
       "nav-profile": "Profile & Settings",
       "nav-logout": "Sign Out",
       "disclaimer-tag": "Disclaimer:",
-      "disclaimer-text": "MuktoAin provides general legal information and document drafting assistance. This is NOT formal legal advice. Every document must be reviewed by a verified lawyer before use.",
+      "disclaimer-text": "MuktoAin provides general legal information and document drafting assistance. This is NOT formal legal advice. Every document must be reviewed by a verified lawyer before use. For urgent legal matters, consult a qualified advocate.",
       "footer-tagline": "Free AI-augmented legal aid platform for citizens of Bangladesh — every document reviewed by verified advocates.",
       "footer-nav-h": "Navigation",
       "footer-legal-h": "Legal & Terms",

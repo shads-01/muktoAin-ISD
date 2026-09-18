@@ -1,9 +1,13 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @{
     ViewData["Title"] = "মুক্ত আইন — AI-সহায়ক আইনি তথ্য ও পরামর্শ";
     var prefill = Context.Request.Query["prefill"].ToString();
+    var enableMdExport = string.Equals(Configuration["DevFeatures:EnableConversationMarkdownExport"], "true", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Environment.GetEnvironmentVariable("DevFeatures__EnableConversationMarkdownExport"), "true", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Environment.GetEnvironmentVariable("ENABLE_CONVERSATION_MARKDOWN_EXPORT"), "true", StringComparison.OrdinalIgnoreCase);
 }
 
-<main class="chat-shell" id="main" data-prefill="@prefill">
+<main class="chat-shell" id="main" data-prefill="@prefill" data-enable-md-export="@(enableMdExport ? "true" : "false")">
     <button class="chat-side-toggle icon-btn" id="chat-side-toggle" type="button"
             aria-controls="chat-side" aria-expanded="false" aria-label="Chat history / আলোচনার ইতিহাস">
         <i data-lucide="panel-left"></i>
