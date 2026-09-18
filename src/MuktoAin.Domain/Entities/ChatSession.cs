@@ -3,7 +3,7 @@ using MuktoAin.Domain.Enums;
 namespace MuktoAin.Domain.Entities;
 
 // A citizen chat conversation on the home page. InProgress sessions are
-// resumable from the recent-chats strip; Committed sessions have become
+// resumable from the history sidebar; Committed sessions have become
 // cases and their transcript stays attached to the case forever.
 public class ChatSession
 {
@@ -18,6 +18,14 @@ public class ChatSession
     public string? SessionKey { get; set; }
 
     public string Title { get; set; } = string.Empty;
+
+    // Conversational intake (spec 3.2): structured slots the model re-emits each
+    // turn as an opaque JSON object — C# never parses its shape, only stores it
+    // (last write wins) and flattens it for the explain turn / commit.
+    public string? CaseFileJson { get; set; }
+
+    // Citizen's detected language ("bn" | "en"), used by the explain turn.
+    public string? Language { get; set; }
 
     public ChatSessionStatus Status { get; set; } = ChatSessionStatus.InProgress;
 
