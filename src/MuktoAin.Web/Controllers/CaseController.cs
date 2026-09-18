@@ -7,14 +7,13 @@ using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
+using MuktoAin.Web.Session;
 using MuktoAin.Web.ViewModels;
 
 namespace MuktoAin.Web.Controllers;
 
 public class CaseController : Controller
 {
-    private const string TrackedCasesKey = "TrackedCases";
-
     private readonly CaseService _caseService;
     private readonly IRightsExplanationService _rightsExplanationService;
     private readonly DocumentService _documentService;
@@ -464,36 +463,16 @@ public class CaseController : Controller
     private string? ResolveTrackingCode(int caseId, string? queryCode)
     {
         if (!string.IsNullOrEmpty(queryCode)) return queryCode;
-        if (TempData.Peek("TrackingCode") is string tempCode) return tempCode;
-        return GetTrackedCases().FirstOrDefault(t => t.caseId == caseId).code;
+        var saved = TrackedCases.Resolve(HttpContext.Session, caseId);
+        if (!string.IsNullOrEmpty(saved)) return saved;
+        return TempData.Peek("TrackingCode") as string;
     }
 
     private void RememberTrackedCase(int caseId, string? code)
-    {
-        if (code == null) return;
-        var entries = GetTrackedCases();
-        if (entries.Any(t => t.caseId == caseId)) return;
-        entries.Add((caseId, code));
-        SaveTrackedCases(entries);
-    }
+        => TrackedCases.Remember(HttpContext.Session, caseId, code);
 
     private List<(int caseId, string code)> GetTrackedCases()
-    {
-        var raw = HttpContext.Session.GetString(TrackedCasesKey);
-        if (string.IsNullOrEmpty(raw)) return new List<(int, string)>();
-
-        return raw.Split('|', StringSplitOptions.RemoveEmptyEntries)
-            .Select(e => e.Split(':', 2))
-            .Where(p => p.Length == 2 && int.TryParse(p[0], out _))
-            .Select(p => (int.Parse(p[0]), p[1]))
-            .ToList();
-    }
-
-    private void SaveTrackedCases(List<(int caseId, string code)> entries)
-    {
-        HttpContext.Session.SetString(TrackedCasesKey,
-            string.Join("|", entries.Select(t => $"{t.caseId}:{t.code}")));
-    }
+        => TrackedCases.Read(HttpContext.Session);
 
 
     private int? GetCurrentUserId()
