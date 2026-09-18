@@ -76,4 +76,18 @@ public class IdentityErrorMapperTests
         Assert.Null(field);
         Assert.Equal("original", message);
     }
+
+    [Theory]
+    [InlineData("PasswordTooShort", "Password")]
+    [InlineData("DuplicateEmail", "Email")]
+    public void Map_WithoutLocalizer_ReturnsFallbackBilingualMessage(string code, string expectedField)
+    {
+        var error = new IdentityError { Code = code, Description = "original" };
+
+        var (field, message) = IdentityErrorMapper.Map(error);
+
+        Assert.Equal(expectedField, field);
+        Assert.Contains("/", message);
+        Assert.DoesNotContain("original", message);
+    }
 }
