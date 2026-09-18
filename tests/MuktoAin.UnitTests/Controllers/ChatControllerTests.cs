@@ -545,4 +545,64 @@ public class ChatControllerTests
         Assert.IsType<JsonResult>(result);
         store.Verify(s => s.ReleaseOneAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task Ask_RejectsQuestionOverMaxLength_WithBilingualError()
+    {
+        var result = await _controller.Ask(new ChatAskRequest
+        {
+            ChatSessionId = 15,
+            Question = new string('a', 2001),
+            Language = "en"
+        });
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result);
+        var json = Assert.IsAssignableFrom<object>(bad.Value);
+        Assert.Contains("too long", json.ToString());
+    }
+
+    [Fact]
+    public async Task Messages_ReturnsBlockedTrue_WhenSessionIsBlocked()
+    {
+        var session = new ChatSession
+        {
+            ChatSessionId = 99,
+            UserId = 42,
+            Status = ChatSessionStatus.Blocked,
+            CaseFileJson = "{\"category\":\"LabourComplaint\",\"district\":\"Dhaka\"}"
+        };
+        _sessionRepo.Setup(r => r.GetByIdAsync(99)).ReturnsAsync(session);
+
+        var result = await _controller.Messages(99);
+        var json = Assert.IsType<JsonResult>(result);
+        var val = json.Value!;
+        var blockedProp = val.GetType().GetProperty("blocked");
+        Assert.NotNull(blockedProp);
+        Assert.True((bool)blockedProp.GetValue(val)!);
+
+        var canDraftProp = val.GetType().GetProperty("canDraft");
+        Assert.NotNull(canDraftProp);
+        Assert.False((bool)canDraftProp.GetValue(val)!);
+    }
+
+    [Fact]
+    public async Task Ask_WhenSessionIsBlocked_ReturnsSessionBlockedTrue()
+    {
+        var session = new ChatSession
+        {
+            ChatSessionId = 105,
+            UserId = 42,
+            Status = ChatSessionStatus.Blocked,
+            BlockedStreak = 3
+        };
+        _sessionRepo.Setup(r => r.GetByIdAsync(105)).ReturnsAsync(session);
+
+        var result = await _controller.Ask(new ChatAskRequest { ChatSessionId = 105, Question = "hello" });
+        var json = Assert.IsType<JsonResult>(result);
+        var val = json.Value!;
+        var sessionBlockedProp = val.GetType().GetProperty("sessionBlocked");
+        Assert.NotNull(sessionBlockedProp);
+        Assert.True((bool)sessionBlockedProp.GetValue(val)!);
+    }
 }
+

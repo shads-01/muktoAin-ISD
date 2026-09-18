@@ -529,3 +529,4 @@ docs/
 # Data Protection key ring (AUD-2) — never commit encryption keys
 keys/
 
+.atlas/
