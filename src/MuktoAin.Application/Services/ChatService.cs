@@ -22,6 +22,7 @@ namespace MuktoAin.Application.Services;
 public class ChatService
 {
     private const string IntakeModelName = "gemini-2.5-flash";
+    private const int BlockedStreakLockThreshold = 3;
 
     private readonly IRepository<ChatSession> _sessionRepo;
     private readonly IRepository<ChatMessage> _messageRepo;
@@ -189,17 +190,22 @@ public class ChatService
         if (session.Status == ChatSessionStatus.Committed)
             throw new InvalidOperationException("Committed chats are read-only.");
 
-        // Layer 1 — free heuristic pre-filter: canned reply, no model call,
-        // no quota charge, AI_LOG flag (spec 3.4).
-        if (_safetyFilter.IsBlocked(question, out var flag))
+        // 3-strike lock: this session is closed. Canned refusal, zero model
+        // calls, free turn (controller treats Blocked=true as free).
+        if (session.Status == ChatSessionStatus.Blocked)
         {
-            var canned = CannedReply("blocked", language);
+            var locked = CannedReply("locked", language);
             await _aiLogService.LogAsync(null, AiRequestType.ChatIntake,
-                question, $"[safety:{flag}] {canned}", IntakeModelName, 1, 0, ct);
-            return new ChatTurnDto(canned, Array.Empty<CitedSectionDto>(), DisclaimersFor(language),
+                question, "[locked] " + locked, IntakeModelName, 1, 0, ct);
+            return new ChatTurnDto(locked, Array.Empty<CitedSectionDto>(), DisclaimersFor(language),
                 FromCache: false, RetrievalOnly: false, Tier: "full",
                 Blocked: true, CaseFileJson: session.CaseFileJson);
         }
+
+        // Layer 1 — free heuristic pre-filter: canned reply, no model call,
+        // no quota charge, AI_LOG flag (spec 3.4).
+        if (_safetyFilter.IsBlocked(question, out var flag))
+            return await BlockedTurnAsync(session, "blocked", language, question, $"[safety:{flag}] ", ct);
 
         // A1: context-aware cache-first. Key = normalized question + THIS
         // session's case-file description + language, so a repeat question is
@@ -249,12 +255,21 @@ public class ChatService
         sw.Stop();
 
         var intent = (envelope.Intent ?? "normal").Trim().ToLowerInvariant();
-        var blocked = intent != "normal";
-        var reply = (blocked ? CannedReply(intent, language) : envelope.Reply) ?? string.Empty;
+        if (intent != "normal")
+            return await BlockedTurnAsync(session, intent, language, question, $"[intent:{intent}] ", ct);
+
+        // Normal turn — reset any blocked streak.
+        if (session.BlockedStreak != 0)
+        {
+            session.BlockedStreak = 0;
+            session.UpdatedAt = DateTime.UtcNow;
+            await _sessionRepo.SaveChangesAsync();
+        }
+        var reply = envelope.Reply ?? string.Empty;
 
         // Persist case file — full re-emit, last write wins (spec 3.2).
         // readyToExplain is ignored when intent != normal (spec 3.4 hard rule).
-        if (!blocked && !string.IsNullOrWhiteSpace(envelope.CaseFileJson))
+        if (!string.IsNullOrWhiteSpace(envelope.CaseFileJson))
         {
             session.CaseFileJson = envelope.CaseFileJson;
             session.Language = envelope.Language == "en" ? "en" : "bn";
@@ -263,7 +278,7 @@ public class ChatService
         }
 
         var cited = new List<CitedSectionDto>();
-        if (!blocked && envelope.ReadyToExplain)
+        if (envelope.ReadyToExplain)
         {
             var cfJson = session.CaseFileJson ?? envelope.CaseFileJson ?? "{}";
             string explanationText;
@@ -312,8 +327,7 @@ public class ChatService
         var hasCategory = envelope.SuggestedDraftType != null && MapCategory(envelope.SuggestedDraftType) != null;
         var noMissingInfo = envelope.MissingInfo == null || envelope.MissingInfo.Count == 0;
 
-        var canDraft = !blocked
-            && envelope.CanDraft
+        var canDraft = envelope.CanDraft
             && envelope.ReadyToExplain
             && hasCategory
             && hasDistrict
@@ -321,7 +335,7 @@ public class ChatService
 
         return new ChatTurnDto(reply, cited, DisclaimersFor(language),
             FromCache: false, RetrievalOnly: false, Tier: "full",
-            Blocked: blocked,
+            Blocked: false,
             SuggestedCategoryId: MapCategory(envelope.SuggestedDraftType),
             CaseFileJson: session.CaseFileJson,
             MissingInfo: envelope.MissingInfo,
@@ -722,11 +736,36 @@ public class ChatService
 
     // ---------- canned boundary replies (spec 3.4) ----------
 
+    // Refuse + escalate: every blocked turn bumps the streak; at the threshold
+    // the session is locked. Locked sessions are excluded from resume lookup,
+    // so the citizen naturally starts a fresh chat. All attempts are AI_LOGged.
+    private async Task<ChatTurnDto> BlockedTurnAsync(
+        ChatSession session, string intent, string language, string question,
+        string logPrefix, CancellationToken ct)
+    {
+        session.BlockedStreak++;
+        if (session.BlockedStreak >= BlockedStreakLockThreshold)
+            session.Status = ChatSessionStatus.Blocked;
+        session.UpdatedAt = DateTime.UtcNow;
+        await _sessionRepo.SaveChangesAsync();
+
+        var canned = CannedReply(
+            session.Status == ChatSessionStatus.Blocked ? "locked" : intent, language);
+        await _aiLogService.LogAsync(null, AiRequestType.ChatIntake,
+            question, $"{logPrefix}{canned}", IntakeModelName, 1, 0, ct);
+        return new ChatTurnDto(canned, Array.Empty<CitedSectionDto>(), DisclaimersFor(language),
+            FromCache: false, RetrievalOnly: false, Tier: "full",
+            Blocked: true, CaseFileJson: session.CaseFileJson);
+    }
+
     private static string CannedReply(string intent, string language)
     {
         var en = language == "en";
         return intent switch
         {
+            "locked" => en
+                ? "This conversation has been closed because of repeated rule violations. Please start a new chat and describe a genuine legal problem."
+                : "বারবার নিয়ম ভাঙার কারণে এই আলোচনাটি বন্ধ করা হয়েছে। অনুগ্রহ করে নতুন আলোচনা শুরু করে আপনার আসল আইনি সমস্যাটি বলুন।",
             "probing" or "injection" => en
                 ? "I can't share my internal instructions. I'm here to help you understand your legal rights in Bangladesh — tell me what happened."
                 : "আমি আমার অভ্যন্তরীণ নির্দেশনা শেয়ার করতে পারি না। আমি বাংলাদেশে আপনার আইনি অধিকার বুঝতে সাহায্য করি — কী ঘটেছে তা বলুন।",

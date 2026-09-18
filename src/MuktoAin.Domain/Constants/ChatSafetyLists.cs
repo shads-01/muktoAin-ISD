@@ -12,10 +12,12 @@ public static class ChatSafetyLists
     {
         "make a bomb", "build a bomb", "pipe bomb", "make poison", "buy poison",
         "make a weapon", "make a gun", "3d print gun", "silencer",
-        "kill someone", "kill my", "kill him", "kill her", "murder him", "murder her",
+        "kill someone", "kill him", "kill her", "murder him", "murder her",
+        "i will kill", "i will murder",
         "how to poison", "how to stab", "how to shoot someone", "hack into", "hack account",
         "forge a signature", "forged signature", "counterfeit money", "print fake money",
-        "bom বানাই", "বোমা বানানো", "বোমা বানাব", "বিষ দেওয়া", "বিষ কিনব", "খুন করব",
+        "bom বানাই", "বোমা বানানো", "বোমা বানাব", "বিষ দেওয়া", "বিষ কিনব",
+        "আমি খুন করব", "আমি ওকে খুন করব", "আমি খুন করে দেব", "আমি মেরে ফেলব",
         "খুন করার উপায়", "গুলি করব", "ছুরি মারব", "অ্যাকাউন্ট হ্যাক", "হ্যাক করব",
         "জাল স্বাক্ষর", "জাল টাকা"
     };
@@ -27,7 +29,7 @@ public static class ChatSafetyLists
         "frame someone", "frame him", "frame her", "fake complaint against",
         "false gd against", "false fir against", "threaten to file",
         "মিথ্যা মামলা", "মিথ্যা অভিযোগ", "মিথ্যা জিডি", "মিথ্যা ফেল করব", "ফাঁসাতে চাই",
-        "ফাঁসাতে চাই", "ভয় দেখাব", "হুমকি দেওয়ার লেখা"
+        "ফাঁসাতে চাই", "হুমকি দেওয়ার লেখা"
     };
 
     // Prompt-injection phrasing.
