@@ -18,6 +18,7 @@ public class ActsManagementServiceTests
     private readonly Mock<IActSectionChunkRepository> _chunkRepo = new();
     private readonly Mock<IVectorStore> _vectorStore = new();
     private readonly Mock<ILogger<ActsManagementService>> _logger = new();
+    private readonly Mock<IRepository<AnswerCache>> _cacheRepo = new();
     private readonly ActsManagementService _service;
 
     public ActsManagementServiceTests()
@@ -27,6 +28,7 @@ public class ActsManagementServiceTests
             _sectionRepo.Object,
             _chunkRepo.Object,
             _vectorStore.Object,
+            _cacheRepo.Object,
             _logger.Object);
     }
 
@@ -423,4 +425,65 @@ public class ActsManagementServiceTests
 
     private static string Sha256(string text)
         => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
+
+    // ---------- A7: ANSWER_CACHE invalidation on law changes ----------
+
+    [Fact]
+    public async Task ReindexActAsync_StaleChunksFound_ClearsAnswerCache()
+    {
+        _actRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(NewAct(id: 1));
+        _chunkRepo.Setup(r => r.GetByActIdAsync(1)).ReturnsAsync(new[]
+        {
+            new ActSectionChunk { ChunkId = 1, SectionId = 10, ChunkOrder = 1, ChunkText = "edited", TokenCount = 1, VectorId = "v-1", ContentHash = "stale-hash" },
+        });
+        _cacheRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<AnswerCache>
+        {
+            new() { AnswerCacheId = 1, QueryHash = "h1", Answer = "a" },
+            new() { AnswerCacheId = 2, QueryHash = "h2", Answer = "b" }
+        });
+
+        await _service.ReindexActAsync(1);
+
+        // Stale chunks mean the law text changed — every cached rights
+        // explanation is potentially outdated and must be dropped.
+        _cacheRepo.Verify(r => r.GetAllAsync(), Times.Once);
+        _cacheRepo.Verify(r => r.DeleteAsync(It.IsAny<AnswerCache>()), Times.Exactly(2));
+        _cacheRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task ReindexActAsync_AllFresh_NoCacheClear()
+    {
+        _actRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(NewAct(id: 1));
+        _chunkRepo.Setup(r => r.GetByActIdAsync(1)).ReturnsAsync(new[]
+        {
+            new ActSectionChunk { ChunkId = 1, SectionId = 10, ChunkOrder = 1, ChunkText = "same", TokenCount = 1, VectorId = "v-1", ContentHash = Sha256("same") },
+        });
+
+        await _service.ReindexActAsync(1);
+
+        _cacheRepo.Verify(r => r.DeleteAsync(It.IsAny<AnswerCache>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteActAsync_Clean_ClearsAnswerCache()
+    {
+        _actRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(NewAct(id: 1));
+        _sectionRepo.Setup(r => r.CountCaseReferencesAsync(1)).ReturnsAsync(0);
+        _sectionRepo.Setup(r => r.CountScenarioMappingsAsync(1)).ReturnsAsync(0);
+        _chunkRepo.Setup(r => r.GetByActIdAsync(1)).ReturnsAsync(new[]
+        {
+            new ActSectionChunk { ChunkId = 1, SectionId = 10, ChunkOrder = 1, ChunkText = "a", TokenCount = 1, VectorId = "v-1", ContentHash = "h1" },
+        });
+        _cacheRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<AnswerCache>
+        {
+            new() { AnswerCacheId = 1, QueryHash = "h1", Answer = "a" },
+            new() { AnswerCacheId = 2, QueryHash = "h2", Answer = "b" }
+        });
+
+        var result = await _service.DeleteActAsync(1);
+
+        Assert.True(result.Success);
+        _cacheRepo.Verify(r => r.DeleteAsync(It.IsAny<AnswerCache>()), Times.Exactly(2));
+    }
 }

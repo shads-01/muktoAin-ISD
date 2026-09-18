@@ -36,9 +36,9 @@ public class RepositoryAndConstraintSqlTests
         Skip.IfNot(_fx.DatabaseAvailable);
         await using var ctx = _fx.CreateContext();
 
-        // Logged-in sessions have NULL SessionKey; the filtered index
-        // (UQ_CHAT_SESSION_SessionKey ... WHERE SessionKey IS NOT NULL, per
-        // scripts/08 + scripts/09_fix) must allow arbitrarily many NULLs.
+        // Logged-in sessions have NULL SessionKey; the filtered nonunique
+        // index (IX_CHAT_SESSION_SessionKey ... WHERE SessionKey IS NOT NULL,
+        // per scripts/14) must allow arbitrarily many NULLs.
         ctx.ChatSessions.Add(new ChatSession { Title = "Guest session A" });
         ctx.ChatSessions.Add(new ChatSession { Title = "Guest session B" });
         ctx.ChatSessions.Add(new ChatSession { Title = "Guest session C" });
@@ -49,20 +49,16 @@ public class RepositoryAndConstraintSqlTests
     }
 
     [SkippableFact]
-    public async Task Filtered_SessionKey_Index_Rejects_Duplicate_Guest_Keys()
+    public async Task Filtered_SessionKey_Index_Allows_Duplicate_Guest_Keys()
     {
         Skip.IfNot(_fx.DatabaseAvailable);
-        var key = Guid.NewGuid().ToString("N")[..22]; // matches ChatService's 22-char keys
-
-        await using (var ctx = _fx.CreateContext())
-        {
-            ctx.ChatSessions.Add(new ChatSession { SessionKey = key, Title = "Seed" });
-            await ctx.SaveChangesAsync();
-        }
-
-        await using var second = _fx.CreateContext();
-        second.ChatSessions.Add(new ChatSession { SessionKey = key, Title = "Collision" });
-        await Assert.ThrowsAsync<DbUpdateException>(() => second.SaveChangesAsync());
+        var key = Guid.NewGuid().ToString("N")[..22];
+        await using var db = _fx.CreateContext();
+        db.ChatSessions.AddRange(
+            new ChatSession { SessionKey = key, Title = "Synthetic A" },
+            new ChatSession { SessionKey = key, Title = "Synthetic B" });
+        await db.SaveChangesAsync();
+        Assert.Equal(2, await db.ChatSessions.CountAsync(s => s.SessionKey == key));
     }
 
     [SkippableFact]
@@ -162,5 +158,30 @@ public class RepositoryAndConstraintSqlTests
 
         await using var verify = _fx.CreateContext();
         Assert.Null(await verify.Cases.FindAsync(caseId));
+    }
+
+    [SkippableFact]
+    public async Task AiTurnReservationStore_Atomically_Reserves_And_Releases_On_Real_Sql()
+    {
+        Skip.IfNot(_fx.DatabaseAvailable);
+        await using var ctx = _fx.CreateContext();
+        var store = new MuktoAin.Infrastructure.Data.AiTurnReservationStore(ctx);
+
+        var since = DateTime.UtcNow.AddMinutes(-5);
+        var limit = 2;
+
+        var r1 = await store.TryReserveAsync(since, limit);
+        var r2 = await store.TryReserveAsync(since, limit);
+        var r3 = await store.TryReserveAsync(since, limit);
+
+        Assert.True(r1);
+        Assert.True(r2);
+        Assert.False(r3); // limit of 2 reached
+
+        await store.ReleaseOneAsync();
+
+        // After releasing one, reservation should succeed again
+        var r4 = await store.TryReserveAsync(since, limit);
+        Assert.True(r4);
     }
 }

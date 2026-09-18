@@ -52,4 +52,40 @@ public class RegisterViewModelTests
 
         Assert.Empty(results);
     }
+
+    [Fact]
+    public void PhoneNumber_Invalid_ResolvesEnglishErrorMessage_WhenCultureIsEn()
+    {
+        var originalCulture = System.Globalization.CultureInfo.CurrentUICulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("en");
+            var results = ValidatePhoneNumber("123");
+
+            Assert.NotEmpty(results);
+            Assert.Contains("Bangladeshi mobile number", results[0].ErrorMessage);
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = originalCulture;
+        }
+    }
+
+    [Fact]
+    public void PhoneNumber_Invalid_ResolvesBanglaErrorMessage_WhenCultureIsBn()
+    {
+        var originalCulture = System.Globalization.CultureInfo.CurrentUICulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("bn");
+            var results = ValidatePhoneNumber("123");
+
+            Assert.NotEmpty(results);
+            Assert.Contains("বাংলাদেশী মোবাইল নম্বর", results[0].ErrorMessage);
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = originalCulture;
+        }
+    }
 }
