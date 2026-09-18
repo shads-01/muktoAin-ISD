@@ -262,6 +262,7 @@ public class AdminController : Controller
         TempData["Success"] = "নতুন অ্যাডমিন তৈরি হয়েছে — রিসেট লিংকটি নিরাপদে পাঠান।";
         TempData["SuccessEn"] = "New admin created — relay the reset link securely.";
         TempData["Info"] = resetUrl;
+        TempData["InfoEn"] = resetUrl;
         return RedirectToAction(nameof(Users));
     }
 
