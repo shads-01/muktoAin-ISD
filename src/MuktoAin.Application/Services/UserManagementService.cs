@@ -132,6 +132,6 @@ public class UserManagementService(UserManager<User> userManager) : IUserManagem
         // Satisfies Program.cs's Identity password policy (digit, upper, lower,
         // non-alphanumeric, length >= 8) — the account owner resets it via the
         // link before ever using it, so this value itself is never communicated.
-        return $"Tmp{Guid.NewGuid():N}!A1".Substring(0, 20);
+        return $"Tmp!1A{Guid.NewGuid():N}"[..20];
     }
 }

@@ -21,6 +21,18 @@
         }
     </div>
 
+    @if (TempData["Info"] is string resetLink)
+    {
+        <div style="background: rgba(30, 130, 60, 0.1); border: 1px solid rgba(30, 130, 60, 0.3); border-left: 4px solid #1e823c; padding: 14px 18px; border-radius: 6px; margin-bottom: 20px;">
+            <strong style="color: #1e823c;">🔑 নতুন অ্যাডমিন সক্রিয়করণ / অ্যাক্টিভেশন লিংক:</strong><br />
+            <span style="font-size: 0.9rem; color: var(--text-muted, #555);">নতুন অ্যাডমিনকে পাসওয়ার্ড সেট করার জন্য নিচের লিংকটি পাঠান:</span>
+            <div style="margin-top: 8px; display: flex; gap: 8px; align-items: center;">
+                <input type="text" value="@resetLink" id="adminResetUrlInput" readonly style="flex: 1; padding: 6px 10px; font-family: monospace; font-size: 0.85rem; border: 1px solid var(--border, #ccc); border-radius: 4px; background: var(--bg-card, #fff);" />
+                <button type="button" class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('adminResetUrlInput').value); this.innerText='কপি হয়েছে!';">Copy Link</button>
+            </div>
+        </div>
+    }
+
     <div class="chip-row" style="margin-bottom: 16px">
         @foreach (var f in new[] { "All", "Citizen", "Lawyer", "Admin" })
         {
