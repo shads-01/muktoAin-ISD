@@ -276,6 +276,11 @@ builder.Services.AddScoped<IAiOrchestrationService>(sp =>
 // S-2.3: Rights explanation facade (FR-4)
 builder.Services.AddScoped<IRightsExplanationService, RightsExplanationService>();
 
+// S-3.1 + S-3.2: QA benchmark harness (dataset loader + zero-shot/few-shot
+// evaluation runner; S-3.3 reuses the same runner with a prompt-variant option).
+builder.Services.AddSingleton<IBenchmarkLoader, BenchmarkLoaderService>();
+builder.Services.AddScoped<IBenchmarkRunner, BenchmarkRunnerService>();
+
 // S-3.6: Admin user management (FR-18)
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 
