@@ -1,5 +1,6 @@
 using MuktoAin.Application.DTOs;
 using MuktoAin.Application.Services;
+using MuktoAin.Domain.Common;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces;
@@ -300,6 +301,70 @@ public class LawyerReviewServiceTests
         Assert.Equal(5, doc.AssignedLawyerProfileId);
         Assert.NotNull(doc.ClaimedAt);
         _docRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task ClaimAsync_ReturnsFalse_WhenConcurrencyConflict()
+    {
+        var doc = new GeneratedDocument
+        {
+            DocumentId = 7,
+            Status = DocumentStatus.UnderReview,
+            AssignedLawyerProfileId = null
+        };
+        _docRepo.Setup(r => r.GetByIdAsync(7)).ReturnsAsync(doc);
+        _docRepo.Setup(r => r.SaveChangesAsync())
+            .ThrowsAsync(new ConcurrencyConflictException("rowversion conflict"));
+
+        var result = await _service.ClaimAsync(documentId: 7, lawyerProfileId: 42);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SubmitReviewAsync_ReturnsFalse_WhenConcurrencyConflict()
+    {
+        var doc = new GeneratedDocument
+        {
+            DocumentId = 8,
+            CaseId = 80,
+            Status = DocumentStatus.UnderReview,
+            AssignedLawyerProfileId = 42
+        };
+        _docRepo.Setup(r => r.GetByIdAsync(8)).ReturnsAsync(doc);
+        _reviewRepo.Setup(r => r.SaveChangesAsync())
+            .ThrowsAsync(new ConcurrencyConflictException("rowversion conflict"));
+
+        var result = await _service.SubmitReviewAsync(new SubmitReviewDto(
+            8, 42, ReviewDecision.Approved, "looks fine", null));
+
+        Assert.False(result);
+        // The one failed save was the only save: nothing was half-written.
+        _docRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
+        _caseRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task SubmitReviewAsync_SavesReviewDocumentAndCaseInOneSave()
+    {
+        var doc = new GeneratedDocument
+        {
+            DocumentId = 9, CaseId = 90, Status = DocumentStatus.UnderReview,
+            ContentDraft = "draft", AssignedLawyerProfileId = 5
+        };
+        var caseEntity = new Case { CaseId = 90, Status = CaseStatus.UnderReview };
+        _docRepo.Setup(r => r.GetByIdAsync(9)).ReturnsAsync(doc);
+        _caseRepo.Setup(r => r.GetByIdAsync(90)).ReturnsAsync(caseEntity);
+
+        var result = await _service.SubmitReviewAsync(new SubmitReviewDto(
+            9, 5, ReviewDecision.Approved, "ok", null));
+
+        Assert.True(result);
+        Assert.Equal(DocumentStatus.Approved, doc.Status);
+        Assert.Equal(CaseStatus.Finalized, caseEntity.Status);
+        _reviewRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _docRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
+        _caseRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
     }
 
     [Fact]

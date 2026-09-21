@@ -13,5 +13,7 @@ public class GeneratedDocumentConfiguration : IEntityTypeConfiguration<Generated
         // Redesign columns (scripts/08_redesign_tables.sql) — additive
         builder.Property(d => d.VersionNo).HasDefaultValue(1);
         builder.Property(d => d.CitizenEdited).HasDefaultValue(false);
+        // AUD-4 (scripts/17_add_rowversion_columns.sql)
+        builder.Property(d => d.RowVersion).IsRowVersion();
     }
 }

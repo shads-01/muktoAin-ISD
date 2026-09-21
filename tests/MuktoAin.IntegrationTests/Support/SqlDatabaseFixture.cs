@@ -27,8 +27,14 @@ public class SqlDatabaseFixture : IAsyncLifetime
         "08_redesign_tables.sql",
         "09_part_b_tables.sql",
         "09_fix_chat_session_sessionkey_unique_index.sql",
+        "11_notifications_table.sql",
+        "12_add_user_issuperadmin.sql",
         "13_chat_conversational_columns.sql",
+        "14_add_admin_audit_log.sql",
         "14_chat_sidebar_history.sql",
+        "15_chat_blocked_streak.sql",
+        "16_notification_is_seen.sql",
+        "17_add_rowversion_columns.sql",
     };
     private const string FullTextScript = "03_fulltext.sql";
 

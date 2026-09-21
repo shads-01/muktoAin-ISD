@@ -36,6 +36,9 @@ public class Case
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
+    // AUD-4: SQL Server rowversion for optimistic concurrency (status changes)
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
     public ICollection<GeneratedDocument> Documents { get; set; } = new List<GeneratedDocument>();
     public ICollection<CaseActReference> ActReferences { get; set; } = new List<CaseActReference>();
 }

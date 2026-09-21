@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using MuktoAin.Application.DTOs;
+using MuktoAin.Domain.Common;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces;
@@ -115,8 +116,15 @@ public class LawyerReviewService
 
         d.AssignedLawyerProfileId = lawyerProfileId;
         d.ClaimedAt = DateTime.UtcNow;
-        await _docRepo.SaveChangesAsync();
-        return true;
+        try
+        {
+            await _docRepo.SaveChangesAsync();
+            return true;
+        }
+        catch (ConcurrencyConflictException)
+        {
+            return false; // another lawyer claimed it first (AUD-4)
+        }
     }
 
     public async Task<ReviewWorkspaceDto?> GetForReviewAsync(int documentId)
@@ -182,23 +190,34 @@ public class LawyerReviewService
             ReviewedAt = DateTime.UtcNow
         };
         await _reviewRepo.AddAsync(review);
-        await _reviewRepo.SaveChangesAsync();
 
         switch (dto.Decision)
         {
             case ReviewDecision.Approved:
-                await _documentUpdateAsync(d, DocumentStatus.Approved, null);
-                await _caseService.TransitionStatusAsync(d.CaseId, CaseStatus.Finalized);
+                ApplyDocumentDecision(d, DocumentStatus.Approved, null);
+                await _caseService.ApplyStatusTransitionAsync(d.CaseId, CaseStatus.Finalized);
                 break;
             case ReviewDecision.EditedApproved:
-                await _documentUpdateAsync(d, DocumentStatus.Approved, dto.EditedContent);
-                await _caseService.TransitionStatusAsync(d.CaseId, CaseStatus.Finalized);
+                ApplyDocumentDecision(d, DocumentStatus.Approved, dto.EditedContent);
+                await _caseService.ApplyStatusTransitionAsync(d.CaseId, CaseStatus.Finalized);
                 break;
             case ReviewDecision.Rejected:
-                await _documentUpdateAsync(d, DocumentStatus.Rejected, null);
-                await _caseService.TransitionStatusAsync(d.CaseId, CaseStatus.UnderReview);
+                ApplyDocumentDecision(d, DocumentStatus.Rejected, null);
+                await _caseService.ApplyStatusTransitionAsync(d.CaseId, CaseStatus.UnderReview);
                 // UnderReview + Rejected document = citizen edit & resubmit loop.
                 break;
+        }
+
+        try
+        {
+            // Review row, claim, document decision and case status all share
+            // the request's DbContext, so this one save commits them together:
+            // a rowversion conflict on the document or case persists none (AUD-4).
+            await _reviewRepo.SaveChangesAsync();
+        }
+        catch (ConcurrencyConflictException)
+        {
+            return false;
         }
 
         var c2 = await _caseRepo.GetByIdAsync(d.CaseId);
@@ -260,16 +279,16 @@ public class LawyerReviewService
         return result;
     }
 
-    private async Task _documentUpdateAsync(GeneratedDocument d, DocumentStatus status, string? edited)
+    private static void ApplyDocumentDecision(GeneratedDocument d, DocumentStatus status, string? edited)
     {
         // Mirrors DocumentService.UpdateStatusAsync semantics (verified):
         // EditedApproved -> ContentFinal = edited; Approved -> final = draft.
+        // Saved by the caller together with the review (see SubmitReviewAsync).
         d.Status = status;
         if (edited != null)
             d.ContentFinal = edited;
         else if (status == DocumentStatus.Approved)
             d.ContentFinal = d.ContentDraft;
-        await _docRepo.SaveChangesAsync();
     }
 
     // Case.Title/Description are field-level-encrypted PII (S-1.7). Decrypt
