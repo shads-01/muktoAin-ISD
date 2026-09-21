@@ -11,7 +11,7 @@ namespace MuktoAin.Application.Documents.Templates;
 /// Follows the format specified in Arpita_plan.md Step 3.1 —
 /// structured application for filing a GD at a police station.
 /// </summary>
-public class GeneralDiaryTemplate : IDocumentTemplate
+public class GeneralDiaryTemplate : IDocumentTemplate, IBanglaDocumentVariant
 {
     public DocumentType DocumentType => DocumentType.GeneralDiary;
 
@@ -105,5 +105,75 @@ public class GeneralDiaryTemplate : IDocumentTemplate
         sb.AppendLine(new string('═', 60));
 
         return Task.FromResult(sb.ToString());
+    }
+
+    public async Task<string> RenderBanglaOnlyAsync(Case caseEntity, RightsExplanationDto explanation)
+    {
+        var districtName = caseEntity.District?.Name;
+        var sb = new StringBuilder();
+
+        sb.AppendLine("বরাবর");
+        sb.AppendLine("ভারপ্রাপ্ত কর্মকর্তা (ওসি)");
+        sb.AppendLine($"থানা, {districtName ?? BanglaOnlyRender.Placeholder}, বাংলাদেশ");
+        sb.AppendLine();
+
+        var primarySection = explanation.CitedSections.FirstOrDefault();
+        var sectionRef = primarySection != null
+            ? $" ({primarySection.ActTitle}, ধারা {primarySection.SectionNumber} সংশ্লিষ্ট)"
+            : string.Empty;
+        sb.AppendLine($"বিষয়: সাধারণ ডায়েরি (জিডি) ভুক্তির আবেদন{sectionRef}");
+        sb.AppendLine();
+
+        sb.AppendLine("মহোদয়,");
+        sb.AppendLine();
+
+        sb.AppendLine($"আমি, স্বাক্ষরকারী, {districtName ?? BanglaOnlyRender.Placeholder}-এর বাসিন্দা, " +
+                       "নিম্নবর্ণিত ঘটনা/পরিস্থিতি সংক্রান্ত একটি সাধারণ ডায়েরি (জিডি) ভুক্তি রেকর্ডের জন্য " +
+                       "এই আবেদনটি বিনীতভাবে জমা দিচ্ছি:");
+        sb.AppendLine();
+
+        sb.AppendLine("ঘটনার বিবরণ:");
+        sb.AppendLine(BanglaOnlyRender.Rule);
+        sb.AppendLine(caseEntity.Description);
+        sb.AppendLine();
+
+        sb.AppendLine("প্রযোজ্য আইনি বিধান:");
+        sb.AppendLine(BanglaOnlyRender.Rule);
+        if (explanation.CitedSections.Count > 0)
+        {
+            foreach (var section in explanation.CitedSections)
+            {
+                sb.AppendLine($"• {section.ActTitle}, ধারা {section.SectionNumber}:");
+                sb.AppendLine($"  {section.SectionText}");
+                sb.AppendLine();
+            }
+        }
+        else
+        {
+            sb.AppendLine("  [নির্দিষ্ট কোনো ধারা পাওয়া যায়নি — ডিউটি কর্মকর্তা বা একজন যোগ্য আইনজীবীর পরামর্শ নিন]");
+            sb.AppendLine();
+        }
+
+        if (!string.IsNullOrWhiteSpace(explanation.Explanation))
+        {
+            sb.AppendLine("প্রযোজ্য আইনি অধিকার ও প্রতিকার:");
+            sb.AppendLine(BanglaOnlyRender.Rule);
+            sb.AppendLine(explanation.Explanation);
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("প্রার্থনা:");
+        sb.AppendLine(BanglaOnlyRender.Rule);
+        sb.AppendLine("আমি সর্বান্তঃকরণে প্রার্থনা করছি যে, উপরোক্ত ঘটনা আপনার থানার সাধারণ ডায়েরি খাতায় যথাযথভাবে রেকর্ড করা হোক, " +
+                       "প্রয়োজনীয় তদন্ত শুরু করা হোক এবং আইনগত সুরক্ষা ও নিরাপত্তার জন্য উপযুক্ত ব্যবস্থা গ্রহণ করা হোক।");
+        sb.AppendLine();
+
+        sb.AppendLine("ঘোষণা:");
+        sb.AppendLine(BanglaOnlyRender.Rule);
+        sb.AppendLine("আমি এই মর্মে ঘোষণা করছি যে, উপরোক্ত তথ্য আমার জ্ঞান ও বিশ্বাসমতে সত্য ও সঠিক। " +
+                       "আইন-শৃঙ্খলা বাহিনীকে মিথ্যা বা বিভ্রান্তিকর তথ্য প্রদান বাংলাদেশি আইনে শাস্তিযোগ্য।");
+        sb.AppendLine();
+
+        return BanglaOnlyRender.AppendClosing(sb, "আবেদনকারী", districtName);
     }
 }

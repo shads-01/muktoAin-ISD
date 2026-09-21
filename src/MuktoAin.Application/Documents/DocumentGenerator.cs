@@ -32,6 +32,25 @@ public class DocumentGenerator
     }
 
     /// <summary>
+    /// Bangla-only rendering path (A-3.9): fixed template copy is emitted in
+    /// Bangla only (no English interleaving); citizen/AI content flows through
+    /// verbatim. Routing decision (which language a case gets) is the caller's —
+    /// DocumentService routes on Case.Language.
+    /// </summary>
+    public async Task<string> GenerateBanglaOnlyAsync(Case caseEntity, RightsExplanationDto explanation)
+    {
+        var docType = MapCategoryToDocumentType(caseEntity.CategoryId);
+
+        if (!_templates.TryGetValue(docType, out var template))
+            throw new InvalidOperationException($"No template found for document type {docType}");
+
+        if (template is IBanglaDocumentVariant banglaVariant)
+            return await banglaVariant.RenderBanglaOnlyAsync(caseEntity, explanation);
+
+        return await template.RenderAsync(caseEntity, explanation);
+    }
+
+    /// <summary>
     /// Exposes the category→DocumentType mapping for callers that need the type
     /// without generating a full document (e.g., DocumentService persisting the enum).
     /// </summary>

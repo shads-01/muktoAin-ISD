@@ -1187,13 +1187,13 @@ NO UNRESOLVED DECISIONS
 2. Include step-by-step instructions with placeholder screenshots.
 3. Target: ~800 lines.
 
-#### A-3.9: Extended Document Template Variants (Bangla-Only + Tests)
+#### A-3.9: Extended Document Template Variants (Bangla-Only + Tests) [COMPLETED]
 
 > `[Blocked by: A-3.1]`
 
-1. Add Bangla-only rendering variants for all 4 templates (no English interleaving).
-2. Add unit tests for Bangla-only output, mixed-language fallback, and edge cases.
-3. Target: ~700 lines.
+1. Add Bangla-only rendering variants for all 4 templates (no English interleaving). (Completed - IBanglaDocumentVariant implemented across Labour, GD, RTI, and Consumer templates)
+2. Add unit tests for Bangla-only output, mixed-language fallback, and edge cases. (Completed - 22 unit tests in BanglaOnlyTemplateTests, DocumentGenerator/DocumentService language routing verified)
+3. Target: ~700 lines. (Completed - ~750 lines across templates, generator, and test suite)
 
 #### A-3.10: `docs/testing-report.md` (Test Coverage & Methodology)
 

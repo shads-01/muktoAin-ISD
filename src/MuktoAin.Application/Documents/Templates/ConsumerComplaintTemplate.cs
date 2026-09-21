@@ -11,7 +11,7 @@ namespace MuktoAin.Application.Documents.Templates;
 /// Follows the format specified in Arpita_plan.md Step 3.3 —
 /// structured complaint to the Directorate of National Consumer Rights Protection (DNCRP) or District Committee.
 /// </summary>
-public class ConsumerComplaintTemplate : IDocumentTemplate
+public class ConsumerComplaintTemplate : IDocumentTemplate, IBanglaDocumentVariant
 {
     public DocumentType DocumentType => DocumentType.ConsumerComplaint;
 
@@ -115,5 +115,86 @@ public class ConsumerComplaintTemplate : IDocumentTemplate
         sb.AppendLine(new string('═', 60));
 
         return Task.FromResult(sb.ToString());
+    }
+
+    public async Task<string> RenderBanglaOnlyAsync(Case caseEntity, RightsExplanationDto explanation)
+    {
+        var districtName = caseEntity.District?.Name;
+        var sb = new StringBuilder();
+
+        sb.AppendLine("বরাবর");
+        sb.AppendLine("মহাপরিচালক / দায়িত্বপ্রাপ্ত কর্মকর্তা");
+        sb.AppendLine("জাতীয় ভোক্তা অধিকার সংরক্ষণ অধিদপ্তর (ডিএনসিআরপি)");
+        sb.AppendLine($"জেলা কার্যালয়: {districtName ?? BanglaOnlyRender.Placeholder}, বাংলাদেশ");
+        sb.AppendLine();
+
+        var primarySection = explanation.CitedSections.FirstOrDefault();
+        var sectionRef = primarySection != null
+            ? $" ভোক্তা অধিকার সংরক্ষণ আইন, ২০০৯-এর ধারা {primarySection.SectionNumber}-এর অধীনে"
+            : string.Empty;
+        sb.AppendLine($"বিষয়: {sectionRef.TrimStart()} অভিযোগ");
+        sb.AppendLine();
+
+        sb.AppendLine("মহোদয়,");
+        sb.AppendLine();
+
+        sb.AppendLine($"আমি, স্বাক্ষরকারী ভোক্তা, {districtName ?? BanglaOnlyRender.Placeholder}-এর বাসিন্দা, " +
+                       "সংশ্লিষ্ট প্রতিষ্ঠান/বিক্রেতা/সেবাদাতার বিরুদ্ধে ভোক্তা-বিরোধী কার্যকলাপ ও " +
+                       "ভোক্তা অধিকার সংরক্ষণ আইন, ২০০৯ (২০০৯ সনের ২৬ নং আইন)-এর বিধিভঙ্গের বিষয়ে " +
+                       "এই আনুষ্ঠানিক অভিযোগ জমা দিচ্ছি:");
+        sb.AppendLine();
+
+        sb.AppendLine("অভিযোগের ঘটনাবলি:");
+        sb.AppendLine(BanglaOnlyRender.Rule);
+        sb.AppendLine(caseEntity.Description);
+        sb.AppendLine();
+
+        sb.AppendLine("প্রযোজ্য আইনি বিধান:");
+        sb.AppendLine(BanglaOnlyRender.Rule);
+        if (explanation.CitedSections.Count > 0)
+        {
+            foreach (var section in explanation.CitedSections)
+            {
+                sb.AppendLine($"• {section.ActTitle}, ধারা {section.SectionNumber}:");
+                sb.AppendLine($"  {section.SectionText}");
+                sb.AppendLine();
+            }
+        }
+        else
+        {
+            sb.AppendLine("• ভোক্তা অধিকার সংরক্ষণ আইন, ২০০৯ (প্রাসঙ্গিক ভোক্তা-বিরোধী কার্যকলাপ সংক্রান্ত বিধান)");
+            sb.AppendLine();
+        }
+
+        if (!string.IsNullOrWhiteSpace(explanation.Explanation))
+        {
+            sb.AppendLine("ভোক্তা আইনে আপনার অধিকার:");
+            sb.AppendLine(BanglaOnlyRender.Rule);
+            sb.AppendLine(explanation.Explanation);
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("প্রার্থিত প্রতিকার:");
+        sb.AppendLine(BanglaOnlyRender.Rule);
+        sb.AppendLine("উপরোক্ত ঘটনা ও প্রযোজ্য আইনি বিধানের ভিত্তিতে অভিযোগকারী বিনীতভাবে প্রার্থনা করছেন:");
+        sb.AppendLine("১. প্রতিবাদী প্রতিষ্ঠানের বিরুদ্ধে দ্রুত তদন্ত ও শুনানি আয়োজন করা হোক;");
+        sb.AppendLine("২. যথাযথ প্রতিস্থাপন, পূর্ণ আর্থিক ফেরত বা আইনগত ক্ষতিপূরণ প্রদান করা হোক;");
+        sb.AppendLine("৩. আইন অনুযায়ী জরিমানা আরোপ করা হোক এবং আদায়কৃত জরিমানার ২৫% ধারা ৭৬(৪) মোতাবেক অভিযোগকারীকে প্রদান করা হোক।");
+        sb.AppendLine();
+
+        sb.AppendLine("সংযুক্ত প্রমাণপত্র:");
+        sb.AppendLine(BanglaOnlyRender.Rule);
+        sb.AppendLine("• ক্রয় রশিদ / মানি রশিদ / ক্যাশ মেমো / অর্ডার নিশ্চিতকরণ");
+        sb.AppendLine("• পণ্যের ছবি, প্যাকেজিং, ব্যাচ নম্বর বা ওয়ারেন্টি নথি (প্রযোজ্য ক্ষেত্রে)");
+        sb.AppendLine("• প্রতিবাদী সঙ্গে যোগাযোগের রেকর্ড / অভিযোগের স্মৃতিচিহ্ন");
+        sb.AppendLine();
+
+        sb.AppendLine("ঘোষণা:");
+        sb.AppendLine(BanglaOnlyRender.Rule);
+        sb.AppendLine("আমি এই মর্মে ঘোষণা করছি যে, উপরোক্ত বিবরণ আমার জ্ঞান, তথ্য ও বিশ্বাসমতে সত্য ও সঠিক, " +
+                       "এবং এই অভিযোগে আমি কোনো অপরিহার্য তথ্য গোপন করিনি।");
+        sb.AppendLine();
+
+        return BanglaOnlyRender.AppendClosing(sb, "অভিযোগকারী", districtName);
     }
 }

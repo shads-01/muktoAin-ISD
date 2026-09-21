@@ -61,7 +61,12 @@ public class DocumentService
             if (category != null) caseEntity.Category = category;
         }
 
-        var content = await _generator.GenerateAsync(caseEntity, explanation);
+        // A-3.9: Bangla-first rendering — a case whose language is "bn" (the
+        // default for every chat commit and demo seed) gets the Bangla-only
+        // template variant. English/unknown languages keep the legacy template.
+        var content = string.Equals(caseEntity.Language, "bn", StringComparison.OrdinalIgnoreCase)
+            ? await _generator.GenerateBanglaOnlyAsync(caseEntity, explanation)
+            : await _generator.GenerateAsync(caseEntity, explanation);
 
         var doc = new GeneratedDocument
         {
