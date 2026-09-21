@@ -338,14 +338,17 @@ using (var scope = app.Services.CreateScope())
         context,
         app.Environment.ContentRootPath);
 
-    await ActImportService.SeedAsync(
-        context,
-        app.Environment.ContentRootPath,
-        logger);
+    if (!app.Environment.IsEnvironment("Testing"))
+    {
+        await ActImportService.SeedAsync(
+            context,
+            app.Environment.ContentRootPath,
+            logger);
 
-    await LegalChunkingService.ChunkAsync(
-        context,
-        logger);
+        await LegalChunkingService.ChunkAsync(
+            context,
+            logger);
+    }
 
     await SeedScenarioMappings.SeedAsync(
         context,
@@ -427,3 +430,7 @@ app.Run();
 static string PartitionKey(HttpContext httpContext) =>
     httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
     ?? "ip:" + (httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+
+// E-3.4 / A-3.7: WebApplicationFactory<Program> requires a compilable Program type.
+// Top-level statements don't emit one unless a partial class is declared.
+public partial class Program { }

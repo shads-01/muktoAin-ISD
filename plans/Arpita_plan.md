@@ -1169,14 +1169,14 @@ NO UNRESOLVED DECISIONS
 
 ### New Tasks (Line Rebalancing)
 
-#### A-3.7: Comprehensive API Integration Test Suite
+#### A-3.7: Comprehensive API Integration Test Suite [COMPLETED]
 
 > `[Blocked by: A-2.1, A-2.4, E-3.4]`
 
-1. Create integration tests for Document, Case, and Payment controller endpoints.
-2. Use `WebApplicationFactory<Program>` with test DB.
-3. Cover: happy path CRUD, authorization checks, edge cases.
-4. Target: ~1,000 lines of test code.
+1. Create integration tests for Document, Case, and Payment controller endpoints. (Completed - WebHostSmokeTests, DocumentApiTests, CaseApiTests, PaymentApiTests)
+2. Use `WebApplicationFactory<Program>` with test DB. (Completed - MuktoAinWebApplicationFactory with TestAuthHandler, AntiForgery, offline AI stubs)
+3. Cover: happy path CRUD, authorization checks, edge cases. (Completed - 26 API tests covering full lifecycle, antiforgery, IDOR, admin override)
+4. Target: ~1,000 lines of test code. (Completed - ~1,100 lines across 4 test classes + helpers)
 
 #### A-3.8: `docs/user-guide.md` (Citizen, Lawyer, Admin Workflows)
 
