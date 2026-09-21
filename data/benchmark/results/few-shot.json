@@ -1,0 +1,65 @@
+{
+  "Variant": "few-shot-irac",
+  "DatasetPath": "data/benchmark/benchmark-sample.json",
+  "OutputPath": "",
+  "TotalQuestions": 2,
+  "ScoredQuestions": 2,
+  "SkippedQuestions": 0,
+  "MeanPrecision": 1.0,
+  "MeanRecall": 1.0,
+  "MeanF1": 1.0,
+  "Categories": [
+    {
+      "Category": "A",
+      "QuestionCount": 1,
+      "MeanPrecision": 1.0,
+      "MeanRecall": 1.0,
+      "MeanF1": 1.0
+    },
+    {
+      "Category": "B",
+      "QuestionCount": 1,
+      "MeanPrecision": 1.0,
+      "MeanRecall": 1.0,
+      "MeanF1": 1.0
+    }
+  ],
+  "Questions": [
+    {
+      "DatasetId": 1,
+      "Question": "Question 1 about unpaid wages?",
+      "Language": "en",
+      "Category": "A",
+      "Response": "Issue: Unpaid wages.\nRule: Bangladesh Labour Act, 2006, Section 123.\nApplication: Wages were not paid within seven days.\nConclusion: Under Section 123 of the Bangladesh Labour Act, 2006, employer is liable.\r\n\r\n⚠️ MuktoAin provides general legal information and document drafting assistance. This is NOT formal legal advice. Every document must be reviewed by a verified lawyer before use. For urgent legal matters, consult a qualified advocate.",
+      "Error": null,
+      "CitedReferences": [
+        "Bangladesh Labour Act, 2006, Section 123"
+      ],
+      "ExpectedReferences": [
+        "Bangladesh Labour Act, 2006, Section 123"
+      ],
+      "Precision": 1.0,
+      "Recall": 1.0,
+      "F1": 1.0
+    },
+    {
+      "DatasetId": 2,
+      "Question": "Question 2 about unpaid wages?",
+      "Language": "en",
+      "Category": "B",
+      "Response": "Issue: Unpaid wages.\nRule: Bangladesh Labour Act, 2006, Section 123.\nApplication: Wages were not paid within seven days.\nConclusion: Under Section 123 of the Bangladesh Labour Act, 2006, employer is liable.\r\n\r\n⚠️ MuktoAin provides general legal information and document drafting assistance. This is NOT formal legal advice. Every document must be reviewed by a verified lawyer before use. For urgent legal matters, consult a qualified advocate.",
+      "Error": null,
+      "CitedReferences": [
+        "Bangladesh Labour Act, 2006, Section 123"
+      ],
+      "ExpectedReferences": [
+        "Bangladesh Labour Act, 2006, Section 123"
+      ],
+      "Precision": 1.0,
+      "Recall": 1.0,
+      "F1": 1.0
+    }
+  ],
+  "StartedAt": "2026-09-21T12:44:00.0000000+00:00",
+  "CompletedAt": "2026-09-21T12:44:01.0000000+00:00"
+}

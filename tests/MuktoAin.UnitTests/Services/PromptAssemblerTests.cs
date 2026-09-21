@@ -87,4 +87,32 @@ public class PromptAssemblerTests
         Assert.Contains("Curated Scenario Guidance", prompt);
         Assert.Contains("Keyword 'unpaid salary' maps to Section ID 33", prompt);
     }
+
+    [Fact]
+    public async Task AssembleFewShotIracPromptAsync_IncludesExemplarsIracHeadingsContextAndDisclaimer()
+    {
+        var sections = new List<RetrievedSection>
+        {
+            new(123, "Bangladesh Labour Act, 2006", "123", "The wages of every worker shall be paid...", 0.9f, RetrievalMethod.Vector)
+        };
+
+        _scenarioRepoMock.Setup(r => r.SearchByKeywordAsync(It.IsAny<string>()))
+            .ReturnsAsync(Enumerable.Empty<ScenarioMapping>());
+
+        var prompt = await _assembler.AssembleFewShotIracPromptAsync(
+            "My employer has not paid my wages for 3 months",
+            sections,
+            "en");
+
+        Assert.Contains("My employer has not paid my wages for 3 months", prompt);
+        Assert.Contains("IRAC", prompt);
+        Assert.Contains("Issue:", prompt);
+        Assert.Contains("Rule:", prompt);
+        Assert.Contains("Application:", prompt);
+        Assert.Contains("Conclusion:", prompt);
+        Assert.Contains("Section 123", prompt);
+        Assert.Contains("The wages of every worker shall be paid", prompt);
+        Assert.Contains("English", prompt);
+        Assert.Contains(Disclaimers.Legal, prompt);
+    }
 }
