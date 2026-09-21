@@ -522,6 +522,7 @@ UI_SPEC.md
 Copy_Paste_Plan.md
 docs/*
 !docs/architecture.md
+!docs/deployment-plan.md
 
 # Scratch files
 .agent/scratch/
