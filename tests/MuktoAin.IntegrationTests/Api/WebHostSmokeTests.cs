@@ -49,4 +49,14 @@ public class WebHostSmokeTests : IClassFixture<MuktoAinWebApplicationFactory>
         var response = await client.GetAsync("/Home/AccessDenied");
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Error_Pages_Render_Bilingual_Copy()
+    {
+        var client = _factory.CreateClient();
+        var notFound = await client.GetAsync("/Home/NotFound");
+        var html = await notFound.Content.ReadAsStringAsync();
+        Assert.Contains("data-bn", html);
+        Assert.Contains("data-en", html);
+    }
 }

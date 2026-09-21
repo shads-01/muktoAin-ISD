@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using MuktoAin.Application.DTOs;
 using MuktoAin.Application.Services;
+using MuktoAin.Web.Models;
 
 namespace MuktoAin.Web.Controllers;
 
@@ -281,9 +282,15 @@ public class ChatController : Controller
                     new { id = result.CaseId, code = result.AnonymousTrackingCode })
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return Json(new { error = ex.Message });
+            return Json(new
+            {
+                success = false,
+                error = ApiErrors.AiUnavailableEn,
+                errorBn = ApiErrors.AiUnavailableBn,
+                message = "AI_REQUEST_FAILED",
+            });
         }
     }
 

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Interfaces.Repositories;
+using MuktoAin.Web.Models;
 
 namespace MuktoAin.Web.Controllers;
 
@@ -83,7 +84,13 @@ public class PaymentController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to process honorarium payment for case {CaseId}", body.CaseId);
-            return StatusCode(500, new { success = false, message = ex.Message });
+            return StatusCode(500, new
+            {
+                success = false,
+                message = "পেমেন্ট প্রক্রিয়াকরণে সমস্যা হয়েছে / The payment could not be processed.",
+                error = ApiErrors.PaymentFailedEn,
+                errorBn = ApiErrors.PaymentFailedBn,
+            });
         }
     }
 
@@ -119,7 +126,13 @@ public class PaymentController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to process top-up payment");
-            return StatusCode(500, new { success = false, message = ex.Message });
+            return StatusCode(500, new
+            {
+                success = false,
+                message = "পেমেন্ট প্রক্রিয়াকরণে সমস্যা হয়েছে / The payment could not be processed.",
+                error = ApiErrors.PaymentFailedEn,
+                errorBn = ApiErrors.PaymentFailedBn,
+            });
         }
     }
 
