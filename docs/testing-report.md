@@ -258,7 +258,7 @@ You can isolate specific features using xUnit fully qualified name filters:
 ## 6. Continuous Integration (CI/CD) Pipeline
 
 ### 6.1 GitHub Actions Workflow
-The project's continuous integration workflow is defined in [`.github/workflows/ci.yml`](file:///d:/3.2_ISD/muktoAin-ISD/.github/workflows/ci.yml):
+The project's continuous integration workflow is defined in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml):
 
 ```
 [ Push / PR to main or arpita/* ]

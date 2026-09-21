@@ -164,7 +164,7 @@ For local development and testing, open your browser and navigate to:
 ```
 http://localhost:5250
 ```
-*(Or `http://localhost:5000` depending on your launch profile in [launchSettings.json](file:///d:/3.2_ISD/muktoAin-ISD/src/MuktoAin.Web/Properties/launchSettings.json).)*
+*(Or `http://localhost:5000` depending on your launch profile in [`launchSettings.json`](../src/MuktoAin.Web/Properties/launchSettings.json).)*
 
 > 📷 *[SCREENSHOT: MuktoAin landing page with hero banner, search bar, and disclaimer banner — capture before release]*
 
