@@ -91,7 +91,7 @@
         var dEmail = el("draft-email");
         if (dEmail) dEmail.value = "";
         var dAnon = el("draft-anonymous");
-        if (dAnon) dAnon.checked = true;
+        if (dAnon) dAnon.checked = dAnon.defaultChecked; // ticked for guests only (server-rendered)
         ["draft-category-label", "draft-district-label", "draft-title-label"].forEach(function (id) {
             var lbl = el(id);
             if (lbl) lbl.textContent = "—";
@@ -162,22 +162,31 @@
         box.appendChild(retry);
     }
 
+    // Same-origin case link for caseId, or null. The server emits /Case/Result/{id}
+    // (conventional route); the older ?id= form is still accepted. Links carrying
+    // a tracking code are never followed from here.
+    function safeCaseUrl(rawUrl, caseId) {
+        if (!rawUrl) return null;
+        var url = new URL(rawUrl, window.location.origin);
+        var m = /^\/Case\/Result(?:\/(\d+))?$/.exec(url.pathname);
+        var id = m && (m[1] || url.searchParams.get("id"));
+        if (url.origin !== window.location.origin || !m || id !== String(caseId) || url.searchParams.has("code")) return null;
+        return url.pathname + url.search;
+    }
+
     function renderCommitted(data) {
         var box = el("chat-committed");
         if (!box) return;
         box.hidden = false;
         box.replaceChildren();
         box.appendChild(bilingual(document.createElement("p"), "এই আলোচনা শুধু পড়ার জন্য।", "This conversation is read-only."));
-        if (data.caseUrl) {
-            var url = new URL(data.caseUrl, window.location.origin);
-            if (url.origin === window.location.origin && url.pathname === "/Case/Result" &&
-                url.searchParams.get("id") === String(data.caseId) && !url.searchParams.has("code")) {
-                var link = bilingual(document.createElement("a"), "মামলা দেখুন", "View case");
-                link.className = "btn btn-outline";
-                link.href = url.pathname + url.search;
-                box.appendChild(link);
-                return;
-            }
+        var caseHref = safeCaseUrl(data.caseUrl, data.caseId);
+        if (caseHref) {
+            var link = bilingual(document.createElement("a"), "মামলা দেখুন", "View case");
+            link.className = "btn btn-outline";
+            link.href = caseHref;
+            box.appendChild(link);
+            return;
         }
         box.appendChild(bilingual(document.createElement("p"), "মামলার লিংক পাওয়া যায়নি।", "Case link unavailable."));
     }
@@ -914,8 +923,13 @@
         if (tEl) {
             var title = cf.title;
             if (!title) {
+                // First message = the problem statement (same fallback the server uses);
+                // the last one is usually the citizen's name or phone number.
                 var users = thread.querySelectorAll(".bubble.user");
-                if (users.length) title = users[users.length - 1].textContent.slice(0, 250);
+                if (users.length) {
+                    var first = users[0].textContent;
+                    title = first.length > 60 ? first.slice(0, 60) + "…" : first;
+                }
             }
             tEl.textContent = title || "—";
         }
@@ -951,11 +965,9 @@
             });
             loadHistory(null);
             if (!active(version, id)) return;
-            var target = new URL(data.redirectUrl, window.location.origin);
-            if (target.origin !== window.location.origin || target.pathname !== "/Case/Result" ||
-                target.searchParams.get("id") !== String(data.caseId) || target.searchParams.has("code"))
-                throw new Error("Invalid case link.");
-            window.location.href = target.pathname + target.search;
+            var target = safeCaseUrl(data.redirectUrl, data.caseId);
+            if (!target) throw new Error("Invalid case link.");
+            window.location.href = target;
         } catch (error) {
             if (!active(version, id)) return;
             if (window.showToast) window.showToast(curLang() === "en" ? "Could not open the case. Try again." : "মামলা খোলা যায়নি। আবার চেষ্টা করুন।");
