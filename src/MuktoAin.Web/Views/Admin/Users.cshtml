@@ -2,6 +2,10 @@
 @{
     ViewData["Title"] = "Users — Admin — MuktoAin";
     ViewData["IsAdminPage"] = true;
+
+    var totalPages = Model.PageSize > 0
+        ? (int)Math.Ceiling(Model.TotalCount / (double)Model.PageSize)
+        : 1;
 }
 
 <main class="container" id="main">
@@ -125,5 +129,29 @@
                 }
             </tbody>
         </table>
+        @if (totalPages > 1)
+        {
+            <div class="pagination" style="margin-top: 12px">
+                @if (Model.Page > 1)
+                {
+                    <a asp-action="Users" asp-route-role="@Model.RoleFilter" asp-route-page="@(Model.Page - 1)"><i data-lucide="chevron-left"></i></a>
+                }
+                @for (var p = 1; p <= totalPages; p++)
+                {
+                    @if (p == Model.Page)
+                    {
+                        <button type="button" class="active" data-page="@p">@p</button>
+                    }
+                    else
+                    {
+                        <a asp-action="Users" asp-route-role="@Model.RoleFilter" asp-route-page="@p">@p</a>
+                    }
+                }
+                @if (Model.Page < totalPages)
+                {
+                    <a asp-action="Users" asp-route-role="@Model.RoleFilter" asp-route-page="@(Model.Page + 1)"><i data-lucide="chevron-right"></i></a>
+                }
+            </div>
+        }
     </div>
 </main>

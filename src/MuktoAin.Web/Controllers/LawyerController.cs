@@ -88,25 +88,31 @@ public class LawyerController : Controller
         return RedirectToAction(nameof(Status));
     }
 
+    private const int QueuePageSize = 20;
+
     // Queue: documents in the pool, oldest-first (SLA). Filter chips:
     // All (default) · Unclaimed · Mine (my claimed docs, re-enterable).
     [HttpGet]
-    public async Task<IActionResult> Queue(string? filter)
+    public async Task<IActionResult> Queue(string? filter, int page = 1)
     {
         var profile = await MyProfileAsync();
         if (profile == null || profile.VerificationStatus != VerificationStatus.Approved)
             return RedirectToAction(nameof(Status));
 
-        var queue = await _reviewService.GetQueueAsync(profile.LawyerProfileId, filter);
+        var queue = await _reviewService.GetQueueAsync(profile.LawyerProfileId, filter, page, QueuePageSize);
 
+        var totalPages = Math.Max((int)Math.Ceiling(queue.TotalCount / (double)QueuePageSize), 1);
         var vm = new LawyerQueueViewModel
         {
             LawyerName = (await _userManager.FindByIdAsync(profile.UserId.ToString()))?.FullName ?? "",
             BarRegistrationNumber = profile.BarRegistrationNumber,
             Specialization = profile.Specialization ?? "",
-            PendingCount = queue.Count,
+            PendingCount = queue.TotalCount, // KPI shows the full backlog, not the page
             ActiveFilter = filter ?? "All",
-            Items = queue.Select(q => new LawyerQueueItemViewModel
+            Page = Math.Max(1, Math.Min(page, totalPages)),
+            PageSize = QueuePageSize,
+            TotalCount = queue.TotalCount,
+            Items = queue.Items.Select(q => new LawyerQueueItemViewModel
             {
                 DocumentId = q.DocumentId,
                 CaseId = q.CaseId,

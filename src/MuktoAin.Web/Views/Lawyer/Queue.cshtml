@@ -2,6 +2,17 @@
 @using MuktoAin.Web.Controllers
 @{
     ViewData["Title"] = "রিভিউ কিউ — মুক্ত আইন";
+
+    // Display-only Bengali numeral rendering, same convention as
+    // Lawyer/History.cshtml's pagination.
+    static string ToBn(int n) => n.ToString()
+        .Select(c => char.IsDigit(c) ? (char)(c - '0' + '০') : c)
+        .Aggregate(new System.Text.StringBuilder(), (sb, c) => sb.Append(c))
+        .ToString();
+
+    var totalPages = Model.PageSize > 0
+        ? (int)Math.Ceiling(Model.TotalCount / (double)Model.PageSize)
+        : 1;
 }
 
 <main class="container" id="main">
@@ -117,6 +128,30 @@
                 </tbody>
             </table>
             <p class="muted tiny" style="margin: 12px 0 0" data-bn="নথি খুললেই সেটি আপনার নামে লক হয় (একসময়ে একটি পর্যালোচনা)।" data-en="Opening a document claims it for you (one active review at a time).">নথি খুললেই সেটি আপনার নামে লক হয় (একসময়ে একটি পর্যালোচনা)।</p>
+            @if (totalPages > 1)
+            {
+                <div class="pagination" style="margin-top: 12px">
+                    @if (Model.Page > 1)
+                    {
+                        <a asp-action="Queue" asp-route-filter="@Model.ActiveFilter" asp-route-page="@(Model.Page - 1)"><i data-lucide="chevron-left"></i></a>
+                    }
+                    @for (var p = 1; p <= totalPages; p++)
+                    {
+                        @if (p == Model.Page)
+                        {
+                            <button type="button" class="active" data-page="@p">@ToBn(p)</button>
+                        }
+                        else
+                        {
+                            <a asp-action="Queue" asp-route-filter="@Model.ActiveFilter" asp-route-page="@p">@ToBn(p)</a>
+                        }
+                    }
+                    @if (Model.Page < totalPages)
+                    {
+                        <a asp-action="Queue" asp-route-filter="@Model.ActiveFilter" asp-route-page="@(Model.Page + 1)"><i data-lucide="chevron-right"></i></a>
+                    }
+                </div>
+            }
         </div>
     }
 </main>

@@ -177,26 +177,36 @@ public class AdminController : Controller
         });
     }
 
+    private const int AdminListPageSize = 20;
+
     [HttpGet]
-    public async Task<IActionResult> Users(string? role)
+    public async Task<IActionResult> Users(string? role, int page = 1)
     {
         var all = await _userManagement.GetAllUsersAsync();
-        var filtered = string.IsNullOrWhiteSpace(role) || role == "All"
+        var filtered = (string.IsNullOrWhiteSpace(role) || role == "All"
             ? all
-            : all.Where(u => u.Role.Equals(role, StringComparison.OrdinalIgnoreCase));
+            : all.Where(u => u.Role.Equals(role, StringComparison.OrdinalIgnoreCase))).ToList();
+
+        var totalPages = Math.Max((int)Math.Ceiling(filtered.Count / (double)AdminListPageSize), 1);
         var vm = new AdminUsersViewModel
         {
             RoleFilter = role ?? "All",
             ViewerIsSuperAdmin = User.HasClaim("IsSuperAdmin", "true"),
-            Users = filtered.Select(u => new AdminUserRowViewModel
-            {
-                UserId = u.UserId,
-                FullName = u.FullName,
-                Email = u.Email,
-                Role = u.Role,
-                Status = u.Status,
-                IsSuperAdmin = u.IsSuperAdmin
-            }).ToList()
+            Page = Math.Max(1, Math.Min(page, totalPages)),
+            PageSize = AdminListPageSize,
+            TotalCount = filtered.Count,
+            Users = filtered
+                .Skip((Math.Max(1, Math.Min(page, totalPages)) - 1) * AdminListPageSize)
+                .Take(AdminListPageSize)
+                .Select(u => new AdminUserRowViewModel
+                {
+                    UserId = u.UserId,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    Role = u.Role,
+                    Status = u.Status,
+                    IsSuperAdmin = u.IsSuperAdmin
+                }).ToList()
         };
         return View(vm);
     }
@@ -499,44 +509,60 @@ public class AdminController : Controller
         return View(vm);
     }
 
+    private const int AdminAiLogsPageSize = 50;
+
     // ---------- FR-12: AI Logs ----------
 
     [HttpGet]
-    public async Task<IActionResult> AiLogs(string? type, int minLatency = 0)
+    public async Task<IActionResult> AiLogs(string? type, int minLatency = 0, int page = 1)
     {
-        var logs = (await _aiLogRepo.GetAllAsync())
-            .OrderByDescending(l => l.CreatedAt)
-            .Take(200);
+        var all = (await _aiLogRepo.GetAllAsync()).ToList();
 
+        // "Calls today" is a global KPI — intentionally counted BEFORE the
+        // type/latency filters (same semantics as the pre-AUD-8 action).
+        var today = DateTime.UtcNow.Date;
+        var callsToday = all.Count(l => l.CreatedAt >= today);
+
+        // AUD-8: filter the FULL set (the old code took the newest 200 rows
+        // BEFORE filtering, so filters silently ignored older matches), then
+        // page. No hardcoded Take(200) — older entries are reachable again.
+        IEnumerable<AiLog> filtered = all.OrderByDescending(l => l.CreatedAt);
         if (!string.IsNullOrWhiteSpace(type) && type != "All"
             && Enum.TryParse<Domain.Enums.AiRequestType>(type, out var t))
         {
-            logs = logs.Where(l => l.RequestType == t);
+            filtered = filtered.Where(l => l.RequestType == t);
         }
         if (minLatency > 0)
         {
-            logs = logs.Where(l => l.LatencyMs >= minLatency);
+            filtered = filtered.Where(l => l.LatencyMs >= minLatency);
         }
+        var filteredList = filtered.ToList();
 
-        var today = DateTime.UtcNow.Date;
-        var allToday = (await _aiLogRepo.GetAllAsync()).Where(l => l.CreatedAt >= today).ToList();
+        var totalPages = Math.Max((int)Math.Ceiling(filteredList.Count / (double)AdminAiLogsPageSize), 1);
+        var currentPage = Math.Max(1, Math.Min(page, totalPages));
 
         var vm = new AdminAiLogsViewModel
         {
-            CallsToday = allToday.Count,
-            FailureRateToday = allToday.Count == 0 ? 0 : 0, // failure detection = latency outliers; see view
-            Logs = logs.Select(l => new AdminAiLogRowViewModel
-            {
-                LogId = l.LogId,
-                Time = l.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-                Type = l.RequestType.ToString(),
-                Model = l.ModelUsed,
-                Tokens = l.TokensUsed,
-                LatencyMs = l.LatencyMs,
-                CaseId = l.CaseId,
-                PromptPreview = l.PromptText.Length > 200 ? l.PromptText[..200] + "…" : l.PromptText,
-                ResponsePreview = l.ResponseText.Length > 200 ? l.ResponseText[..200] + "…" : l.ResponseText
-            }).ToList()
+            CallsToday = callsToday,
+            FailureRateToday = 0, // failure detection = latency outliers; see view
+            Page = currentPage,
+            PageSize = AdminAiLogsPageSize,
+            TotalCount = filteredList.Count,
+            Logs = filteredList
+                .Skip((currentPage - 1) * AdminAiLogsPageSize)
+                .Take(AdminAiLogsPageSize)
+                .Select(l => new AdminAiLogRowViewModel
+                {
+                    LogId = l.LogId,
+                    Time = l.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                    Type = l.RequestType.ToString(),
+                    Model = l.ModelUsed,
+                    Tokens = l.TokensUsed,
+                    LatencyMs = l.LatencyMs,
+                    CaseId = l.CaseId,
+                    PromptPreview = l.PromptText.Length > 200 ? l.PromptText[..200] + "…" : l.PromptText,
+                    ResponsePreview = l.ResponseText.Length > 200 ? l.ResponseText[..200] + "…" : l.ResponseText
+                }).ToList()
         };
         return View(vm);
     }

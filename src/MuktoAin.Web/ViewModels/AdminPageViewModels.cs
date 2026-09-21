@@ -5,6 +5,12 @@ public class AdminUsersViewModel
     public List<AdminUserRowViewModel> Users { get; set; } = new();
     public string RoleFilter { get; set; } = "All";
     public bool ViewerIsSuperAdmin { get; set; }
+
+    // AUD-8: pagination (the controller returns every user unfiltered today,
+    // which does not scale past a few hundred rows — audit report Admin #4).
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+    public int TotalCount { get; set; }
 }
 
 public class AdminUserRowViewModel
@@ -90,6 +96,12 @@ public class AdminAiLogsViewModel
     public List<AdminAiLogRowViewModel> Logs { get; set; } = new();
     public int CallsToday { get; set; }
     public double FailureRateToday { get; set; }
+
+    // AUD-8: the controller hardcoded Take(200) — older rows were simply
+    // unreachable from the UI. Page size 50 keeps the prompt-inspector cheap.
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 50;
+    public int TotalCount { get; set; }
 }
 
 public class AdminAiLogRowViewModel

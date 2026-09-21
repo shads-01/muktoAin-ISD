@@ -152,6 +152,12 @@ public class LawyerQueueViewModel
     public string Specialization { get; set; } = string.Empty;
     public int PendingCount { get; set; }
     public string ActiveFilter { get; set; } = "All";
+
+    // AUD-8: pagination (mirrors LawyerHistoryViewModel)
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+    public int TotalCount { get; set; }
+
     public List<LawyerQueueItemViewModel> Items { get; set; } = new();
 }
 

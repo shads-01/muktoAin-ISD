@@ -54,8 +54,10 @@ public class LawyerReviewService
     // Queue = documents in UnderReview, oldest-first (SLA age shown by the view).
     // filter: "All" (default) | "Unclaimed" | "Mine". CanOpen allows re-entry
     // into the lawyer's OWN claimed doc (ClaimAsync auto-allows same lawyer).
-    public async Task<IReadOnlyList<QueueItemDto>> GetQueueAsync(
-        int? lawyerProfileId = null, string? filter = "All")
+    // AUD-8: paged — the page slice is taken BEFORE the expensive per-document
+    // enrichment loop so a large backlog enriches only the visible page.
+    public async Task<QueuePageDto> GetQueueAsync(
+        int? lawyerProfileId = null, string? filter = "All", int page = 1, int pageSize = 20)
     {
         var docs = (await _docRepo.GetAllAsync())
             .Where(d => d.Status == DocumentStatus.UnderReview)
@@ -66,8 +68,11 @@ public class LawyerReviewService
         else if (filter == "Mine" && lawyerProfileId.HasValue)
             docs = docs.Where(d => d.AssignedLawyerProfileId == lawyerProfileId.Value);
 
+        var ordered = docs.OrderBy(d => d.CreatedAt).ToList();
+        var totalCount = ordered.Count;
+
         var result = new List<QueueItemDto>();
-        foreach (var d in docs.OrderBy(d => d.CreatedAt))
+        foreach (var d in ordered.Skip((page - 1) * pageSize).Take(pageSize))
         {
             var c = await _caseRepo.GetWithDocumentsAsync(d.CaseId);
             if (c == null) continue;
@@ -94,7 +99,7 @@ public class LawyerReviewService
                 CanOpen: !d.AssignedLawyerProfileId.HasValue
                       || d.AssignedLawyerProfileId == lawyerProfileId));
         }
-        return result;
+        return new QueuePageDto(totalCount, result);
     }
 
     // Claim = optimistic lock. Returns false if another lawyer already holds it.
