@@ -60,4 +60,13 @@ public class DisclaimerInjectorTests
         var resultWhitespace = _injector.InjectDisclaimer("   ", "bn");
         Assert.EndsWith(Disclaimers.LegalBangla, resultWhitespace);
     }
+
+    [Fact]
+    public void InjectDisclaimer_AlreadyEndsWithDisclaimer_DoesNotDuplicate()
+    {
+        var inputWithDisclaimer = $"Some advice text{Environment.NewLine}{Environment.NewLine}{Disclaimers.Legal}";
+        var result = _injector.InjectDisclaimer(inputWithDisclaimer, "en");
+
+        Assert.Equal(inputWithDisclaimer, result);
+    }
 }

@@ -1,17 +1,35 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Localization;
+using MuktoAin.Web.Resources;
 using MuktoAin.Web.ViewModels;
 
 namespace MuktoAin.Web.Auth;
 
 // Maps ASP.NET Core Identity's default IdentityResult error codes onto the
-// RegisterViewModel field that produced them, with bilingual (bn/en) text, so
-// server-side failures (like the password policy) surface next to the right
-// field instead of only in the generic summary. Codes that don't map to a
-// specific field fall back to a model-level error carrying Identity's own
-// English description -- nothing is swallowed.
+// RegisterViewModel field that produced them. Since S-3.5 the message TEXT
+// lives in Resources/SharedResource.{bn,en}.resx and is resolved per request
+// via IStringLocalizer (RequestLocalization sets the culture from the same
+// mkt-lang cookie the client-side toggle uses). Codes that don't map to a
+// specific field — or have no resx entry — fall back to a model-level error
+// carrying Identity's own English description (or bilingual fallback). Nothing is swallowed.
 public static class IdentityErrorMapper
 {
-    private static readonly IReadOnlyDictionary<string, string> PasswordFieldErrors =
+    private static readonly IReadOnlyDictionary<string, string> CodeToField =
+        new Dictionary<string, string>
+        {
+            ["PasswordTooShort"] = nameof(RegisterViewModel.Password),
+            ["PasswordRequiresUpper"] = nameof(RegisterViewModel.Password),
+            ["PasswordRequiresLower"] = nameof(RegisterViewModel.Password),
+            ["PasswordRequiresDigit"] = nameof(RegisterViewModel.Password),
+            ["PasswordRequiresNonAlphanumeric"] = nameof(RegisterViewModel.Password),
+            ["PasswordRequiresUniqueChars"] = nameof(RegisterViewModel.Password),
+            ["UserAlreadyHasPassword"] = nameof(RegisterViewModel.Password),
+            ["DuplicateUserName"] = nameof(RegisterViewModel.Email),
+            ["DuplicateEmail"] = nameof(RegisterViewModel.Email),
+            ["InvalidEmail"] = nameof(RegisterViewModel.Email),
+        };
+
+    private static readonly IReadOnlyDictionary<string, string> FallbackBilingualErrors =
         new Dictionary<string, string>
         {
             ["PasswordTooShort"] =
@@ -28,11 +46,6 @@ public static class IdentityErrorMapper
                 "পাসওয়ার্ডে আরও আলাদা ধরণের অক্ষর ব্যবহার করুন। / Password must use more unique characters.",
             ["UserAlreadyHasPassword"] =
                 "এই একাউন্টে ইতিমধ্যে একটি পাসওয়ার্ড সেট করা আছে। / This account already has a password set.",
-        };
-
-    private static readonly IReadOnlyDictionary<string, string> EmailFieldErrors =
-        new Dictionary<string, string>
-        {
             ["DuplicateUserName"] =
                 "এই ইমেইল দিয়ে ইতিমধ্যে একটি একাউন্ট নিবন্ধিত হয়েছে। / An account with this email is already registered.",
             ["DuplicateEmail"] =
@@ -42,15 +55,29 @@ public static class IdentityErrorMapper
         };
 
     public static (string? Field, string Message) Map(IdentityError error)
-    {
-        if (PasswordFieldErrors.TryGetValue(error.Code, out var passwordMessage))
-        {
-            return (nameof(RegisterViewModel.Password), passwordMessage);
-        }
+        => Map(error, null);
 
-        if (EmailFieldErrors.TryGetValue(error.Code, out var emailMessage))
+    public static (string? Field, string Message) Map(
+        IdentityError error, IStringLocalizer<SharedResource>? localizer)
+    {
+        if (CodeToField.TryGetValue(error.Code, out var field))
         {
-            return (nameof(RegisterViewModel.Email), emailMessage);
+            if (localizer != null)
+            {
+                var localized = localizer["IdentityError_" + error.Code];
+
+                if (!localized.ResourceNotFound)
+                {
+                    return (field, localized.Value);
+                }
+            }
+
+            if (FallbackBilingualErrors.TryGetValue(error.Code, out var fallback))
+            {
+                return (field, fallback);
+            }
+
+            return (field, error.Description);
         }
 
         // Unknown/infra codes keep Identity's original (English) description at

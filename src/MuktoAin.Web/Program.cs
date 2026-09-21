@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -20,9 +21,15 @@ using MuktoAin.Infrastructure.Search;
 using MuktoAin.Infrastructure.Security;
 using MuktoAin.Infrastructure.VectorStore;
 using MuktoAin.Web.Auth;
+using MuktoAin.Web.Localization;
 using MuktoAin.Web.Middleware;
+using MuktoAin.Web.Resources;
+using MuktoAin.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Development port watchdog: reclaims port 5250 from any stale instances and monitors parent process
+DevProcessWatchdog.Initialize(builder.Environment);
 
 // Add services to the container.
 var mvcBuilder = builder.Services.AddControllersWithViews();
@@ -37,6 +44,26 @@ builder.Services.AddSession(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+});
+
+// S-3.5: server-side localization. The client-side data-bn/data-en toggle in
+// main.js REMAINS the primary UI translation mechanism — this only drives
+// SERVER-rendered strings (validation errors, identity errors) via .resx.
+builder.Services.AddLocalization();
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultureNames = new[] { "bn-BD", "en" };
+
+    options.SetDefaultCulture("bn-BD")
+        .AddSupportedCultures(supportedCultureNames)
+        .AddSupportedUICultures(supportedCultureNames);
+
+    // Replace the defaults (querystring/header/AspNetCore.Culture cookie) with
+    // ONLY our provider: the mkt-lang cookie main.js already maintains. No new
+    // cookie, no SetLanguage endpoint — one language state, one toggle.
+    options.RequestCultureProviders.Clear();
+    options.RequestCultureProviders.Add(new MuktoAinLanguageCookieProvider());
 });
 
 // Schema is authored and controlled directly in SSMS via scripts/*.sql (T-1.6) --
@@ -147,9 +174,10 @@ builder.Services.AddSingleton(sp =>
 
 builder.Services.AddSingleton<GeminiClient>();
 
-// NOTE: fully qualified on purpose -- Domain.Interfaces.* and
-// Domain.Interfaces.Services.* both define IAiService/IEmbeddingService after the
-// T-1.13 merge; GeminiClient/GeminiEmbeddingService implement the former.
+// NOTE: fully qualified on purpose -- IEmbeddingService is defined in both
+// Domain.Interfaces.* and Domain.Interfaces.Services.*; GeminiEmbeddingService
+// implements the former. (The old Services/IAiService duplicate was deleted
+// with the conversational chat redesign — only Domain.Interfaces.IAiService remains.)
 builder.Services.AddSingleton<MuktoAin.Domain.Interfaces.IAiService>(
     sp => sp.GetRequiredService<GeminiClient>());
 
@@ -179,6 +207,7 @@ builder.Services.AddScoped<IActSectionRepository, ActSectionRepository>();
 builder.Services.AddScoped<ICaseRepository, CaseRepository>();
 builder.Services.AddScoped<IActSectionChunkRepository, ActSectionChunkRepository>();
 builder.Services.AddScoped<IScenarioMappingRepository, ScenarioMappingRepository>();
+builder.Services.AddScoped<IChatHistoryRepository, ChatHistoryRepository>();
 
 // Case lifecycle service
 builder.Services.AddScoped<CaseService>();
@@ -315,6 +344,11 @@ else
 {
     app.UseDeveloperExceptionPage();
 }
+
+// S-3.5: must run before anything that renders or resolves culture (static
+// files, routing, controllers) so CultureInfo.CurrentUICulture is correct
+// whenever a server-rendered string is produced.
+app.UseRequestLocalization();
 
 app.UseStatusCodePagesWithReExecute("/Home/Error", "?statusCode={0}");
 

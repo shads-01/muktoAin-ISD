@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using MuktoAin.Web.ViewModels;
 
 namespace MuktoAin.UnitTests.ViewModels;
@@ -8,6 +9,11 @@ namespace MuktoAin.UnitTests.ViewModels;
 // tests pin the Bangladesh-specific format that replaces it here too.
 public class RegisterViewModelTests
 {
+    public RegisterViewModelTests()
+    {
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en");
+    }
+
     private static List<ValidationResult> ValidatePhoneNumber(string? phoneNumber)
     {
         var model = new RegisterViewModel { PhoneNumber = phoneNumber };
@@ -51,5 +57,41 @@ public class RegisterViewModelTests
         var results = ValidatePhoneNumber(phoneNumber);
 
         Assert.Empty(results);
+    }
+
+    [Fact]
+    public void PhoneNumber_Invalid_ResolvesEnglishErrorMessage_WhenCultureIsEn()
+    {
+        var originalCulture = System.Globalization.CultureInfo.CurrentUICulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("en");
+            var results = ValidatePhoneNumber("123");
+
+            Assert.NotEmpty(results);
+            Assert.Contains("Bangladeshi mobile number", results[0].ErrorMessage);
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = originalCulture;
+        }
+    }
+
+    [Fact]
+    public void PhoneNumber_Invalid_ResolvesBanglaErrorMessage_WhenCultureIsBn()
+    {
+        var originalCulture = System.Globalization.CultureInfo.CurrentUICulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("bn");
+            var results = ValidatePhoneNumber("123");
+
+            Assert.NotEmpty(results);
+            Assert.Contains("বাংলাদেশী মোবাইল নম্বর", results[0].ErrorMessage);
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = originalCulture;
+        }
     }
 }

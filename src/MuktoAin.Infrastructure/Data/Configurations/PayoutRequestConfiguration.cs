@@ -10,5 +10,7 @@ public class PayoutRequestConfiguration : IEntityTypeConfiguration<PayoutRequest
     {
         builder.ToTable("PAYOUT_REQUEST", "dbo");
         builder.HasKey(p => p.PayoutRequestId);
+
+        builder.Property(p => p.Amount).HasPrecision(10, 2);
     }
 }

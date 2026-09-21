@@ -29,6 +29,10 @@
     "RunOnStartup": false,
     "RunOnStartup_Comment": "Set to true to run the embedding batch job on app startup. Set back to false after the initial run."
   },
+  "DevFeatures": {
+    "EnableConversationMarkdownExport": true,
+    "EnableConversationMarkdownExport_Comment": "Set to true to enable conversation transcript export as Markdown (Alt+M shortcut and window.copyChatAsMarkdown()). Can also be toggled via environment variable DevFeatures__EnableConversationMarkdownExport."
+  },
   "Logging": {
     "LogLevel": {
       "Default": "Information",

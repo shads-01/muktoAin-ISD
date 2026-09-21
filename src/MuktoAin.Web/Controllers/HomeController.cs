@@ -17,6 +17,9 @@ public class HomeController : Controller
         return View();
     }
 
+    [HttpGet("/Chat")]
+    public IActionResult Chat() => View("Index");
+
     [HttpGet]
     public IActionResult About()
     {

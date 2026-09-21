@@ -524,7 +524,9 @@ docs/
 
 # Scratch files
 .agent/scratch/
+.superpowers/
 
 # Data Protection key ring (AUD-2) — never commit encryption keys
 keys/
 
+.atlas/
