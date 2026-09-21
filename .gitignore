@@ -520,7 +520,8 @@ template-frontend/
 UI.md
 UI_SPEC.md
 Copy_Paste_Plan.md
-docs/
+docs/*
+!docs/architecture.md
 
 # Scratch files
 .agent/scratch/
