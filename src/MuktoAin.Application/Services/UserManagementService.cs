@@ -14,7 +14,7 @@ public class IdentityCreationFailedException(IEnumerable<IdentityError> errors) 
     public IReadOnlyList<IdentityError> Errors { get; } = errors.ToList();
 }
 
-public class UserManagementService(UserManager<User> userManager) : IUserManagementService
+public class UserManagementService(UserManager<User> userManager, IAdminAuditService audit) : IUserManagementService
 {
     public Task<IEnumerable<UserListDto>> GetAllUsersAsync()
     {
@@ -56,6 +56,12 @@ public class UserManagementService(UserManager<User> userManager) : IUserManagem
         {
             await userManager.UpdateSecurityStampAsync(user);
         }
+
+        await audit.LogAdminActionAsync(
+            actingAdminId,
+            status == AccountStatus.Suspended ? "SuspendUser" : "UnsuspendUser",
+            targetUserId: userId,
+            details: $"Status changed to {status}");
 
         return true;
     }

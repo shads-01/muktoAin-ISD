@@ -20,19 +20,22 @@ public class PaymentService
     private readonly IRepository<LawyerProfile> _lawyerRepo;
     private readonly ICaseRepository _caseRepo;
     private readonly UserManager<User> _userManager;
+    private readonly IAdminAuditService _audit;
 
     public PaymentService(
         IRepository<PaymentOrder> orderRepo,
         IRepository<PayoutRequest> payoutRepo,
         IRepository<LawyerProfile> lawyerRepo,
         ICaseRepository caseRepo,
-        UserManager<User> userManager)
+        UserManager<User> userManager,
+        IAdminAuditService audit)
     {
         _orderRepo = orderRepo;
         _payoutRepo = payoutRepo;
         _lawyerRepo = lawyerRepo;
         _caseRepo = caseRepo;
         _userManager = userManager;
+        _audit = audit;
     }
 
     public async Task<PaymentOrder> CreateHonorariumOrderAsync(
@@ -46,41 +49,39 @@ public class PaymentService
         var c = await _caseRepo.GetWithDocumentsAsync(caseId)
                 ?? throw new ArgumentException("Case not found");
 
-        var commission = Math.Round(amount * DefaultCommissionRate, 2);
+        var assignedLawyerProfileId = c.Documents?
+            .OrderByDescending(d => d.CreatedAt)
+            .FirstOrDefault(d => d.AssignedLawyerProfileId.HasValue)?
+            .AssignedLawyerProfileId;
+
         var order = new PaymentOrder
         {
             UserId = userId,
             CaseId = caseId,
-            // Lawyer id resolved from the case's claimed document
-            LawyerProfileId = c.Documents?.LastOrDefault()?.AssignedLawyerProfileId,
+            LawyerProfileId = assignedLawyerProfileId,
             Purpose = PaymentPurpose.Honorarium,
-            Status = PaymentStatus.Pending,
             Amount = amount,
-            Commission = commission,
-            NetToLawyer = amount - commission,
+            Commission = amount * DefaultCommissionRate,
+            Status = PaymentStatus.Pending,
             CreatedAt = DateTime.UtcNow
         };
         await _orderRepo.AddAsync(order);
         await _orderRepo.SaveChangesAsync();
-
-        if (order.LawyerProfileId.HasValue)
-        {
-            c.HonorariumPaid = true; // optimistic flag; refund resets
-            await _caseRepo.SaveChangesAsync();
-        }
         return order;
     }
 
-    public async Task<PaymentOrder> CreateTopUpOrderAsync(int? userId, decimal amount)
+    public async Task<PaymentOrder> CreateTopUpOrderAsync(
+        int? userId, decimal amount)
     {
         var order = new PaymentOrder
         {
             UserId = userId,
+            CaseId = null,
+            LawyerProfileId = null,
             Purpose = PaymentPurpose.TopUp,
-            Status = PaymentStatus.Pending,
             Amount = amount,
-            Commission = 0,
-            NetToLawyer = 0,
+            Commission = 0m,
+            Status = PaymentStatus.Pending,
             CreatedAt = DateTime.UtcNow
         };
         await _orderRepo.AddAsync(order);
@@ -89,7 +90,10 @@ public class PaymentService
     }
 
     // Sandbox "IPN confirmed" action.
-    public async Task MarkPaidAsync(int paymentOrderId, string gatewayRef)
+    // AUD-7: when an admin triggers this (AdminController.MarkOrderPaid), the
+    // action is recorded; the sandbox citizen-side auto-mark passes no admin id
+    // and correctly produces no admin-audit row.
+    public async Task MarkPaidAsync(int paymentOrderId, string gatewayRef, int? actingAdminId = null)
     {
         var o = await _orderRepo.GetByIdAsync(paymentOrderId)
                 ?? throw new ArgumentException("Order not found");
@@ -97,6 +101,14 @@ public class PaymentService
         o.GatewayRef = gatewayRef;
         o.PaidAt = DateTime.UtcNow;
         await _orderRepo.SaveChangesAsync();
+
+        if (actingAdminId.HasValue)
+        {
+            await _audit.LogAdminActionAsync(
+                actingAdminId.Value, "MarkOrderPaid",
+                targetEntityId: paymentOrderId,
+                details: $"GatewayRef {gatewayRef} · {o.Amount:0.00} BDT");
+        }
     }
 
     public async Task MarkFailedAsync(int paymentOrderId)
@@ -107,7 +119,8 @@ public class PaymentService
         await _orderRepo.SaveChangesAsync();
     }
 
-    public async Task RefundAsync(int paymentOrderId)
+    // AUD-7: admin-triggered refunds are recorded (ledger reversal noted).
+    public async Task RefundAsync(int paymentOrderId, int? actingAdminId = null)
     {
         var o = await _orderRepo.GetByIdAsync(paymentOrderId);
         if (o == null || o.Status != PaymentStatus.Paid) return;
@@ -123,6 +136,14 @@ public class PaymentService
                 c.HonorariumPaid = false; // ledger reversed
                 await _caseRepo.SaveChangesAsync();
             }
+        }
+
+        if (actingAdminId.HasValue)
+        {
+            await _audit.LogAdminActionAsync(
+                actingAdminId.Value, "RefundOrder",
+                targetEntityId: paymentOrderId,
+                details: $"{o.Amount:0.00} BDT ledger reversed");
         }
     }
 

@@ -329,6 +329,8 @@ builder.Services.AddScoped<ChatService>();
 // Part B: lawyer review flow
 builder.Services.AddScoped<LawyerReviewService>();
 builder.Services.AddScoped<PaymentService>();
+// AUD-7: administrative audit trail (fail-safe writer).
+builder.Services.AddScoped<IAdminAuditService, AdminAuditService>();
 
 var app = builder.Build();
 

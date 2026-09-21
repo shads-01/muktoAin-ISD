@@ -190,9 +190,10 @@ public class LawyerReviewServiceTests
 
         var queue = await _service.GetQueueAsync(lawyerProfileId: 5, filter: "All");
 
-        Assert.Equal(2, queue.Count);
-        Assert.Equal(2, queue[0].DocumentId); // Oldest first
-        Assert.Equal(1, queue[1].DocumentId);
+        Assert.Equal(2, queue.TotalCount);
+        Assert.Equal(2, queue.Items.Count);
+        Assert.Equal(2, queue.Items[0].DocumentId); // Oldest first
+        Assert.Equal(1, queue.Items[1].DocumentId);
     }
 
     [Fact]
@@ -215,7 +216,7 @@ public class LawyerReviewServiceTests
 
         var queue = await _service.GetQueueAsync(lawyerProfileId: 5, filter: "Unclaimed");
 
-        var item = Assert.Single(queue);
+        var item = Assert.Single(queue.Items);
         Assert.Equal(1, item.DocumentId);
     }
 
@@ -239,7 +240,7 @@ public class LawyerReviewServiceTests
 
         var queue = await _service.GetQueueAsync(lawyerProfileId: 5, filter: "Mine");
 
-        var item = Assert.Single(queue);
+        var item = Assert.Single(queue.Items);
         Assert.Equal(1, item.DocumentId);
     }
 
@@ -270,10 +271,11 @@ public class LawyerReviewServiceTests
 
         var queue = await _service.GetQueueAsync(lawyerProfileId: 5, filter: "All");
 
-        Assert.Equal(3, queue.Count);
-        Assert.True(queue.Single(q => q.DocumentId == 1).CanOpen);
-        Assert.True(queue.Single(q => q.DocumentId == 2).CanOpen);
-        Assert.False(queue.Single(q => q.DocumentId == 3).CanOpen);
+        Assert.Equal(3, queue.TotalCount);
+        Assert.Equal(3, queue.Items.Count);
+        Assert.True(queue.Items.Single(q => q.DocumentId == 1).CanOpen);
+        Assert.True(queue.Items.Single(q => q.DocumentId == 2).CanOpen);
+        Assert.False(queue.Items.Single(q => q.DocumentId == 3).CanOpen);
     }
 
     // ── ClaimAsync Security Edge-Case Tests ──────────────────────────────
@@ -591,5 +593,71 @@ public class LawyerReviewServiceTests
             .ReturnsAsync(new CaseCategory { CategoryId = categoryId, Name = categoryName });
         _districtRepo.Setup(r => r.GetByIdAsync(districtId))
             .ReturnsAsync(new District { DistrictId = districtId, Name = districtName });
+    }
+
+    // AUD-8: queue paging — TotalCount reflects the FULL filtered pool while
+    // Items are page-sliced BEFORE the expensive per-document enrichment loop
+    // (each enriched item costs a case fetch + category + district lookups).
+    private void SetUpQueueOfDocs(int count)
+    {
+        var docs = new List<GeneratedDocument>();
+        for (var i = 1; i <= count; i++)
+        {
+            docs.Add(new GeneratedDocument
+            {
+                DocumentId = i,
+                CaseId = 100 + i,
+                Status = DocumentStatus.UnderReview,
+                CreatedAt = new DateTime(2026, 9, 1).AddHours(i)
+            });
+        }
+        _docRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(docs);
+        _caseRepo.Setup(r => r.GetWithDocumentsAsync(It.IsAny<int>()))
+            .ReturnsAsync((int caseId) => new Case
+            {
+                CaseId = caseId, Title = $"Case {caseId}", CategoryId = 1, DistrictId = 1
+            });
+        _categoryRepo.Setup(r => r.GetByIdAsync(1))
+            .ReturnsAsync(new CaseCategory { CategoryId = 1, Name = "Labour" });
+        _districtRepo.Setup(r => r.GetByIdAsync(1))
+            .ReturnsAsync(new District { DistrictId = 1, Name = "Dhaka" });
+    }
+
+    [Fact]
+    public async Task GetQueueAsync_Paging_ReturnsTotalCountAndCorrectPageSlice()
+    {
+        SetUpQueueOfDocs(25);
+
+        var result = await _service.GetQueueAsync(lawyerProfileId: 5, filter: "All", page: 2, pageSize: 20);
+
+        Assert.Equal(25, result.TotalCount);      // full pool, not the page size
+        Assert.Equal(5, result.Items.Count);      // items 21-25
+        Assert.Equal(21, result.Items[0].DocumentId); // oldest-first ordering preserved
+        Assert.Equal(25, result.Items[4].DocumentId);
+    }
+
+    [Fact]
+    public async Task GetQueueAsync_Paging_TotalCountRespectsFilter()
+    {
+        SetUpQueueOfDocs(25);
+        // Claim half of the documents so the "Unclaimed" filter sees only 12.
+        var claimed = new List<GeneratedDocument>();
+        for (var i = 1; i <= 25; i++)
+        {
+            var doc = new GeneratedDocument
+            {
+                DocumentId = i, CaseId = 100 + i,
+                Status = DocumentStatus.UnderReview,
+                CreatedAt = new DateTime(2026, 9, 1).AddHours(i)
+            };
+            if (i % 2 == 0) doc.AssignedLawyerProfileId = 9; // claimed by someone
+            claimed.Add(doc);
+        }
+        _docRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(claimed);
+
+        var result = await _service.GetQueueAsync(lawyerProfileId: 5, filter: "Unclaimed", page: 1, pageSize: 20);
+
+        Assert.Equal(13, result.TotalCount); // 13 odd-numbered docs (1..25) are unclaimed
+        Assert.Equal(13, result.Items.Count);
     }
 }

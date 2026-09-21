@@ -33,6 +33,7 @@ public class AdminController : Controller
     private readonly IRepository<AiLog> _aiLogRepo;
     private readonly PaymentService _paymentService;
     private readonly GeminiClient _geminiClient;
+    private readonly IAdminAuditService _audit;
 
     public AdminController(
         ILogger<AdminController> logger,
@@ -49,7 +50,8 @@ public class AdminController : Controller
         IRepository<CaseCategory> categoryRepo,
         IRepository<AiLog> aiLogRepo,
         PaymentService paymentService,
-        GeminiClient geminiClient)
+        GeminiClient geminiClient,
+        IAdminAuditService audit)
     {
         _logger = logger;
         _dbContext = dbContext;
@@ -66,6 +68,7 @@ public class AdminController : Controller
         _aiLogRepo = aiLogRepo;
         _paymentService = paymentService;
         _geminiClient = geminiClient;
+        _audit = audit;
     }
 
     [HttpGet]
@@ -174,26 +177,36 @@ public class AdminController : Controller
         });
     }
 
+    private const int AdminListPageSize = 20;
+
     [HttpGet]
-    public async Task<IActionResult> Users(string? role)
+    public async Task<IActionResult> Users(string? role, int page = 1)
     {
         var all = await _userManagement.GetAllUsersAsync();
-        var filtered = string.IsNullOrWhiteSpace(role) || role == "All"
+        var filtered = (string.IsNullOrWhiteSpace(role) || role == "All"
             ? all
-            : all.Where(u => u.Role.Equals(role, StringComparison.OrdinalIgnoreCase));
+            : all.Where(u => u.Role.Equals(role, StringComparison.OrdinalIgnoreCase))).ToList();
+
+        var totalPages = Math.Max((int)Math.Ceiling(filtered.Count / (double)AdminListPageSize), 1);
         var vm = new AdminUsersViewModel
         {
             RoleFilter = role ?? "All",
             ViewerIsSuperAdmin = User.HasClaim("IsSuperAdmin", "true"),
-            Users = filtered.Select(u => new AdminUserRowViewModel
-            {
-                UserId = u.UserId,
-                FullName = u.FullName,
-                Email = u.Email,
-                Role = u.Role,
-                Status = u.Status,
-                IsSuperAdmin = u.IsSuperAdmin
-            }).ToList()
+            Page = Math.Max(1, Math.Min(page, totalPages)),
+            PageSize = AdminListPageSize,
+            TotalCount = filtered.Count,
+            Users = filtered
+                .Skip((Math.Max(1, Math.Min(page, totalPages)) - 1) * AdminListPageSize)
+                .Take(AdminListPageSize)
+                .Select(u => new AdminUserRowViewModel
+                {
+                    UserId = u.UserId,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    Role = u.Role,
+                    Status = u.Status,
+                    IsSuperAdmin = u.IsSuperAdmin
+                }).ToList()
         };
         return View(vm);
     }
@@ -455,6 +468,15 @@ public class AdminController : Controller
         {
             await _scenarioRepo.DeleteAsync(m);
             await _scenarioRepo.SaveChangesAsync();
+
+            // AUD-7: DeleteScenario is a HARD delete with no soft-delete flag —
+            // the audit row is the only surviving record of what was removed.
+            var adminId = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                out var id) ? id : 0;
+            await _audit.LogAdminActionAsync(
+                adminId, "DeleteScenario",
+                targetEntityId: mappingId,
+                details: $"Keyword '{m.ScenarioKeyword}' (SectionId {m.SectionId}) hard-deleted.");
         }
         TempData["Success"] = "Mapping deleted.";
         return RedirectToAction(nameof(Scenarios));
@@ -487,44 +509,60 @@ public class AdminController : Controller
         return View(vm);
     }
 
+    private const int AdminAiLogsPageSize = 50;
+
     // ---------- FR-12: AI Logs ----------
 
     [HttpGet]
-    public async Task<IActionResult> AiLogs(string? type, int minLatency = 0)
+    public async Task<IActionResult> AiLogs(string? type, int minLatency = 0, int page = 1)
     {
-        var logs = (await _aiLogRepo.GetAllAsync())
-            .OrderByDescending(l => l.CreatedAt)
-            .Take(200);
+        var all = (await _aiLogRepo.GetAllAsync()).ToList();
 
+        // "Calls today" is a global KPI — intentionally counted BEFORE the
+        // type/latency filters (same semantics as the pre-AUD-8 action).
+        var today = DateTime.UtcNow.Date;
+        var callsToday = all.Count(l => l.CreatedAt >= today);
+
+        // AUD-8: filter the FULL set (the old code took the newest 200 rows
+        // BEFORE filtering, so filters silently ignored older matches), then
+        // page. No hardcoded Take(200) — older entries are reachable again.
+        IEnumerable<AiLog> filtered = all.OrderByDescending(l => l.CreatedAt);
         if (!string.IsNullOrWhiteSpace(type) && type != "All"
             && Enum.TryParse<Domain.Enums.AiRequestType>(type, out var t))
         {
-            logs = logs.Where(l => l.RequestType == t);
+            filtered = filtered.Where(l => l.RequestType == t);
         }
         if (minLatency > 0)
         {
-            logs = logs.Where(l => l.LatencyMs >= minLatency);
+            filtered = filtered.Where(l => l.LatencyMs >= minLatency);
         }
+        var filteredList = filtered.ToList();
 
-        var today = DateTime.UtcNow.Date;
-        var allToday = (await _aiLogRepo.GetAllAsync()).Where(l => l.CreatedAt >= today).ToList();
+        var totalPages = Math.Max((int)Math.Ceiling(filteredList.Count / (double)AdminAiLogsPageSize), 1);
+        var currentPage = Math.Max(1, Math.Min(page, totalPages));
 
         var vm = new AdminAiLogsViewModel
         {
-            CallsToday = allToday.Count,
-            FailureRateToday = allToday.Count == 0 ? 0 : 0, // failure detection = latency outliers; see view
-            Logs = logs.Select(l => new AdminAiLogRowViewModel
-            {
-                LogId = l.LogId,
-                Time = l.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-                Type = l.RequestType.ToString(),
-                Model = l.ModelUsed,
-                Tokens = l.TokensUsed,
-                LatencyMs = l.LatencyMs,
-                CaseId = l.CaseId,
-                PromptPreview = l.PromptText.Length > 200 ? l.PromptText[..200] + "…" : l.PromptText,
-                ResponsePreview = l.ResponseText.Length > 200 ? l.ResponseText[..200] + "…" : l.ResponseText
-            }).ToList()
+            CallsToday = callsToday,
+            FailureRateToday = 0, // failure detection = latency outliers; see view
+            Page = currentPage,
+            PageSize = AdminAiLogsPageSize,
+            TotalCount = filteredList.Count,
+            Logs = filteredList
+                .Skip((currentPage - 1) * AdminAiLogsPageSize)
+                .Take(AdminAiLogsPageSize)
+                .Select(l => new AdminAiLogRowViewModel
+                {
+                    LogId = l.LogId,
+                    Time = l.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                    Type = l.RequestType.ToString(),
+                    Model = l.ModelUsed,
+                    Tokens = l.TokensUsed,
+                    LatencyMs = l.LatencyMs,
+                    CaseId = l.CaseId,
+                    PromptPreview = l.PromptText.Length > 200 ? l.PromptText[..200] + "…" : l.PromptText,
+                    ResponsePreview = l.ResponseText.Length > 200 ? l.ResponseText[..200] + "…" : l.ResponseText
+                }).ToList()
         };
         return View(vm);
     }
@@ -543,7 +581,9 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RefundOrder(int orderId)
     {
-        await _paymentService.RefundAsync(orderId);
+        var adminId = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+            out var id) ? id : 0;
+        await _paymentService.RefundAsync(orderId, adminId);
         TempData["Success"] = "Order refunded (sandbox) — ledger reversed.";
         return RedirectToAction(nameof(Transactions));
     }
@@ -564,7 +604,9 @@ public class AdminController : Controller
     public async Task<IActionResult> MarkOrderPaid(int orderId)
     {
         // Sandbox gateway confirm (in lieu of real SSLCommerz IPN)
-        await _paymentService.MarkPaidAsync(orderId, $"SBX-{Guid.NewGuid().ToString("N")[..12].ToUpper()}");
+        var adminId = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+            out var id) ? id : 0;
+        await _paymentService.MarkPaidAsync(orderId, $"SBX-{Guid.NewGuid().ToString("N")[..12].ToUpper()}", adminId);
         TempData["Success"] = "Order marked Paid (sandbox gateway).";
         return RedirectToAction(nameof(Transactions));
     }
@@ -657,18 +699,28 @@ public class AdminController : Controller
             }
             model.VerificationQueue = verificationQueue;
 
-            // Audit stream = latest AI_LOG + review events (real, no PII —
-            // AI_LOG prompts are redacted at write time per S-2.7)
-            model.AuditLogs = aiLogsToday
+            // AUD-7: real administrative audit trail. The previous "audit" panel
+            // was fed from AI_LOG rows (AI calls, not admin actions — audit
+            // report Admin Scope #5). Latest 10 ADMIN_AUDIT_LOG rows; actor
+            // names resolved from the users list already loaded above.
+            var auditEntries = await _dbContext.AdminAuditLogs
+                .AsNoTracking()
                 .OrderByDescending(l => l.CreatedAt)
                 .Take(10)
+                .ToListAsync();
+            model.AuditLogs = auditEntries
                 .Select(l => new SystemAuditLogItemViewModel
                 {
                     Timestamp = l.CreatedAt.ToString("HH:mm"),
-                    Action = $"AI {l.RequestType}",
-                    Actor = l.ModelUsed,
-                    Status = l.LatencyMs > 8000 || l.TokensUsed <= 0 ? "Warning" : "Success",
-                    Details = $"Case {(l.CaseId?.ToString() ?? "chat")} · {l.LatencyMs}ms · {l.TokensUsed} tokens"
+                    Action = l.Action,
+                    Actor = users.FirstOrDefault(u => u.Id == l.AdminUserId)?.FullName
+                            ?? $"Admin #{l.AdminUserId}",
+                    Status = "Success",
+                    Details = string.Join(" · ", new[] {
+                            l.Details,
+                            l.TargetUserId.HasValue ? $"User #{l.TargetUserId}" : null,
+                            l.TargetEntityId.HasValue ? $"Entity #{l.TargetEntityId}" : null
+                        }.Where(p => !string.IsNullOrWhiteSpace(p)))
                 })
                 .ToList();
         }

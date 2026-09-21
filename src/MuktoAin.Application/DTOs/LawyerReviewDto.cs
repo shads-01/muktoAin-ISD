@@ -17,6 +17,13 @@ public record QueueItemDto(
     bool CanOpen             // false when claimed by another lawyer
 );
 
+// AUD-8: queue paging envelope — TotalCount is the FULL filtered pool size
+// (for the pager), Items is the current page slice only.
+public record QueuePageDto(
+    int TotalCount,
+    IReadOnlyList<QueueItemDto> Items
+);
+
 public record ReviewWorkspaceDto(
     int DocumentId,
     int CaseId,

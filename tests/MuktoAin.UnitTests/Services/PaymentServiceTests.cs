@@ -17,16 +17,19 @@ namespace MuktoAin.UnitTests.Services;
 // to ICaseRepository.GetWithDocumentsAsync, which eager-loads Documents.
 public class PaymentServiceTests
 {
+    private readonly Mock<IRepository<CaseCategory>> _categoryRepo = new();
     private readonly Mock<IRepository<PaymentOrder>> _orderRepo = new();
     private readonly Mock<IRepository<PayoutRequest>> _payoutRepo = new();
     private readonly Mock<IRepository<LawyerProfile>> _lawyerRepo = new();
     private readonly Mock<ICaseRepository> _caseRepo = new();
+    private readonly Mock<IAdminAuditService> _auditMock = new();
     private readonly PaymentService _service;
 
     public PaymentServiceTests()
     {
         _service = new PaymentService(
-            _orderRepo.Object, _payoutRepo.Object, _lawyerRepo.Object, _caseRepo.Object, NewUserManager());
+            _orderRepo.Object, _payoutRepo.Object, _lawyerRepo.Object, _caseRepo.Object,
+            NewUserManager(), _auditMock.Object);
     }
 
     private static UserManager<User> NewUserManager()
@@ -48,5 +51,18 @@ public class PaymentServiceTests
         var order = await _service.CreateHonorariumOrderAsync(caseId: 5, userId: 7, amount: 1000m);
 
         Assert.Equal(42, order.LawyerProfileId);
+    }
+
+    // AUD-7: the admin's mark-paid action is recorded with order + gateway ref.
+    [Fact]
+    public async Task MarkPaidAsync_WithActingAdmin_LogsAudit()
+    {
+        var order = new PaymentOrder { PaymentOrderId = 7, Status = PaymentStatus.Pending, Amount = 500m };
+        _orderRepo.Setup(r => r.GetByIdAsync(7)).ReturnsAsync(order);
+
+        await _service.MarkPaidAsync(7, "SBX-ABC123", actingAdminId: 1);
+
+        _auditMock.Verify(a => a.LogAdminActionAsync(
+            1, "MarkOrderPaid", null, 7, It.IsAny<string?>()), Times.Once);
     }
 }
