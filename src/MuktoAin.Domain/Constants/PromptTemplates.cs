@@ -38,6 +38,56 @@ public static class PromptTemplates
         - End with: {disclaimer}
         """;
 
+    public const string RightsExplanationFewShotIrac = """
+        You are a legal information assistant for Bangladesh.
+        A citizen has described this problem: {problem}
+
+        Study these worked examples, each answered with the IRAC structure
+        (Issue, Rule, Application, Conclusion), citing only retrieved statutes:
+
+        {examples}
+
+        Now answer the citizen's problem above using the same IRAC structure.
+        Based ONLY on the following statutory sections, explain their rights
+        in plain {language}. Cite specific Act names and Section numbers.
+
+        Relevant statutory text:
+        {context}
+
+        Rules:
+        - Only cite sections provided above. Never fabricate citations.
+        - Structure the answer with clear Issue, Rule, Application, Conclusion headings.
+        - Use simple language a non-lawyer can understand.
+        - If the provided sections don't cover the problem, say so explicitly.
+        - End with: {disclaimer}
+        """;
+
+    // Few-shot exemplars (requirements.md §4: "Representative QA samples with
+    // IRAC explanations injected via PromptAssembler to guide Gemini's citations").
+    public const string FewShotIracExampleEnglish = """
+        Example 1:
+        Problem: My employer has not paid my wages for the last three months.
+        Relevant statutory text:
+        - Bangladesh Labour Act, 2006, Section 123: The wages of every worker shall be paid before the expiry of the seventh working day after the last day of the wage period.
+        Answer:
+        Issue: Has the employer failed to pay wages within the statutory deadline?
+        Rule: Section 123 of the Bangladesh Labour Act, 2006 requires wages to be paid before the expiry of the seventh working day after the last day of the wage period.
+        Application: Three months of wages were never paid, so the employer has breached the Section 123 payment deadline.
+        Conclusion: You are entitled to the unpaid wages under Section 123 of the Bangladesh Labour Act, 2006.
+        """;
+
+    public const string FewShotIracExampleBangla = """
+        Example 2:
+        Problem: কর্মক্ষেত্রে দুর্ঘটনায় আহত হয়েছি, ক্ষতিপূরণ পাব কি না জানতে চাই।
+        Relevant statutory text:
+        - Bangladesh Labour Act, 2006, Section 150: If personal injury is caused to a worker by accident arising out of and in the course of his employment, the employer shall be liable to pay compensation.
+        Answer:
+        Issue: কর্মক্ষেত্রে দুর্ঘটনাজনিত আঘাতের জন্য ক্ষতিপূরণ পাওয়া যাবে কি না?
+        Rule: বাংলাদেশ শ্রম আইন, ২০০৬-এর ১৫০ ধারা অনুযায়ী কর্মের সময়ে দুর্ঘটনাজনিত আঘাত হলে নিয়োগকর্তা ক্ষতিপূরণ দিতে বাধ্য।
+        Application: আঘাতটি কর্মের সময়ে ও কর্মক্ষেত্রে হয়েছে, তাই ১৫০ ধারার অধীনে ক্ষতিপূরণের দাবি প্রযোজ্য।
+        Conclusion: আপনি ১৫০ ধারার অধীনে ক্ষতিপূরণের দাবি করতে পারেন (বাংলাদেশ শ্রম আইন, ২০০৬)।
+        """;
+
     // Conversational intake (spec: docs/superpowers/specs/2026-09-15-conversational-chat-redesign-design.md).
     // The model drives dialogue and re-emits the FULL case file every turn;
     // C# owns state. No legal conclusions during gathering — the cited
