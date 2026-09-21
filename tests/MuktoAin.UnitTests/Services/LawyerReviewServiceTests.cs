@@ -339,8 +339,30 @@ public class LawyerReviewServiceTests
             8, 42, ReviewDecision.Approved, "looks fine", null));
 
         Assert.False(result);
-        // Nothing past the failed save runs: no status change, no case transition.
-        Assert.Equal(DocumentStatus.UnderReview, doc.Status);
+        // The one failed save was the only save: nothing was half-written.
+        _docRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
+        _caseRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task SubmitReviewAsync_SavesReviewDocumentAndCaseInOneSave()
+    {
+        var doc = new GeneratedDocument
+        {
+            DocumentId = 9, CaseId = 90, Status = DocumentStatus.UnderReview,
+            ContentDraft = "draft", AssignedLawyerProfileId = 5
+        };
+        var caseEntity = new Case { CaseId = 90, Status = CaseStatus.UnderReview };
+        _docRepo.Setup(r => r.GetByIdAsync(9)).ReturnsAsync(doc);
+        _caseRepo.Setup(r => r.GetByIdAsync(90)).ReturnsAsync(caseEntity);
+
+        var result = await _service.SubmitReviewAsync(new SubmitReviewDto(
+            9, 5, ReviewDecision.Approved, "ok", null));
+
+        Assert.True(result);
+        Assert.Equal(DocumentStatus.Approved, doc.Status);
+        Assert.Equal(CaseStatus.Finalized, caseEntity.Status);
+        _reviewRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
         _docRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
         _caseRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
     }

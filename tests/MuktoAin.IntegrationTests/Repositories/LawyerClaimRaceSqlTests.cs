@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Moq;
+using MuktoAin.Application.DTOs;
 using MuktoAin.Application.Services;
 using MuktoAin.Domain.Common;
 using MuktoAin.Domain.Entities;
@@ -66,6 +67,45 @@ public class LawyerClaimRaceSqlTests
         await using var verify = _fx.CreateContext();
         var stored = await verify.GeneratedDocuments.SingleAsync(d => d.DocumentId == docId);
         Assert.Equal(lawyerA, stored.AssignedLawyerProfileId);
+    }
+
+    [SkippableFact]
+    public async Task SubmitReviewAsync_Case_Conflict_Leaves_Nothing_Half_Saved()
+    {
+        Skip.IfNot(_fx.DatabaseAvailable);
+        var (docId, lawyerA, _) = await SeedUnclaimedDocumentAsync();
+
+        int caseId;
+        await using (var claim = _fx.CreateContext())
+        {
+            var d = await claim.GeneratedDocuments.SingleAsync(x => x.DocumentId == docId);
+            d.AssignedLawyerProfileId = lawyerA;
+            await claim.SaveChangesAsync();
+            caseId = d.CaseId;
+        }
+
+        await using var reviewCtx = _fx.CreateContext();
+        // The reviewing request has already read the case...
+        await reviewCtx.Cases.SingleAsync(c => c.CaseId == caseId);
+
+        // ...when someone else updates that case.
+        await using (var other = _fx.CreateContext())
+        {
+            var c = await other.Cases.SingleAsync(x => x.CaseId == caseId);
+            c.UpdatedAt = DateTime.UtcNow;
+            await other.SaveChangesAsync();
+        }
+
+        var ok = await CreateService(reviewCtx).SubmitReviewAsync(new SubmitReviewDto(
+            docId, lawyerA, ReviewDecision.Approved, "looks fine", null));
+
+        Assert.False(ok);
+        await using var verify = _fx.CreateContext();
+        Assert.False(await verify.LawyerReviews.AnyAsync(r => r.DocumentId == docId));
+        var stored = await verify.GeneratedDocuments.SingleAsync(x => x.DocumentId == docId);
+        Assert.Equal(DocumentStatus.UnderReview, stored.Status);
+        Assert.Equal(CaseStatus.UnderReview,
+            (await verify.Cases.SingleAsync(x => x.CaseId == caseId)).Status);
     }
 
     private static LawyerReviewService CreateService(AppDbContext ctx)

@@ -117,6 +117,15 @@ public class CaseService
 
     public async Task<bool> TransitionStatusAsync(int caseId, CaseStatus newStatus)
     {
+        if (!await ApplyStatusTransitionAsync(caseId, newStatus)) return false;
+        await _caseRepo.SaveChangesAsync();
+        return true;
+    }
+
+    // Same as TransitionStatusAsync but leaves saving to the caller, so the
+    // change can be committed together with other writes in one SaveChanges.
+    public async Task<bool> ApplyStatusTransitionAsync(int caseId, CaseStatus newStatus)
+    {
         var c = await _caseRepo.GetByIdAsync(caseId);
         if (c == null) return false;
 
@@ -133,7 +142,6 @@ public class CaseService
 
         c.Status = newStatus;
         c.UpdatedAt = DateTime.UtcNow;
-        await _caseRepo.SaveChangesAsync();
         return true;
     }
 
