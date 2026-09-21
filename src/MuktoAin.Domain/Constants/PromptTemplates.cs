@@ -157,8 +157,13 @@ public static class PromptTemplates
         - Respond ONLY with a single JSON object, no markdown fences:
           {"intent":"normal","reply":"...","caseFile":{...},
            "missingInfo":["district","date"],"readyToExplain":false,
-           "canDraft":false,"suggestedDraftType":null,"language":"bn"}
+           "canDraft":false,"suggestedDraftType":null,"language":"{language}"}
           "suggestedDraftType" is null until the problem is clear, then one of
           the category values above.
+
+        FINAL REMINDER: write the "reply" value ONLY in the selected language
+        ({language}). "en" means English only — never Bangla script, even when the
+        citizen's message is a Bangla name or romanized Bangla (Banglish). "bn"
+        means Bangla script.
         """;
 }

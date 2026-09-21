@@ -130,6 +130,14 @@ public class ChatService
     public async Task<ChatSession?> GetSessionAsync(int chatSessionId)
         => await _sessionRepo.GetByIdAsync(chatSessionId);
 
+    // Hard delete: CHAT_MESSAGE rows go via the FK's ON DELETE CASCADE. A committed
+    // session's Case/document are not referenced from the session's side, so they stay.
+    public async Task DeleteSessionAsync(ChatSession session)
+    {
+        await _sessionRepo.DeleteAsync(session);
+        await _sessionRepo.SaveChangesAsync();
+    }
+
     public async Task<Case?> GetOwnedCommittedCaseAsync(int chatSessionId, int? userId, string? key)
     {
         var session = await _sessionRepo.GetByIdAsync(chatSessionId);

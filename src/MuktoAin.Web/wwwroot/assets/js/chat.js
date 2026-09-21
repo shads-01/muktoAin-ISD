@@ -1099,6 +1099,68 @@
 
     // ---------- history sidebar / URL navigation ----------
 
+    var deletedChatIds = {};
+
+    function attachDelete(row, c) {
+        var id = Number(c.chatSessionId);
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "chat-side-del";
+        btn.innerHTML = '<i data-lucide="trash-2"></i>';
+        var label = bilingual(document.createElement("span"), "আলোচনা মুছুন", "Delete conversation");
+        label.className = "sr-only";
+        btn.appendChild(label);
+        btn.onclick = function () { confirmDelete(row, btn, c, id); };
+        row.appendChild(btn);
+    }
+
+    function confirmDelete(row, btn, c, id) {
+        var en = curLang() === "en";
+        var message = en
+            ? "This conversation will be permanently deleted. This cannot be undone."
+            : "এই আলোচনা স্থায়ীভাবে মুছে যাবে। এটি আর ফেরানো যাবে না।";
+        if (c.status === "Committed")
+            message += en ? " Your case will not be deleted, only this conversation."
+                : " আপনার মামলা মুছবে না, শুধু এই আলোচনা মুছবে।";
+        window.showConfirmDialog({
+            title: en ? "Delete this conversation?" : "আলোচনা মুছবেন?",
+            message: message,
+            okText: en ? "Delete permanently" : "স্থায়ীভাবে মুছুন",
+            cancelText: en ? "Cancel" : "বাতিল",
+            isDanger: true,
+            onCancel: function () { btn.focus(); },
+            onConfirm: async function () {
+                try {
+                    await postJson("/Chat/Delete", { chatSessionId: id });
+                } catch (e) {
+                    if (e.status !== 404) {
+                        if (window.showToast) window.showToast(en ? "Could not delete. Please try again." : "মুছে ফেলা যায়নি। আবার চেষ্টা করুন।", "error");
+                        btn.focus();
+                        return;
+                    }
+                }
+                removeHistoryRow(row, id);
+            }
+        });
+        var cancel = document.querySelector('#global-confirm-modal .btn[data-confirm-action="cancel"]');
+        if (cancel) cancel.focus();
+    }
+
+    function removeHistoryRow(row, id) {
+        deletedChatIds[id] = true;
+        var list = el("chat-history");
+        var next = row.nextElementSibling || row.previousElementSibling;
+        var focusTarget = next ? next.querySelector("a") : el("chat-new");
+        row.remove();
+        if (state.chatSessionId === id) {
+            window.history.replaceState({ chatSessionId: 0 }, "", "/Chat");
+            navigateChat(0, false);
+        }
+        if (focusTarget && !focusTarget.closest("[inert]")) focusTarget.focus();
+        if (!list.children.length) loadHistory(null);
+        if (window.showToast) window.showToast(curLang() === "en" ? "Conversation deleted" : "আলোচনা মুছে ফেলা হয়েছে", "success");
+    }
+
     async function loadHistory(cursor) {
         var sideList = el("chat-history");
         if (!sideList) return;
@@ -1116,24 +1178,31 @@
             var list = el("chat-history");
             if (!cursor) list.replaceChildren();
             data.chats.forEach(function (c) {
+                if (deletedChatIds[c.chatSessionId]) return;
                 if (list.querySelector('[data-chat-id="' + Number(c.chatSessionId) + '"]')) return;
+                var row = document.createElement("div");
+                row.className = "chat-side-row";
                 var link = document.createElement("a");
                 link.className = "chat-side-item";
                 link.href = "/Chat?id=" + c.chatSessionId;
                 link.dataset.chatId = String(c.chatSessionId);
                 var title = document.createElement("span");
+                title.className = "chat-side-title";
                 title.textContent = c.title;
                 link.appendChild(title);
+                var meta = document.createElement("span");
+                meta.className = "chat-side-meta";
                 var date = document.createElement("time");
                 date.className = "tiny muted";
                 date.dateTime = c.updatedAt;
                 var days = Math.max(0, Math.floor((Date.now() - Date.parse(c.updatedAt)) / 86400000));
                 bilingual(date, days === 0 ? "আজ" : bn(days) + " দিন আগে", days === 0 ? "Today" : days + " days ago");
-                link.appendChild(date);
+                meta.appendChild(date);
+                link.appendChild(meta);
                 if (c.status === "Committed") {
                     var badge = bilingual(document.createElement("span"), "মামলা", "Case");
                     badge.className = "chat-side-badge";
-                    link.appendChild(badge);
+                    meta.appendChild(badge);
                 } else if (c.status === "Blocked" || c.status === "blocked") {
                     var lock = document.createElement("span");
                     lock.className = "chat-side-lock-icon";
@@ -1149,7 +1218,10 @@
                     event.preventDefault();
                     navigateChat(c.chatSessionId, true);
                 });
-                list.appendChild(link);
+                row.appendChild(link);
+                attachDelete(row, c);
+                list.appendChild(row);
+                renderIcons();
             });
             historyCursor = data.nextCursor;
             el("chat-history-more").hidden = !historyCursor;
@@ -1284,7 +1356,10 @@
         document.addEventListener("keydown", function (event) {
             var sideEl = el("chat-side");
             if (sideEl.hidden || desktop.matches) return;
-            if (event.key === "Escape") { event.preventDefault(); setSidebar(false); return; }
+            if (event.key === "Escape") {
+                if (el("global-confirm-modal")) return;
+                event.preventDefault(); setSidebar(false); return;
+            }
             if (event.key !== "Tab") return;
             var nodes = Array.from(sideEl.querySelectorAll('a[href],button:not([disabled]),[tabindex="0"]'))
                 .filter(function (node) { return !node.hidden && node.getClientRects().length > 0; });

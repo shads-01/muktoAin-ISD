@@ -286,6 +286,24 @@ public class ChatController : Controller
         });
     }
 
+    // Permanently delete one of the caller's own chats. Body: { "chatSessionId": n }
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete([FromBody] ChatDeleteRequest? body)
+    {
+        if (body == null || body.ChatSessionId <= 0)
+            return BadRequest(new { error = "chatSessionId required" });
+
+        var session = await _chatService.GetSessionAsync(body.ChatSessionId);
+        if (session == null)
+            return NotFound(new { error = "Session not found" });
+
+        if (!OwnsSession(session, CurrentUserId(), SessionKey())) return Forbid();
+
+        await _chatService.DeleteSessionAsync(session);
+        return Json(new { deleted = true, chatSessionId = body.ChatSessionId });
+    }
+
     // Daily quota snapshot for the composer counter.
     [HttpGet]
     public async Task<IActionResult> Quota()
@@ -386,6 +404,11 @@ public class ChatAskRequest
     // A2: "rights" (default) | "search" — search routes to keyword section
     // retrieval (FR-7), no model call, no quota.
     public string? Mode { get; set; }
+}
+
+public class ChatDeleteRequest
+{
+    public int ChatSessionId { get; set; }
 }
 
 public class ChatCommitRequest
