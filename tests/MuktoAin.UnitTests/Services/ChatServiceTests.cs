@@ -182,7 +182,6 @@ public class ChatServiceTests
         _messageRepo.Verify(r => r.GetAllAsync(), Times.Never);
     }
 
-    // Default envelope response for intake turns.
     [Theory]
     [InlineData("Chattogram", 10)]
     [InlineData("Chittagong", 10)]
@@ -209,6 +208,7 @@ public class ChatServiceTests
         Assert.Equal(expected, ChatService.MatchDistrictId(value, districts));
     }
 
+    // Default envelope response for intake turns.
     internal void SetupEnvelope(string json)
         => _aiService.Setup(a => a.GenerateContentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(json);

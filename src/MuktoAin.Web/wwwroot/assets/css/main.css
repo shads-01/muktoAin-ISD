@@ -617,6 +617,7 @@ select.input, .form-select { appearance: none; background-image: linear-gradient
 
 /* Alert strips */
 .alert { display: flex; gap: 10px; padding: 12px 14px; border-radius: var(--radius); font-size: 14px; border: 1px solid var(--border); background: var(--surface-2); }
+.alert[hidden] { display: none; }
 .alert i[data-lucide], .alert svg.lucide { flex: none; margin-top: 2px; }
 .alert-warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
 .alert-info { background: var(--info-soft); border-color: color-mix(in srgb, var(--info) 30%, transparent); color: var(--info); }
@@ -688,7 +689,6 @@ details.acc .acc-body.cited-body {
 .timeline { display: flex; margin: 8px 0 4px; }
 .t-step { flex: 1; text-align: center; position: relative; }
 .t-step .t-dot {
-.alert[hidden] { display: none; }
   width: 28px; height: 28px; border-radius: 50%; margin: 0 auto 6px;
   display: flex; align-items: center; justify-content: center;
   background: var(--surface); border: 2px solid var(--border-strong); color: var(--ink-3);

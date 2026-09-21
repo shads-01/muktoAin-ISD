@@ -618,28 +618,6 @@ public class ChatService
         => draftType != null && CategoryByDraftType.TryGetValue(draftType.Trim(), out var id) ? id : null;
 
     private async Task<byte> ResolveDistrictIdAsync(string? districtValue)
-    {
-        if (string.IsNullOrWhiteSpace(districtValue)) return 0;
-        if (byte.TryParse(districtValue.Trim(), out var id)) return id;
-
-        var wanted = NormalizeDistrict(districtValue);
-        if (DistrictAliases.TryGetValue(wanted, out var official)) wanted = official;
-        return districts.FirstOrDefault(d => NormalizeDistrict(d.Name) == wanted)?.DistrictId ?? 0;
-    }
-
-    // Reads one top-level string slot from the case-file JSON, case-insensitively.
-    public static string? CaseFileString(string? caseFileJson, string key)
-    {
-        if (string.IsNullOrWhiteSpace(caseFileJson)) return null;
-        try
-        {
-            using var doc = JsonDocument.Parse(caseFileJson);
-            foreach (var p in doc.RootElement.EnumerateObject())
-            {
-                if (string.Equals(p.Name, key, StringComparison.OrdinalIgnoreCase)
-                    && p.Value.ValueKind == JsonValueKind.String)
-                    return p.Value.GetString();
-            }
         => MatchDistrictId(districtValue, await _districtRepo.GetAllAsync());
 
     // Older/alternate English spellings the model emits → the official spelling
@@ -671,6 +649,28 @@ public class ChatService
     }
 
     public static byte MatchDistrictId(string? districtValue, IEnumerable<District> districts)
+    {
+        if (string.IsNullOrWhiteSpace(districtValue)) return 0;
+        if (byte.TryParse(districtValue.Trim(), out var id)) return id;
+
+        var wanted = NormalizeDistrict(districtValue);
+        if (DistrictAliases.TryGetValue(wanted, out var official)) wanted = official;
+        return districts.FirstOrDefault(d => NormalizeDistrict(d.Name) == wanted)?.DistrictId ?? 0;
+    }
+
+    // Reads one top-level string slot from the case-file JSON, case-insensitively.
+    public static string? CaseFileString(string? caseFileJson, string key)
+    {
+        if (string.IsNullOrWhiteSpace(caseFileJson)) return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(caseFileJson);
+            foreach (var p in doc.RootElement.EnumerateObject())
+            {
+                if (string.Equals(p.Name, key, StringComparison.OrdinalIgnoreCase)
+                    && p.Value.ValueKind == JsonValueKind.String)
+                    return p.Value.GetString();
+            }
             return null;
         }
         catch
