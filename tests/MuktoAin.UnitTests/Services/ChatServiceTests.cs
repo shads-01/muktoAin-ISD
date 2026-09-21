@@ -183,6 +183,32 @@ public class ChatServiceTests
     }
 
     // Default envelope response for intake turns.
+    [Theory]
+    [InlineData("Chattogram", 10)]
+    [InlineData("Chittagong", 10)]
+    [InlineData("chittagong district", 10)]
+    [InlineData("Comilla", 13)]
+    [InlineData("Barisal", 4)]
+    [InlineData("Cox Bazar", 12)]
+    [InlineData("Chapai Nawabganj", 9)]
+    [InlineData("Dhaka", 14)]
+    [InlineData("14", 14)]
+    [InlineData("Atlantis", 0)]
+    [InlineData(null, 0)]
+    public void MatchDistrictId_AcceptsAlternateEnglishSpellings(string? value, int expected)
+    {
+        var districts = new[]
+        {
+            new District { DistrictId = 4, Name = "Barishal" },
+            new District { DistrictId = 9, Name = "Chapainawabganj" },
+            new District { DistrictId = 10, Name = "Chattogram" },
+            new District { DistrictId = 12, Name = "Cox's Bazar" },
+            new District { DistrictId = 13, Name = "Cumilla" },
+            new District { DistrictId = 14, Name = "Dhaka" },
+        };
+        Assert.Equal(expected, ChatService.MatchDistrictId(value, districts));
+    }
+
     internal void SetupEnvelope(string json)
         => _aiService.Setup(a => a.GenerateContentAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(json);
