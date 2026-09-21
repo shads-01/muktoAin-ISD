@@ -30,6 +30,7 @@ Due to file size and licensing, large statutory corpora and benchmark files are 
 - **Filename:** `data/bangladesh-legal-qa-dataset.json`
 - **Kaggle Link:** [kaggle.com/datasets/momahadi/bangladesh-legal-qa-dataset](https://www.kaggle.com/datasets/momahadi/bangladesh-legal-qa-dataset)
 - **Description:** 2,165 curated Bangladeshi legal QA pairs with ground-truth statutory section references used for evaluation benchmarks.
+- **Schema:** Rows mirror the published Hugging Face schema (`dataset_id`, `Act`, `Entry_ID`, `question_type`, `language`, `Question`, `Correct_Option`, `Possible Sections[]`, `Relevant Section`, `Section Number`, `Subsection/Clause`, `Section Text`, `IRAC_Reasoning`, `Answer`, `Type`, `Difficulty`, `Keywords`, `Cited Acts and Sections`, `source_file`, `quality_flag`, `quality_flag_reason`). The canonical C# mapping lives in `src/MuktoAin.Application/DTOs/BenchmarkDatasetRow.cs`; a committed 5-row sample with the same shape is at `data/benchmark/benchmark-sample.json` and is the loader's fallback when the full file is absent.
 
 ---
 

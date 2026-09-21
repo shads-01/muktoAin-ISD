@@ -1,0 +1,140 @@
+[
+  {
+    "dataset_id": 1,
+    "Act": "The Code of Civil Procedure, 1908",
+    "Entry_ID": 1,
+    "question_type": "bar_exam",
+    "language": "Bangla",
+    "Question": "The Code of Civil Procedure, 1908 এর ২(২) ধারা অনুসারে 'ডিক্রি' (Decree) এর অন্তর্ভুক্ত হবে নিচের কোনটি? (ক) মধ্যবর্তী লাভের (Mesne profits) আদেশ (খ) আদেশ হিসেবে আপিলযোগ্য কোনো সিদ্ধান্ত (গ) ডিফল্টের কারণে খারিজ করার কোনো আদেশ (ঘ) আরজি (Plaint) প্রত্যাখ্যান বা খারিজ করা",
+    "Question_No": "২",
+    "Correct_Option": "ঘ",
+    "Possible Sections": [
+      {
+        "Section Number": "The Code of Civil Procedure, 1908, Section 2(2)",
+        "Full Text": "\"ডিক্রি\" অর্থ একটি বিচারিক সিদ্ধান্তের আনুষ্ঠানিক অভিব্যক্তি যা পক্ষগুলির অধিকার চূড়ান্তভাবে নির্ধারণ করে।"
+      }
+    ],
+    "Relevant Section": "The Code of Civil Procedure, 1908, Section 2(2)",
+    "Section Number": "Section 2",
+    "Subsection/Clause": "(২)",
+    "Section Text": "\"ডিক্রি\" অর্থ একটি বিচারিক সিদ্ধান্তের আনুষ্ঠানিক অভিব্যক্তি যা পক্ষগুলির অধিকার চূড়ান্তভাবে নির্ধারণ করে।",
+    "IRAC_Reasoning": {
+      "Issue": "ডিক্রির সংজ্ঞার অধীনে আরজি প্রত্যাখ্যান অন্তর্ভুক্ত কি না?",
+      "Rule": { "Section 2(2)": "ডিক্রির সংজ্ঞায় প্লেইন্ট বা আরজি খারিজকে অন্তর্ভুক্ত করা হয়েছে।" },
+      "Application": "ধারা ২(২) সরাসরি প্রযোজ্য।",
+      "Conclusion": "সঠিক উত্তর (ঘ)।"
+    },
+    "Answer": "সঠিক উত্তর হলো (ঘ) আরজি (Plaint) প্রত্যাখ্যান বা খারিজ করা।",
+    "Type": "T03 — Definition / Concept Identification",
+    "Difficulty": "High",
+    "Keywords": ["ডিক্রি", "আরজি প্রত্যাখ্যান", "আইনি সংজ্ঞা"],
+    "Cited Acts and Sections": "The Code of Civil Procedure, 1908, Section 2(2)",
+    "source_file": "Q-As/Bangla/Code of civil procedure",
+    "quality_flag": false,
+    "quality_flag_reason": ""
+  },
+  {
+    "dataset_id": 2,
+    "Act": "Bangladesh Labour Act, 2006",
+    "Entry_ID": 7,
+    "question_type": "bar_exam",
+    "language": "English",
+    "Question": "Under the Bangladesh Labour Act, 2006, within how many working days after the end of the wage period must a worker's wages be paid? (a) 3 (b) 5 (c) 7 (d) 10",
+    "Question_No": "৭",
+    "Correct_Option": "c",
+    "Relevant Section": "Bangladesh Labour Act, 2006, Section 123",
+    "Section Number": "Section 123",
+    "Subsection/Clause": "(1)",
+    "Answer": "(c) 7 working days, per Section 123 of the Bangladesh Labour Act, 2006.",
+    "Type": "T05 — Numerical / Quantitative",
+    "Difficulty": "Medium",
+    "Keywords": ["wages", "payment deadline", "wage period"],
+    "Cited Acts and Sections": "Bangladesh Labour Act, 2006, Section 123",
+    "source_file": "Q-As/English/Bangladesh labour act",
+    "quality_flag": false,
+    "quality_flag_reason": ""
+  },
+  {
+    "dataset_id": 3,
+    "Act": "The Code of Civil Procedure, 1908",
+    "Entry_ID": 5,
+    "question_type": "bar_exam",
+    "language": "English",
+    "Question": "A, residing in Chattogram, goes to Dhaka and beats B. Where may B sue A? (a) Chattogram only (b) Dhaka or Chattogram, at B's option (c) Dhaka only (d) The High Court Division only",
+    "Question_No": "৫",
+    "Correct_Option": "b",
+    "Possible Sections": [
+      {
+        "Section Number": "The Code of Civil Procedure, 1908, Section 19",
+        "Full Text": "Where compensation is claimed for wrong to person or movable property, if the wrong was done within the local limits of one court's jurisdiction and the defendant resides or carries on business within the limits of another, the suit may be instituted in either court."
+      }
+    ],
+    "Relevant Section": "The Code of Civil Procedure, 1908, Section 19",
+    "Section Number": "Section 19",
+    "Subsection/Clause": "Illustration (ক)",
+    "Section Text": "যখন কোন মামলা ব্যক্তির ক্ষতির জন্য ক্ষতিপূরণের জন্য দায়ের করা হয়, যদি ক্ষতি এক আদালতের এখতিয়ারে এবং বিবাদী অন্য আদালতের এখতিয়ারে বসবাস করে, তখন মামলা বাদীর অপশনে যে কোনো একটি আদালতে দায়ের করা যাবে।",
+    "IRAC_Reasoning": {
+      "Issue": "ব্যক্তির ক্ষতির ক্ষেত্রে মামলা দায়েরের সঠিক স্থান কোনটি?",
+      "Rule": { "Section 19": "ব্যক্তি বা চল সম্পত্তির ক্ষতির মামলা যেখানে ক্ষতি হয়েছে অথবা বিবাদী বসবাস করে, সেখানে দায়ের করা যায়।" },
+      "Application": "প্রহার ঢাকায় হয়েছে, বিবাদী চট্টগ্রামে থাকে — উভয় স্থানই বৈধ।",
+      "Conclusion": "সঠিক উত্তর (খ)।"
+    },
+    "Answer": "(b) Dhaka or Chattogram, at B's option, per Section 19 of the Code of Civil Procedure, 1908.",
+    "Type": "T04 — Scenario / Fact Pattern Application",
+    "Difficulty": "High",
+    "Keywords": ["jurisdiction", "personal injury", "place of suing"],
+    "Cited Acts and Sections": "The Code of Civil Procedure, 1908, Section 19",
+    "source_file": "Q-As/English/Code of civil procedure",
+    "quality_flag": false,
+    "quality_flag_reason": ""
+  },
+  {
+    "dataset_id": 4,
+    "Act": "Bangladesh Labour Act, 2006",
+    "Entry_ID": 9,
+    "question_type": "bar_exam",
+    "language": "Bangla",
+    "Question": "",
+    "Question_No": "১১",
+    "Correct_Option": "ক",
+    "Relevant Section": "Bangladesh Labour Act, 2006, Section 150",
+    "Answer": "",
+    "source_file": "Q-As/Bangla/Bangladesh labour act",
+    "quality_flag": true,
+    "quality_flag_reason": "Empty question — intentionally malformed seed row"
+  },
+  {
+    "dataset_id": 5,
+    "Act": "Bangladesh Labour Act, 2006",
+    "Entry_ID": 10,
+    "question_type": "bar_exam",
+    "language": "Bangla",
+    "Question": "কর্মক্ষেত্রে দুর্ঘটনায় আহত হলে ক্ষতিপূরণের জন্য বাংলাদেশ শ্রম আইন, ২০০৬-এর কোন ধারা প্রযোজ্য?",
+    "Question_No": "৯",
+    "Correct_Option": "ক",
+    "Possible Sections": [
+      {
+        "Section Number": "Bangladesh Labour Act, 2006, Section 150",
+        "Full Text": "If personal injury is caused to a worker by accident arising out of and in the course of his employment, the employer shall be liable to pay compensation."
+      }
+    ],
+    "Relevant Section": "Bangladesh Labour Act, 2006, Section 150",
+    "Section Number": "Section 150",
+    "Subsection/Clause": "(1)",
+    "Section Text": "যদি কর্মক্ষেত্রে দুর্ঘটনাজনিত আঘাতে কর্মচারী আহত হয়, তবে নিয়োগকর্তা ক্ষতিপূরণ প্রদানে বাধ্য থাকবেন।",
+    "IRAC_Reasoning": {
+      "Issue": "কর্মক্ষেত্রে দুর্ঘটনায় আহত হলে ক্ষতিপূরণ পাওয়া যাবে কি না?",
+      "Rule": { "Section 150": "কর্মের সময়ে দুর্ঘটনাজনিত আঘাতের জন্য নিয়োগকর্তা ক্ষতিপূরণ দিতে বাধ্য।" },
+      "Application": "আঘাতটি কর্মের সময়ে ও কর্মক্ষেত্রে হয়েছে।",
+      "Conclusion": "১৫০ ধারা প্রযোজ্য।"
+    },
+    "Answer": "১৫০ ধারা প্রযোজ্য — কর্মক্ষেত্রে দুর্ঘটনাজনিত আঘাতের ক্ষতিপূরণ।",
+    "Type": "T12 — Remedy Identification",
+    "Difficulty": "Medium",
+    "Keywords": ["ক্ষতিপূরণ", "দুর্ঘটনা", "শ্রম আইন"],
+    "Cited Acts and Sections": "Bangladesh Labour Act, 2006, Section 150",
+    "source_file": "Q-As/Bangla/Bangladesh labour act",
+    "quality_flag": true,
+    "quality_flag_reason": "Reviewed"
+  }
+]
