@@ -1735,7 +1735,37 @@
         });
       });
       poll();
-      setInterval(poll, 30000);
+
+      // Real-time: the server pushes a content-free "notificationsChanged"
+      // signal (Hubs/NotificationHub) whenever this user's notifications
+      // change, and we re-fetch. Polling only runs while the socket is down
+      // (or if the SignalR client script failed to load).
+      var pollTimer = null;
+      function startPolling() { if (!pollTimer) pollTimer = setInterval(poll, 30000); }
+      function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+
+      if (!window.signalR) { startPolling(); return; }
+
+      var connection = new window.signalR.HubConnectionBuilder()
+        .withUrl("/hubs/notifications")
+        .withAutomaticReconnect()
+        .build();
+      connection.on("notificationsChanged", poll);
+      // catch up on anything missed while disconnected
+      connection.onreconnecting(startPolling);
+      connection.onreconnected(function () { stopPolling(); poll(); });
+
+      function connect() {
+        connection.start()
+          .then(function () { stopPolling(); poll(); })
+          .catch(function () {
+            // automatic reconnect only covers drops after a successful start
+            startPolling();
+            setTimeout(connect, 15000);
+          });
+      }
+      connection.onclose(function () { startPolling(); setTimeout(connect, 15000); });
+      connect();
     })();
 
     /* modals & bottom sheets */

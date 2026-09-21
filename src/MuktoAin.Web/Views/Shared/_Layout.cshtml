@@ -308,6 +308,14 @@
 
     <!-- Scripts -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        @* Real-time notification push (Hubs/NotificationHub). Optional: main.js
+           falls back to polling if this fails to load. *@
+        <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"
+                integrity="sha384-mU1xC5yC2LldSW74Rj1Ax8wPiLw/28V5eh51uKJMlBbRVsOtUYd4xyzNsgIAJARB"
+                crossorigin="anonymous"></script>
+    }
     <script src="~/assets/js/main.js" asp-append-version="true"></script>
 
     @* Single place that surfaces TempData["Success"/"Info"/"Error"] as a toast, on
