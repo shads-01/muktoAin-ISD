@@ -618,13 +618,44 @@ public class ChatService
         => draftType != null && CategoryByDraftType.TryGetValue(draftType.Trim(), out var id) ? id : null;
 
     private async Task<byte> ResolveDistrictIdAsync(string? districtValue)
+        => MatchDistrictId(districtValue, await _districtRepo.GetAllAsync());
+
+    // Older/alternate English spellings the model emits → the official spelling
+    // stored in DISTRICT.Name (both sides compared via NormalizeDistrict).
+    private static readonly Dictionary<string, string> DistrictAliases = new()
+    {
+        ["chittagong"] = "chattogram",
+        ["comilla"] = "cumilla",
+        ["barisal"] = "barishal",
+        ["bogra"] = "bogura",
+        ["jessore"] = "jashore",
+        ["jhalakathi"] = "jhalokathi",
+        ["jhalokati"] = "jhalokathi",
+        ["maulvibazar"] = "moulvibazar",
+        ["netrakona"] = "netrokona",
+        ["khagrachari"] = "khagrachhari",
+        ["laxmipur"] = "lakshmipur",
+        ["coxbazar"] = "coxsbazar",
+        ["habigonj"] = "habiganj",
+        ["jaipurhat"] = "joypurhat",
+    };
+
+    // Letters only, lowercased, without a trailing "district" — so "Cox's Bazar",
+    // "cox bazar" and "Chittagong District" all compare cleanly.
+    private static string NormalizeDistrict(string value)
+    {
+        var n = new string(value.Where(char.IsLetter).ToArray()).ToLowerInvariant();
+        return n.EndsWith("district") ? n[..^"district".Length] : n;
+    }
+
+    public static byte MatchDistrictId(string? districtValue, IEnumerable<District> districts)
     {
         if (string.IsNullOrWhiteSpace(districtValue)) return 0;
         if (byte.TryParse(districtValue.Trim(), out var id)) return id;
-        var districts = await _districtRepo.GetAllAsync();
-        return districts
-            .FirstOrDefault(d => d.Name.Equals(districtValue.Trim(), StringComparison.OrdinalIgnoreCase))
-            ?.DistrictId ?? 0;
+
+        var wanted = NormalizeDistrict(districtValue);
+        if (DistrictAliases.TryGetValue(wanted, out var official)) wanted = official;
+        return districts.FirstOrDefault(d => NormalizeDistrict(d.Name) == wanted)?.DistrictId ?? 0;
     }
 
     // Reads one top-level string slot from the case-file JSON, case-insensitively.

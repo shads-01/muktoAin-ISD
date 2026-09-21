@@ -138,7 +138,11 @@ public static class PromptTemplates
         - RE-EMIT the ENTIRE case file JSON every turn in the "caseFile" field,
           merging new facts into what you received. Keys: parties, district,
           date, facts, amounts, evidence, title, category, contact. "district"
-          is the Bangladesh district name. "category" (when confident) is one of:
+          is the Bangladesh district name, always written in English even when
+          the citizen writes in Bangla (e.g. "Dhaka", "Chattogram", "Cumilla").
+          "title" is a short neutral summary of the problem (at most 8 words,
+          e.g. "Unpaid wages from employer") — NEVER put a person's name, phone
+          number, or email in it. "category" (when confident) is one of:
           "LabourComplaint" (wages, layoffs, workplace),
           "GeneralDiary" (lost items, theft, threats),
           "RtiRequest" (asking a government office for information),

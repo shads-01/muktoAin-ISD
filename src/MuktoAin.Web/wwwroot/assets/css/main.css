@@ -566,6 +566,12 @@ a.card.click { color: var(--ink); }
 .field .err { font-size: 12.5px; color: var(--danger); display: none; }
 .field.invalid .err { display: block; }
 .field.invalid .input { border-color: var(--danger); }
+/* asp-validation-for adds .field-validation-error to the span when the server
+   rejects a field (e.g. duplicate email); without this the message stayed hidden. */
+.field .err.field-validation-error { display: block; font-weight: 600; }
+/* asp-validation-summary renders an empty box (class validation-summary-valid)
+   when there are no errors; hide it so .alert styling only shows real errors. */
+.validation-summary-valid { display: none !important; }
 .input, .textarea, select.input, .form-control, .form-select {
   width: 100%; min-height: 48px; padding: 11px 14px;
   border-radius: var(--radius-btn); border: 1px solid var(--border-strong);
@@ -611,6 +617,7 @@ select.input, .form-select { appearance: none; background-image: linear-gradient
 
 /* Alert strips */
 .alert { display: flex; gap: 10px; padding: 12px 14px; border-radius: var(--radius); font-size: 14px; border: 1px solid var(--border); background: var(--surface-2); }
+.alert[hidden] { display: none; }
 .alert i[data-lucide], .alert svg.lucide { flex: none; margin-top: 2px; }
 .alert-warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
 .alert-info { background: var(--info-soft); border-color: color-mix(in srgb, var(--info) 30%, transparent); color: var(--info); }

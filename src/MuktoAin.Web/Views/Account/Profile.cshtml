@@ -4,6 +4,8 @@
     var isLawyer = string.Equals(Model.Role, "Lawyer", StringComparison.OrdinalIgnoreCase);
     var isAdmin = string.Equals(Model.Role, "Admin", StringComparison.OrdinalIgnoreCase);
     var isCitizen = !isLawyer && !isAdmin;
+    var roleBn = isAdmin ? "সিস্টেম অ্যাডমিনিস্ট্রেটর" : isLawyer ? "আইনজীবী" : "সাধারণ নাগরিক";
+    var roleEn = isAdmin ? "System Administrator" : isLawyer ? "Advocate" : "Citizen";
 
     var initial = "U";
     if (!string.IsNullOrWhiteSpace(Model.FullName))
@@ -30,15 +32,15 @@
                     <h1 style="font-size: clamp(22px, 4vw, 30px); margin: 0; line-height: 1.2;">@Model.FullName</h1>
                     @if (isAdmin)
                     {
-                        <span class="badge badge-success" style="font-size: 13px; padding: 4px 10px;"><i data-lucide="shield" style="width: 14px; height: 14px; display: inline;"></i> সিস্টেম অ্যাডমিনিস্ট্রেটর</span>
+                        <span class="badge badge-success" style="font-size: 13px; padding: 4px 10px;"><i data-lucide="shield" style="width: 14px; height: 14px; display: inline;"></i> <span data-bn="সিস্টেম অ্যাডমিনিস্ট্রেটর" data-en="System Administrator">সিস্টেম অ্যাডমিনিস্ট্রেটর</span></span>
                     }
                     else if (isLawyer)
                     {
-                        <span class="badge badge-gold" style="font-size: 13px; padding: 4px 10px;"><i data-lucide="award" style="width: 14px; height: 14px; display: inline;"></i> বাংলাদেশ বার কাউন্সিল আইনজীবী</span>
+                        <span class="badge badge-gold" style="font-size: 13px; padding: 4px 10px;"><i data-lucide="award" style="width: 14px; height: 14px; display: inline;"></i> <span data-bn="বাংলাদেশ বার কাউন্সিল আইনজীবী" data-en="Bangladesh Bar Council Advocate">বাংলাদেশ বার কাউন্সিল আইনজীবী</span></span>
                     }
                     else
                     {
-                        <span class="badge badge-primary" style="font-size: 13px; padding: 4px 10px;"><i data-lucide="user-check" style="width: 14px; height: 14px; display: inline;"></i> নিবন্ধিত নাগরিক</span>
+                        <span class="badge badge-primary" style="font-size: 13px; padding: 4px 10px;"><i data-lucide="user-check" style="width: 14px; height: 14px; display: inline;"></i> <span data-bn="নিবন্ধিত নাগরিক" data-en="Registered Citizen">নিবন্ধিত নাগরিক</span></span>
                     }
                 </div>
                 <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap; color: var(--ink-2); font-size: 14px;">
@@ -47,8 +49,8 @@
                     {
                         <span><i data-lucide="phone" style="width: 15px; height: 15px; display: inline; vertical-align: text-bottom;"></i> @Model.CurrentPhoneNumber</span>
                     }
-                    <span><i data-lucide="calendar" style="width: 15px; height: 15px; display: inline; vertical-align: text-bottom;"></i> সদস্য পদ: @Model.CreatedAt.ToString("dd MMM yyyy")</span>
-                    <span><span class="badge badge-success" style="font-size: 11px;">স্ট্যাটাস: @(Model.AccountStatus == "Active" ? "সক্রিয় / Active" : Model.AccountStatus)</span></span>
+                    <span><i data-lucide="calendar" style="width: 15px; height: 15px; display: inline; vertical-align: text-bottom;"></i> <span data-bn="সদস্য পদ:" data-en="Member since:">সদস্য পদ:</span> @Model.CreatedAt.ToString("dd MMM yyyy")</span>
+                    <span><span class="badge badge-success" style="font-size: 11px;"><span data-bn="স্ট্যাটাস:" data-en="Status:">স্ট্যাটাস:</span> @if (Model.AccountStatus == "Active") { <span data-bn="সক্রিয়" data-en="Active">সক্রিয়</span> } else { <text>@Model.AccountStatus</text> }</span></span>
                 </div>
             </div>
         </div>
@@ -60,8 +62,8 @@
         <!-- Left: Editable & Uneditable Profile Information -->
         <div class="card" style="padding: 24px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-                <h2 style="font-size: 19px; margin: 0;"><i data-lucide="user-cog" style="display: inline; vertical-align: middle; color: var(--gold);"></i> প্রোফাইল ও অ্যাকাউন্ট তথ্য</h2>
-                <span class="muted tiny">সবুজ ফিল্ডগুলো সম্পাদনাযোগ্য</span>
+                <h2 style="font-size: 19px; margin: 0;"><i data-lucide="user-cog" style="display: inline; vertical-align: middle; color: var(--gold);"></i> <span data-bn="প্রোফাইল ও অ্যাকাউন্ট তথ্য" data-en="Profile &amp; Account Details">প্রোফাইল ও অ্যাকাউন্ট তথ্য</span></h2>
+                <span class="muted tiny" data-bn="সবুজ ফিল্ডগুলো সম্পাদনাযোগ্য" data-en="Green fields are editable">সবুজ ফিল্ডগুলো সম্পাদনাযোগ্য</span>
             </div>
 
             <form asp-controller="Account" asp-action="Profile" method="post">
@@ -71,8 +73,8 @@
                 <!-- Uneditable: Email -->
                 <div class="form-group" style="margin-bottom: 16px;">
                     <label class="form-label" style="display: flex; justify-content: space-between;">
-                        <span>লগইন ইমেইল (Login Email)</span>
-                        <span class="muted tiny" style="color: var(--primary);"><i data-lucide="lock" style="width: 12px; height: 12px; display: inline;"></i> পরিবর্তনযোগ্য নয়</span>
+                        <span data-bn="লগইন ইমেইল" data-en="Login Email">লগইন ইমেইল</span>
+                        <span class="muted tiny" style="color: var(--primary);"><i data-lucide="lock" style="width: 12px; height: 12px; display: inline;"></i> <span data-bn="পরিবর্তনযোগ্য নয়" data-en="Not editable">পরিবর্তনযোগ্য নয়</span></span>
                     </label>
                     <input type="email" class="form-control" value="@Model.Email" readonly disabled style="background: rgba(0,0,0,0.04); cursor: not-allowed; font-family: monospace;" />
                 </div>
@@ -80,10 +82,10 @@
                 <!-- Uneditable: Role -->
                 <div class="form-group" style="margin-bottom: 16px;">
                     <label class="form-label" style="display: flex; justify-content: space-between;">
-                        <span>অ্যাকাউন্ট ভূমিকা (Account Role)</span>
-                        <span class="muted tiny" style="color: var(--primary);"><i data-lucide="shield-check" style="width: 12px; height: 12px; display: inline;"></i> সিস্টেম নিয়ন্ত্রিত</span>
+                        <span data-bn="অ্যাকাউন্ট ভূমিকা" data-en="Account Role">অ্যাকাউন্ট ভূমিকা</span>
+                        <span class="muted tiny" style="color: var(--primary);"><i data-lucide="shield-check" style="width: 12px; height: 12px; display: inline;"></i> <span data-bn="সিস্টেম নিয়ন্ত্রিত" data-en="System managed">সিস্টেম নিয়ন্ত্রিত</span></span>
                     </label>
-                    <input type="text" class="form-control" value="@(isAdmin ? "সিস্টেম অ্যাডমিনিস্ট্রেটর (Admin)" : isLawyer ? "আইনজীবী (Advocate)" : "সাধারণ নাগরিক (Citizen)")" readonly disabled style="background: rgba(0,0,0,0.04); cursor: not-allowed;" />
+                    <input type="text" class="form-control" value="@roleBn" data-bn-value="@roleBn" data-en-value="@roleEn" readonly disabled style="background: rgba(0,0,0,0.04); cursor: not-allowed;" />
                 </div>
 
                 <!-- Lawyer-Specific Uneditable Credentials -->
@@ -91,22 +93,22 @@
                 {
                     <div class="form-group" style="margin-bottom: 16px;">
                         <label class="form-label" style="display: flex; justify-content: space-between;">
-                            <span>বার কাউন্সিল সনদ নম্বর (Bar Registration No)</span>
-                            <span class="muted tiny" style="color: var(--primary);"><i data-lucide="award" style="width: 12px; height: 12px; display: inline;"></i> যাচাইকৃত রেকর্ড</span>
+                            <span data-bn="বার কাউন্সিল সনদ নম্বর" data-en="Bar Registration No.">বার কাউন্সিল সনদ নম্বর</span>
+                            <span class="muted tiny" style="color: var(--primary);"><i data-lucide="award" style="width: 12px; height: 12px; display: inline;"></i> <span data-bn="যাচাইকৃত রেকর্ড" data-en="Verified record">যাচাইকৃত রেকর্ড</span></span>
                         </label>
                         <input type="text" class="form-control" value="@Model.BarRegistrationNumber" readonly disabled style="background: rgba(0,0,0,0.04); cursor: not-allowed; font-weight: 700; color: #4a3812;" />
                     </div>
 
                     <div class="form-group" style="margin-bottom: 16px;">
-                        <label class="form-label">অ্যাডমিন ভেরিফিকেশন স্ট্যাটাস</label>
+                        <label class="form-label" data-bn="অ্যাডমিন ভেরিফিকেশন স্ট্যাটাস" data-en="Admin Verification Status">অ্যাডমিন ভেরিফিকেশন স্ট্যাটাস</label>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             @if (Model.VerificationStatus == "Verified" || Model.VerificationStatus == "Approved")
                             {
-                                <span class="badge badge-success"><i data-lucide="check-circle" style="width: 14px; height: 14px; display: inline;"></i> যাচাইকরণ সম্পন্ন (Verified by Admin)</span>
+                                <span class="badge badge-success"><i data-lucide="check-circle" style="width: 14px; height: 14px; display: inline;"></i> <span data-bn="যাচাইকরণ সম্পন্ন" data-en="Verified by Admin">যাচাইকরণ সম্পন্ন</span></span>
                             }
                             else
                             {
-                                <span class="badge badge-gold"><i data-lucide="clock" style="width: 14px; height: 14px; display: inline;"></i> পর্যালোচনার অপেক্ষায় (Pending Verification)</span>
+                                <span class="badge badge-gold"><i data-lucide="clock" style="width: 14px; height: 14px; display: inline;"></i> <span data-bn="পর্যালোচনার অপেক্ষায়" data-en="Pending Verification">পর্যালোচনার অপেক্ষায়</span></span>
                             }
                         </div>
                     </div>
@@ -116,15 +118,15 @@
 
                 <!-- Editable: Full Name -->
                 <div class="form-group" style="margin-bottom: 16px;">
-                    <label asp-for="FullName" class="form-label">পূর্ণ নাম (Full Name) <span style="color: var(--primary);">*</span></label>
-                    <input asp-for="FullName" class="form-control" placeholder="আপনার পূর্ণ নাম লিখুন" required />
+                    <label asp-for="FullName" class="form-label"><span data-bn="পূর্ণ নাম" data-en="Full Name">পূর্ণ নাম</span> <span style="color: var(--primary);">*</span></label>
+                    <input asp-for="FullName" class="form-control" placeholder="আপনার পূর্ণ নাম লিখুন" data-bn-placeholder="আপনার পূর্ণ নাম লিখুন" data-en-placeholder="Enter your full name" required />
                     <span asp-validation-for="FullName" class="text-danger" style="font-size: 13px;"></span>
                 </div>
 
                 <!-- Editable: Phone Number -->
                 <div class="form-group" style="margin-bottom: 16px;">
-                    <label asp-for="PhoneNumber" class="form-label">মোবাইল / ফোন নম্বর (Phone Number)</label>
-                    <input asp-for="PhoneNumber" class="form-control" placeholder="০১XXXXXXXXX" />
+                    <label asp-for="PhoneNumber" class="form-label" data-bn="মোবাইল / ফোন নম্বর" data-en="Mobile / Phone Number">মোবাইল / ফোন নম্বর</label>
+                    <input asp-for="PhoneNumber" class="form-control" placeholder="০১XXXXXXXXX" data-bn-placeholder="০১XXXXXXXXX" data-en-placeholder="01XXXXXXXXX" />
                     <span asp-validation-for="PhoneNumber" class="text-danger" style="font-size: 13px;"></span>
                 </div>
 
@@ -132,29 +134,29 @@
                 @if (isLawyer)
                 {
                     <div class="form-group" style="margin-bottom: 16px;">
-                        <label asp-for="Specialization" class="form-label">বিশেষজ্ঞতার ক্ষেত্র (Legal Specialization)</label>
-                        <input asp-for="Specialization" class="form-control" placeholder="উদাঃ শ্রম আইন, ফৌজদারি, দেওয়ানি, ভোক্তা অধিকার" />
-                        <span class="muted tiny">উদাঃ শ্রম আইন (Labour Law), ফৌজদারি ও সাইবার নিরাপত্তা (Criminal & Cyber), ইত্যাদি</span>
+                        <label asp-for="Specialization" class="form-label" data-bn="বিশেষজ্ঞতার ক্ষেত্র" data-en="Legal Specialization">বিশেষজ্ঞতার ক্ষেত্র</label>
+                        <input asp-for="Specialization" class="form-control" placeholder="উদাঃ শ্রম আইন, ফৌজদারি, দেওয়ানি, ভোক্তা অধিকার" data-bn-placeholder="উদাঃ শ্রম আইন, ফৌজদারি, দেওয়ানি, ভোক্তা অধিকার" data-en-placeholder="e.g. Labour, Criminal, Civil, Consumer Rights" />
+                        <span class="muted tiny" data-bn="উদাঃ শ্রম আইন, ফৌজদারি ও সাইবার নিরাপত্তা, ইত্যাদি" data-en="e.g. Labour Law, Criminal &amp; Cyber Security, etc.">উদাঃ শ্রম আইন, ফৌজদারি ও সাইবার নিরাপত্তা, ইত্যাদি</span>
                     </div>
 
                     <div class="form-group" style="margin-bottom: 16px;">
-                        <label asp-for="ChamberAddress" class="form-label">চেম্বার / অফিসের ঠিকানা (Chamber Address)</label>
-                        <input asp-for="ChamberAddress" class="form-control" placeholder="উদাঃ রুম ২০৪, সুপ্রিম কোর্ট বার ভবন, ঢাকা" />
+                        <label asp-for="ChamberAddress" class="form-label" data-bn="চেম্বার / অফিসের ঠিকানা" data-en="Chamber / Office Address">চেম্বার / অফিসের ঠিকানা</label>
+                        <input asp-for="ChamberAddress" class="form-control" placeholder="উদাঃ রুম ২০৪, সুপ্রিম কোর্ট বার ভবন, ঢাকা" data-bn-placeholder="উদাঃ রুম ২০৪, সুপ্রিম কোর্ট বার ভবন, ঢাকা" data-en-placeholder="e.g. Room 204, Supreme Court Bar Building, Dhaka" />
                     </div>
                 }
 
                 <!-- Editable: Preferred Language -->
                 <div class="form-group" style="margin-bottom: 24px;">
-                    <label asp-for="PreferredLanguage" class="form-label">পছন্দের ভাষা (Preferred Interface Language)</label>
+                    <label asp-for="PreferredLanguage" class="form-label" data-bn="পছন্দের ভাষা" data-en="Preferred Interface Language">পছন্দের ভাষা</label>
                     <select asp-for="PreferredLanguage" id="PreferredLanguage" class="form-control">
                         <option value="bn">বাংলা (Bengali)</option>
                         <option value="en">English (ইংরেজি)</option>
                     </select>
-                    <span class="muted tiny">নির্বাচন করলেই সাথে সাথে পুরো সাইটের ভাষা পরিবর্তন হবে / Switches the whole site's language immediately</span>
+                    <span class="muted tiny" data-bn="নির্বাচন করলেই সাথে সাথে পুরো সাইটের ভাষা পরিবর্তন হবে" data-en="Switches the whole site's language immediately">নির্বাচন করলেই সাথে সাথে পুরো সাইটের ভাষা পরিবর্তন হবে</span>
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i data-lucide="save"></i> প্রোফাইল তথ্য সংরক্ষণ করুন (Save Changes)
+                    <i data-lucide="save"></i> <span data-bn="প্রোফাইল তথ্য সংরক্ষণ করুন" data-en="Save Changes">প্রোফাইল তথ্য সংরক্ষণ করুন</span>
                 </button>
             </form>
         </div>
@@ -167,42 +169,42 @@
                 <!-- Role Overview Card -->
                 <div class="card" style="padding: 24px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-                        <h2 style="font-size: 18px; margin: 0;"><i data-lucide="activity" style="display: inline; vertical-align: middle; color: var(--gold);"></i> কাজের বিবরণী ও দ্রুত লিঙ্ক</h2>
+                        <h2 style="font-size: 18px; margin: 0;"><i data-lucide="activity" style="display: inline; vertical-align: middle; color: var(--gold);"></i> <span data-bn="কাজের বিবরণী ও দ্রুত লিঙ্ক" data-en="Activity &amp; Quick Links">কাজের বিবরণী ও দ্রুত লিঙ্ক</span></h2>
                     </div>
 
                     @if (isLawyer)
                     {
-                        <p style="font-size: 14px; color: var(--ink-2); margin-bottom: 14px;">
+                        <p style="font-size: 14px; color: var(--ink-2); margin-bottom: 14px;" data-bn="নাগরিকদের এআই প্রস্তুতকৃত আইনি ড্রাফটগুলো আপনার পর্যালোচনার মাধ্যমে চূড়ান্ত আইনি বৈধতা ও PDF ডাউনলোডযোগ্যতা পায়।" data-en="Citizens' AI-prepared legal drafts gain final legal validity and PDF download eligibility through your review.">
                             নাগরিকদের এআই প্রস্তুতকৃত আইনি ড্রাফটগুলো আপনার পর্যালোচনার মাধ্যমে চূড়ান্ত আইনি বৈধতা ও PDF ডাউনলোডযোগ্যতা পায়।
                         </p>
                         <div style="background: rgba(146, 116, 56, 0.08); padding: 14px; border-radius: var(--radius-btn); border: 1px solid var(--gold-soft); margin-bottom: 16px;">
-                            <div style="font-size: 13px; color: #4a3812; font-weight: 700;">স্বীকৃত আইনি দায়িত্ব (Human-in-the-Loop Safeguard)</div>
-                            <div style="font-size: 12.5px; color: var(--ink-2); margin-top: 4px;">আইনজীবী হিসেবে আপনার প্রতিটি অনুমোদন সরাসরি কোর্ট ও থানার ফরম্যাটে কার্যকর হয়।</div>
+                            <div style="font-size: 13px; color: #4a3812; font-weight: 700;" data-bn="স্বীকৃত আইনি দায়িত্ব" data-en="Human-in-the-Loop Safeguard">স্বীকৃত আইনি দায়িত্ব</div>
+                            <div style="font-size: 12.5px; color: var(--ink-2); margin-top: 4px;" data-bn="আইনজীবী হিসেবে আপনার প্রতিটি অনুমোদন সরাসরি কোর্ট ও থানার ফরম্যাটে কার্যকর হয়।" data-en="As an advocate, each of your approvals takes effect directly in court and police-station formats.">আইনজীবী হিসেবে আপনার প্রতিটি অনুমোদন সরাসরি কোর্ট ও থানার ফরম্যাটে কার্যকর হয়।</div>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 10px;">
                             <a asp-controller="Lawyer" asp-action="Queue" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                <i data-lucide="file-check-2"></i> আইনজীবী রিভিউ কিউতে যান (Go to Queue)
+                                <i data-lucide="file-check-2"></i> <span data-bn="আইনজীবী রিভিউ কিউতে যান" data-en="Go to Review Queue">আইনজীবী রিভিউ কিউতে যান</span>
                             </a>
                             <a asp-controller="Lawyer" asp-action="History" class="btn btn-outline btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                <i data-lucide="history"></i> রিভিউ ইতিহাস (Review History)
+                                <i data-lucide="history"></i> <span data-bn="রিভিউ ইতিহাস" data-en="Review History">রিভিউ ইতিহাস</span>
                             </a>
                             <a asp-controller="Lawyer" asp-action="Payments" class="btn btn-outline btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                <i data-lucide="wallet"></i> আয় ও পেমেন্ট (Payments)
+                                <i data-lucide="wallet"></i> <span data-bn="আয় ও পেমেন্ট" data-en="Earnings &amp; Payments">আয় ও পেমেন্ট</span>
                             </a>
                         </div>
                     }
                     else
                     {
-                        <p style="font-size: 14px; color: var(--ink-2); margin-bottom: 14px;">
+                        <p style="font-size: 14px; color: var(--ink-2); margin-bottom: 14px;" data-bn="আপনার দায়েরকৃত আইনি সমস্যাসমূহ এবং আইনজীবী দ্বারা পর্যালোচিত ড্রাফটসমূহ সহজে ট্র্যাক করুন।" data-en="Easily track the legal issues you have filed and drafts reviewed by lawyers.">
                             আপনার দায়েরকৃত আইনি সমস্যাসমূহ এবং আইনজীবী দ্বারা পর্যালোচিত ড্রাফটসমূহ সহজে ট্র্যাক করুন।
                         </p>
                         <div style="display: flex; flex-direction: column; gap: 10px;">
                             <a asp-controller="Case" asp-action="Track" class="btn btn-outline" style="display: flex; align-items: center; justify-content: space-between;">
-                                <span><i data-lucide="folder-clock" style="display: inline; vertical-align: middle;"></i> আমার দায়েরকৃত মামলাসমূহ</span>
+                                <span><i data-lucide="folder-clock" style="display: inline; vertical-align: middle;"></i> <span data-bn="আমার দায়েরকৃত মামলাসমূহ" data-en="My Filed Cases">আমার দায়েরকৃত মামলাসমূহ</span></span>
                                 <i data-lucide="chevron-right"></i>
                             </a>
                             <a asp-controller="Case" asp-action="Submit" class="btn btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                <i data-lucide="plus-circle"></i> নতুন আইনি সমস্যা জমা দিন (Intake)
+                                <i data-lucide="plus-circle"></i> <span data-bn="নতুন আইনি সমস্যা জমা দিন" data-en="Submit a New Legal Issue">নতুন আইনি সমস্যা জমা দিন</span>
                             </a>
                         </div>
                     }
@@ -212,30 +214,30 @@
             <!-- Password Change Card -->
             <div class="card" style="padding: 24px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-                    <h2 style="font-size: 18px; margin: 0;"><i data-lucide="key-round" style="display: inline; vertical-align: middle; color: var(--gold);"></i> পাসওয়ার্ড ও নিরাপত্তা</h2>
+                    <h2 style="font-size: 18px; margin: 0;"><i data-lucide="key-round" style="display: inline; vertical-align: middle; color: var(--gold);"></i> <span data-bn="পাসওয়ার্ড ও নিরাপত্তা" data-en="Security &amp; Password">পাসওয়ার্ড ও নিরাপত্তা</span></h2>
                 </div>
 
                 <form asp-controller="Account" asp-action="ChangePassword" method="post">
                     @Html.AntiForgeryToken()
                     
                     <div class="form-group" style="margin-bottom: 14px;">
-                        <label class="form-label">বর্তমান পাসওয়ার্ড (Current Password)</label>
+                        <label class="form-label" data-bn="বর্তমান পাসওয়ার্ড" data-en="Current Password">বর্তমান পাসওয়ার্ড</label>
                         <input name="CurrentPassword" type="password" class="form-control" required placeholder="••••••••" />
                     </div>
 
                     <div class="form-group" style="margin-bottom: 14px;">
-                        <label class="form-label">নতুন পাসওয়ার্ড (New Password)</label>
+                        <label class="form-label" data-bn="নতুন পাসওয়ার্ড" data-en="New Password">নতুন পাসওয়ার্ড</label>
                         <input name="NewPassword" type="password" class="form-control" required placeholder="••••••••" />
-                        <span class="muted tiny">কমপক্ষে ৮ অক্ষর (বড় ও ছোট হাতের অক্ষর, সংখ্যা ও স্পেশাল চিহ্ন)</span>
+                        <span class="muted tiny" data-bn="কমপক্ষে ৮ অক্ষর (বড় ও ছোট হাতের অক্ষর, সংখ্যা ও স্পেশাল চিহ্ন)" data-en="At least 8 characters (upper and lower case letters, a number and a special character)">কমপক্ষে ৮ অক্ষর (বড় ও ছোট হাতের অক্ষর, সংখ্যা ও স্পেশাল চিহ্ন)</span>
                     </div>
 
                     <div class="form-group" style="margin-bottom: 18px;">
-                        <label class="form-label">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
+                        <label class="form-label" data-bn="নতুন পাসওয়ার্ড নিশ্চিত করুন" data-en="Confirm New Password">নতুন পাসওয়ার্ড নিশ্চিত করুন</label>
                         <input name="ConfirmNewPassword" type="password" class="form-control" required placeholder="••••••••" />
                     </div>
 
                     <button type="submit" class="btn btn-outline" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i data-lucide="shield-check"></i> পাসওয়ার্ড আপডেট করুন
+                        <i data-lucide="shield-check"></i> <span data-bn="পাসওয়ার্ড আপডেট করুন" data-en="Update Password">পাসওয়ার্ড আপডেট করুন</span>
                     </button>
                 </form>
 
