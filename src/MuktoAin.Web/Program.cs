@@ -242,9 +242,12 @@ builder.Services.AddSingleton<DisclaimerInjector>();
 // application name. Without this, every container redeploy rotates the key
 // (the default path is ephemeral in the shipped Dockerfile) and encrypted
 // Case.Title/Description become permanently unreadable ciphertext.
+// DataProtection:KeysPath moves the ring outside the content root for hosts
+// that replace it on deploy (Azure App Service: /home/data/keys).
 builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(
-        new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "keys")))
+    .PersistKeysToFileSystem(new DirectoryInfo(DataProtectionKeysPath.Resolve(
+        builder.Configuration["DataProtection:KeysPath"],
+        builder.Environment.ContentRootPath)))
     .SetApplicationName("MuktoAin.Web");
 builder.Services.AddScoped<IEncryptionService, EncryptionService>();
 
