@@ -451,6 +451,14 @@
       el.setAttribute("title", currentLang === "en" ? el.getAttribute("data-en-title") : el.getAttribute("data-bn-title"));
     });
 
+    // 2d. Bilingual input placeholders and read-only display values.
+    document.querySelectorAll("[data-bn-placeholder][data-en-placeholder]").forEach(function (el) {
+      el.setAttribute("placeholder", currentLang === "en" ? el.getAttribute("data-en-placeholder") : el.getAttribute("data-bn-placeholder"));
+    });
+    document.querySelectorAll("[data-bn-value][data-en-value]").forEach(function (el) {
+      el.value = currentLang === "en" ? el.getAttribute("data-en-value") : el.getAttribute("data-bn-value");
+    });
+
     // 3. Navbar navigation links (Preserving logo brand!)
     var navMap = [
       { sel: '.nav-links a[href="/"], .nav-links a[href=""]', text: dict["nav-legal-aid"], icon: "message-square" },
@@ -1142,16 +1150,7 @@
       // User Profile Page
       var crumbProfile = document.querySelector(".breadcrumbs span:last-child");
       if (crumbProfile) crumbProfile.textContent = currentLang === "en" ? "Account Profile" : "অ্যাকাউন্ট প্রোফাইল";
-
-      var formTitle = document.querySelector(".card h2 i[data-lucide='user-cog']");
-      if (formTitle && formTitle.parentElement) {
-        formTitle.parentElement.innerHTML = '<i data-lucide="user-cog" style="display:inline;vertical-align:middle;color:var(--gold);"></i> ' + (currentLang === "en" ? "Profile & Account Details" : "প্রোফাইল ও অ্যাকাউন্ট তথ্য");
-      }
-
-      var passTitle = document.querySelector(".card h2 i[data-lucide='key-round']");
-      if (passTitle && passTitle.parentElement) {
-        passTitle.parentElement.innerHTML = '<i data-lucide="key-round" style="display:inline;vertical-align:middle;color:var(--gold);"></i> ' + (currentLang === "en" ? "Security & Password" : "পাসওয়ার্ড ও নিরাপত্তা");
-      }
+      // Remaining profile copy is driven by data-bn/data-en attributes in the view.
 
     } else if (path.indexOf("/account/login") !== -1) {
       // Login Page
