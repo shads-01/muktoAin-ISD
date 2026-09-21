@@ -11,7 +11,7 @@ namespace MuktoAin.Application.Documents.Templates;
 /// Follows the format specified in Arpita_plan.md Step 2.3 —
 /// structured complaint under the Bangladesh Labour Act, 2006.
 /// </summary>
-public class LabourComplaintTemplate : IDocumentTemplate
+public class LabourComplaintTemplate : IDocumentTemplate, IBanglaDocumentVariant
 {
     public DocumentType DocumentType => DocumentType.LabourComplaint;
 
@@ -106,5 +106,83 @@ public class LabourComplaintTemplate : IDocumentTemplate
         sb.AppendLine(new string('═', 60));
 
         return Task.FromResult(sb.ToString());
+    }
+
+    public async Task<string> RenderBanglaOnlyAsync(Case caseEntity, RightsExplanationDto explanation)
+    {
+        var districtName = caseEntity.District?.Name;
+        var sb = new StringBuilder();
+
+        // ── Header ──────────────────────────────────────────────
+        sb.AppendLine("বরাবর");
+        sb.AppendLine("শ্রম পরিদপ্তর / জেলা শ্রম আদালত");
+        sb.AppendLine($"{districtName ?? BanglaOnlyRender.Placeholder}, বাংলাদেশ");
+        sb.AppendLine();
+
+        // ── Subject ─────────────────────────────────────────────
+        var primarySection = explanation.CitedSections.FirstOrDefault();
+        var sectionRef = primarySection != null
+            ? $"ধারা {primarySection.SectionNumber} (বাংলাদেশ শ্রম আইন, ২০০৬)-এর অধীনে"
+            : "বাংলাদেশ শ্রম আইন, ২০০৬-এর অধীনে";
+        sb.AppendLine($"বিষয়: {sectionRef} অভিযোগ");
+        sb.AppendLine();
+
+        // ── Salutation ──────────────────────────────────────────
+        sb.AppendLine("মহোদয়,");
+        sb.AppendLine();
+
+        // ── Complainant Introduction ────────────────────────────
+        sb.AppendLine($"আমি, স্বাক্ষরকারী, {districtName ?? BanglaOnlyRender.Placeholder}-এর বাসিন্দা, " +
+                       "বাংলাদেশ শ্রম আইন, ২০০৬-এর নিম্নলিখিত লঙ্ঘনের বিষয়ে এই অভিযোগ জমা দিচ্ছি:");
+        sb.AppendLine();
+
+        // ── Facts ───────────────────────────────────────────────
+        sb.AppendLine("মামলার ঘটনাবলি:");
+        sb.AppendLine(BanglaOnlyRender.Rule);
+        sb.AppendLine(caseEntity.Description);
+        sb.AppendLine();
+
+        // ── Legal provisions ────────────────────────────────────
+        sb.AppendLine("প্রযোজ্য আইনি বিধান:");
+        sb.AppendLine(BanglaOnlyRender.Rule);
+        if (explanation.CitedSections.Count > 0)
+        {
+            foreach (var section in explanation.CitedSections)
+            {
+                sb.AppendLine($"• {section.ActTitle}, ধারা {section.SectionNumber}:");
+                sb.AppendLine($"  {section.SectionText}");
+                sb.AppendLine();
+            }
+        }
+        else
+        {
+            sb.AppendLine("  [নির্দিষ্ট কোনো ধারা পাওয়া যায়নি — একজন যোগ্য আইনজীবীর পরামর্শ নিন]");
+            sb.AppendLine();
+        }
+
+        // ── Rights explanation ──────────────────────────────────
+        if (!string.IsNullOrWhiteSpace(explanation.Explanation))
+        {
+            sb.AppendLine("প্রযোজ্য আইনে আপনার অধিকার:");
+            sb.AppendLine(BanglaOnlyRender.Rule);
+            sb.AppendLine(explanation.Explanation);
+            sb.AppendLine();
+        }
+
+        // ── Relief ──────────────────────────────────────────────
+        sb.AppendLine("প্রার্থিত প্রতিকার:");
+        sb.AppendLine(BanglaOnlyRender.Rule);
+        sb.AppendLine("উপরোক্ত ঘটনা ও উদ্ধৃত আইনি বিধানের ভিত্তিতে, অভিযোগকারী ক্ষতিপূরণ, " +
+                       "পুনর্বহাল এবং/অথবা মাননীয় আদালত যথাযথ মনে করেন এমন অন্য যেকোনো প্রতিকার প্রার্থনা করছেন।");
+        sb.AppendLine();
+
+        // ── Declaration ─────────────────────────────────────────
+        sb.AppendLine("ঘোষণা:");
+        sb.AppendLine(BanglaOnlyRender.Rule);
+        sb.AppendLine("আমি এই মর্মে ঘোষণা করছি যে, উপরোক্ত তথ্য আমার জানামতে ও বিশ্বাসমতে সম্পূর্ণ সত্য ও সঠিক। " +
+                       "মিথ্যা বিবৃতি প্রদানের ফলে আইনগত পরিণতি হতে পারে তা আমি অবগত।");
+        sb.AppendLine();
+
+        return BanglaOnlyRender.AppendClosing(sb, "অভিযোগকারী", districtName);
     }
 }

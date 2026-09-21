@@ -1169,14 +1169,14 @@ NO UNRESOLVED DECISIONS
 
 ### New Tasks (Line Rebalancing)
 
-#### A-3.7: Comprehensive API Integration Test Suite
+#### A-3.7: Comprehensive API Integration Test Suite [COMPLETED]
 
 > `[Blocked by: A-2.1, A-2.4, E-3.4]`
 
-1. Create integration tests for Document, Case, and Payment controller endpoints.
-2. Use `WebApplicationFactory<Program>` with test DB.
-3. Cover: happy path CRUD, authorization checks, edge cases.
-4. Target: ~1,000 lines of test code.
+1. Create integration tests for Document, Case, and Payment controller endpoints. (Completed - WebHostSmokeTests, DocumentApiTests, CaseApiTests, PaymentApiTests)
+2. Use `WebApplicationFactory<Program>` with test DB. (Completed - MuktoAinWebApplicationFactory with TestAuthHandler, AntiForgery, offline AI stubs)
+3. Cover: happy path CRUD, authorization checks, edge cases. (Completed - 26 API tests covering full lifecycle, antiforgery, IDOR, admin override)
+4. Target: ~1,000 lines of test code. (Completed - ~1,100 lines across 4 test classes + helpers)
 
 #### A-3.8: `docs/user-guide.md` (Citizen, Lawyer, Admin Workflows)
 
@@ -1187,13 +1187,13 @@ NO UNRESOLVED DECISIONS
 2. Include step-by-step instructions with placeholder screenshots.
 3. Target: ~800 lines.
 
-#### A-3.9: Extended Document Template Variants (Bangla-Only + Tests)
+#### A-3.9: Extended Document Template Variants (Bangla-Only + Tests) [COMPLETED]
 
 > `[Blocked by: A-3.1]`
 
-1. Add Bangla-only rendering variants for all 4 templates (no English interleaving).
-2. Add unit tests for Bangla-only output, mixed-language fallback, and edge cases.
-3. Target: ~700 lines.
+1. Add Bangla-only rendering variants for all 4 templates (no English interleaving). (Completed - IBanglaDocumentVariant implemented across Labour, GD, RTI, and Consumer templates)
+2. Add unit tests for Bangla-only output, mixed-language fallback, and edge cases. (Completed - 22 unit tests in BanglaOnlyTemplateTests, DocumentGenerator/DocumentService language routing verified)
+3. Target: ~700 lines. (Completed - ~750 lines across templates, generator, and test suite)
 
 #### A-3.10: `docs/testing-report.md` (Test Coverage & Methodology)
 
@@ -1204,15 +1204,15 @@ NO UNRESOLVED DECISIONS
    - How to run the full suite
 2. Target: ~500 lines.
 
-#### A-3.11: Input Validation Hardening Across All Forms
+#### A-3.11: Input Validation Hardening Across All Forms [COMPLETED]
 
 > `[Blocked by: E-3.4]`
 
-1. Add server-side `[Required]`, `[StringLength]`, `[RegularExpression]` to all ViewModels.
-2. Add client-side validation scripts for all forms.
-3. Add XSS prevention (HTML encoding, sanitization).
-4. Add length guards matching DB column widths.
-5. Target: ~500 lines.
+1. Add server-side `[Required]`, `[StringLength]`, `[RegularExpression]` to all ViewModels. (Completed - CaseSubmitViewModel, SearchViewModel, LawyerApplyViewModel, LawyerReviewViewModel, RegisterViewModel, ResetPasswordViewModel)
+2. Add client-side validation scripts for all forms. (Completed - _ValidationScriptsPartial wired, validation spans added)
+3. Add XSS prevention (HTML encoding, sanitization). (Completed - Markdig DisableHtml pipeline verified by MarkdownTextTests)
+4. Add length guards matching DB column widths. (Completed - DB column length synchronization across all models)
+5. Target: ~500 lines. (Completed - ~530 lines across ViewModels, views, and test suites)
 
 #### A-3.12: Error Handling Improvements + User-Friendly Error Pages
 

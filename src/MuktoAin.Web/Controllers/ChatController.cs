@@ -6,6 +6,7 @@ using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
+using MuktoAin.Web.Models;
 using MuktoAin.Web.Session;
 
 namespace MuktoAin.Web.Controllers;
@@ -347,9 +348,15 @@ public class ChatController : Controller
                 redirectUrl = Url.Action("Result", "Case", new { id = result.CaseId })
             });
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return Json(new { error = ex.Message });
+            return Json(new
+            {
+                success = false,
+                error = ApiErrors.AiUnavailableEn,
+                errorBn = ApiErrors.AiUnavailableBn,
+                message = "AI_REQUEST_FAILED",
+            });
         }
     }
 

@@ -50,9 +50,11 @@ public class RegisterViewModel
     public string Role { get; set; } = "Citizen"; // "Citizen" or "Lawyer"
 
     [Display(Name = "বার রেজিস্ট্রেশন নম্বর / Bar Reg No (Lawyers only)")]
+    [StringLength(100, ErrorMessage = "সর্বোচ্চ ১০০ অক্ষর / Maximum 100 characters")]
     public string? BarRegistrationNumber { get; set; }
 
     [Display(Name = "বিশেষজ্ঞতা / Specialization (Lawyers only)")]
+    [StringLength(200, ErrorMessage = "সর্বোচ্চ ২০০ অক্ষর / Maximum 200 characters")]
     public string? Specialization { get; set; }
 
     [Display(Name = "পছন্দের ভাষা / Preferred Language")]

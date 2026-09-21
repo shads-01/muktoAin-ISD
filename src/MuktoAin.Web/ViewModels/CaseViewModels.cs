@@ -1,14 +1,37 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace MuktoAin.Web.ViewModels;
 
 public class CaseSubmitViewModel
 {
+    [Required(ErrorMessage = "অভিযোগের ধরন নির্বাচন করুন / Please select a category")]
+    [Range(1, int.MaxValue, ErrorMessage = "সঠিক অভিযোগের ধরন নির্বাচন করুন / Please select a valid category")]
     public int CategoryId { get; set; }
+
+    // District FK is TINYINT-backed (64 districts, byte DistrictId) — 1..255.
+    [Required(ErrorMessage = "জেলা নির্বাচন করুন / Please select a district")]
+    [Range(1, 255, ErrorMessage = "সঠিক জেলা নির্বাচন করুন / Please select a valid district")]
     public byte DistrictId { get; set; }
+
+    // Matches maxlength="250" on Views/Case/Submit.cshtml. (DB column is
+    // NVARCHAR(MAX) because Title is stored encrypted — this is an app guard.)
+    [Required(ErrorMessage = "শিরোনাম প্রয়োজন / Title is required")]
+    [StringLength(250, MinimumLength = 5,
+        ErrorMessage = "শিরোনাম ৫ থেকে ২৫০ অক্ষরের মধ্যে হতে হবে / Title must be 5–250 characters")]
     public string Title { get; set; } = string.Empty;
+
+    // Matches maxlength="5000" on Views/Case/Submit.cshtml; also caps the AI prompt budget.
+    [Required(ErrorMessage = "বিবরণ প্রয়োজন / Description is required")]
+    [StringLength(5000, MinimumLength = 20,
+        ErrorMessage = "বিবরণ ২০ থেকে ৫০০০ অক্ষরের মধ্যে হতে হবে / Description must be 20–5000 characters")]
     public string Description { get; set; } = string.Empty;
+
+    // CASE.Language is NVARCHAR(10) and the pipeline only handles bn/en.
+    [RegularExpression("^(bn|en)$",
+        ErrorMessage = "ভাষা 'bn' বা 'en' হতে হবে / Language must be 'bn' or 'en'")]
     public string Language { get; set; } = "bn";
+
     public bool IsAnonymous { get; set; }
     public List<SelectListItem> Categories { get; set; } = new();
     public List<SelectListItem> Districts { get; set; } = new();
