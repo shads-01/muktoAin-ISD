@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MuktoAin.Domain.Common;
 using MuktoAin.Domain.Interfaces.Repositories;
 using MuktoAin.Infrastructure.Data;
 
@@ -28,5 +29,16 @@ public class Repository<T> : IRepository<T> where T : class
     public virtual async Task AddAsync(T entity) => await _dbSet.AddAsync(entity);
     public virtual Task UpdateAsync(T entity) { _dbSet.Update(entity); return Task.CompletedTask; }
     public virtual Task DeleteAsync(T entity) { _dbSet.Remove(entity); return Task.CompletedTask; }
-    public virtual async Task SaveChangesAsync() => await _context.SaveChangesAsync();
+    public virtual async Task SaveChangesAsync()
+    {
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            // AUD-4: RowVersion mismatch -- surface it without leaking EF upward.
+            throw new ConcurrencyConflictException("The record was changed by another user.", ex);
+        }
+    }
 }

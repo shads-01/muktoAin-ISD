@@ -34,6 +34,7 @@ public class SqlDatabaseFixture : IAsyncLifetime
         "14_chat_sidebar_history.sql",
         "15_chat_blocked_streak.sql",
         "16_notification_is_seen.sql",
+        "17_add_rowversion_columns.sql",
     };
     private const string FullTextScript = "03_fulltext.sql";
 

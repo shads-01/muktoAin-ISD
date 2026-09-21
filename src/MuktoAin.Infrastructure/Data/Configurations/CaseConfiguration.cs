@@ -13,5 +13,7 @@ public class CaseConfiguration : IEntityTypeConfiguration<Case>
         // Redesign columns (scripts/08_redesign_tables.sql) — additive
         builder.Property(c => c.NotificationEmail).HasMaxLength(256);
         builder.Property(c => c.HonorariumPaid).HasDefaultValue(false);
+        // AUD-4 (scripts/17_add_rowversion_columns.sql)
+        builder.Property(c => c.RowVersion).IsRowVersion();
     }
 }

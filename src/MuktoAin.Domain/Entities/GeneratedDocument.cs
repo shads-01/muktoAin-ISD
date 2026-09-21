@@ -35,5 +35,8 @@ public class GeneratedDocument
 
     public DateTime CreatedAt { get; set; }
 
+    // AUD-4: SQL Server rowversion for optimistic concurrency (claim race)
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
     public ICollection<LawyerReview> Reviews { get; set; } = new List<LawyerReview>();
 }
