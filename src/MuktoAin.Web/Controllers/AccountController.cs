@@ -339,7 +339,11 @@ public class AccountController : Controller
     public IActionResult ResetPassword(string email, string token)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+        {
+            TempData["Error"] = "রিসেট লিংকটি অসম্পূর্ণ — নতুন লিংকের জন্য আবার অনুরোধ করুন।";
+            TempData["ErrorEn"] = "The reset link is incomplete — please request a new one.";
             return RedirectToAction(nameof(ForgotPassword));
+        }
         return View(new ResetPasswordViewModel { Email = email, Token = token });
     }
 
@@ -350,8 +354,17 @@ public class AccountController : Controller
     {
         if (!ModelState.IsValid) return View(vm);
 
+        // Unknown email and bad/expired token share one message, so the form
+        // never reveals whether an address is registered.
+        const string invalidLink =
+            "রিসেট লিংকটি অবৈধ বা মেয়াদোত্তীর্ণ — নতুন লিংকের জন্য আবার অনুরোধ করুন। / This reset link is invalid or has expired — please request a new one.";
+
         var user = await _userManager.FindByEmailAsync(vm.Email);
-        if (user == null) return RedirectToAction(nameof(Login));
+        if (user == null)
+        {
+            ModelState.AddModelError(string.Empty, invalidLink);
+            return View(vm);
+        }
 
         var result = await _userManager.ResetPasswordAsync(user, vm.Token, vm.NewPassword);
         if (result.Succeeded)
@@ -360,7 +373,13 @@ public class AccountController : Controller
             TempData["SuccessEn"] = "Password changed — please sign in.";
             return RedirectToAction(nameof(Login));
         }
-        foreach (var e in result.Errors) ModelState.AddModelError(string.Empty, e.Description);
+        foreach (var e in result.Errors)
+        {
+            var message = e.Code == "InvalidToken"
+                ? invalidLink
+                : IdentityErrorMapper.Map(e, _localizer).Message;
+            ModelState.AddModelError(string.Empty, message);
+        }
         return View(vm);
     }
 

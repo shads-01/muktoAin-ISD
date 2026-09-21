@@ -73,7 +73,9 @@ public class LawyerController : Controller
         if (profile.VerificationStatus != VerificationStatus.Rejected) return Forbid();
         if (string.IsNullOrWhiteSpace(vm.BarRegistrationNumber))
         {
-            ModelState.AddModelError(nameof(vm.BarRegistrationNumber), "বার নম্বর আবশ্যক / Bar number required");
+            // ModelState does not survive the redirect, so surface it as a toast.
+            TempData["Error"] = "বার নম্বর আবশ্যক।";
+            TempData["ErrorEn"] = "Bar number required.";
             return RedirectToAction(nameof(Status));
         }
 
