@@ -8,10 +8,12 @@ namespace MuktoAin.Application.Services;
 public class LawyerVerificationService
 {
     private readonly IRepository<LawyerProfile> _profileRepo;
+    private readonly IAdminAuditService _audit;
 
-    public LawyerVerificationService(IRepository<LawyerProfile> profileRepo)
+    public LawyerVerificationService(IRepository<LawyerProfile> profileRepo, IAdminAuditService audit)
     {
         _profileRepo = profileRepo;
+        _audit = audit;
     }
 
     public async Task<int> ApplyAsync(int userId, LawyerApplicationDto dto)
@@ -46,6 +48,15 @@ public class LawyerVerificationService
         profile.RejectionReason = approve ? null : (reason ?? string.Empty);
 
         await _profileRepo.SaveChangesAsync();
+
+        // AUD-7: bar-verification decision is a human-in-the-loop safeguard
+        // action — record which admin made it, on whom, and why (rejections).
+        await _audit.LogAdminActionAsync(
+            adminUserId,
+            approve ? "ApproveLawyerVerification" : "RejectLawyerVerification",
+            targetUserId: profile.UserId,
+            targetEntityId: lawyerProfileId,
+            details: approve ? null : reason);
     }
 
     public async Task<IEnumerable<LawyerProfile>> GetPendingApplicationsAsync()

@@ -42,6 +42,8 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<int>, int>
     public DbSet<AnswerCache> AnswerCaches => Set<AnswerCache>();
     public DbSet<PaymentOrder> PaymentOrders => Set<PaymentOrder>();
     public DbSet<PayoutRequest> PayoutRequests => Set<PayoutRequest>();
+    // AUD-7 (scripts/14_add_admin_audit_log.sql)
+    public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

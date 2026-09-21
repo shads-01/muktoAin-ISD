@@ -33,6 +33,7 @@ public class AdminController : Controller
     private readonly IRepository<AiLog> _aiLogRepo;
     private readonly PaymentService _paymentService;
     private readonly GeminiClient _geminiClient;
+    private readonly IAdminAuditService _audit;
 
     public AdminController(
         ILogger<AdminController> logger,
@@ -49,7 +50,8 @@ public class AdminController : Controller
         IRepository<CaseCategory> categoryRepo,
         IRepository<AiLog> aiLogRepo,
         PaymentService paymentService,
-        GeminiClient geminiClient)
+        GeminiClient geminiClient,
+        IAdminAuditService audit)
     {
         _logger = logger;
         _dbContext = dbContext;
@@ -66,6 +68,7 @@ public class AdminController : Controller
         _aiLogRepo = aiLogRepo;
         _paymentService = paymentService;
         _geminiClient = geminiClient;
+        _audit = audit;
     }
 
     [HttpGet]
@@ -455,6 +458,15 @@ public class AdminController : Controller
         {
             await _scenarioRepo.DeleteAsync(m);
             await _scenarioRepo.SaveChangesAsync();
+
+            // AUD-7: DeleteScenario is a HARD delete with no soft-delete flag —
+            // the audit row is the only surviving record of what was removed.
+            var adminId = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                out var id) ? id : 0;
+            await _audit.LogAdminActionAsync(
+                adminId, "DeleteScenario",
+                targetEntityId: mappingId,
+                details: $"Keyword '{m.ScenarioKeyword}' (SectionId {m.SectionId}) hard-deleted.");
         }
         TempData["Success"] = "Mapping deleted.";
         return RedirectToAction(nameof(Scenarios));
@@ -543,7 +555,9 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RefundOrder(int orderId)
     {
-        await _paymentService.RefundAsync(orderId);
+        var adminId = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+            out var id) ? id : 0;
+        await _paymentService.RefundAsync(orderId, adminId);
         TempData["Success"] = "Order refunded (sandbox) — ledger reversed.";
         return RedirectToAction(nameof(Transactions));
     }
@@ -564,7 +578,9 @@ public class AdminController : Controller
     public async Task<IActionResult> MarkOrderPaid(int orderId)
     {
         // Sandbox gateway confirm (in lieu of real SSLCommerz IPN)
-        await _paymentService.MarkPaidAsync(orderId, $"SBX-{Guid.NewGuid().ToString("N")[..12].ToUpper()}");
+        var adminId = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+            out var id) ? id : 0;
+        await _paymentService.MarkPaidAsync(orderId, $"SBX-{Guid.NewGuid().ToString("N")[..12].ToUpper()}", adminId);
         TempData["Success"] = "Order marked Paid (sandbox gateway).";
         return RedirectToAction(nameof(Transactions));
     }
@@ -657,18 +673,28 @@ public class AdminController : Controller
             }
             model.VerificationQueue = verificationQueue;
 
-            // Audit stream = latest AI_LOG + review events (real, no PII —
-            // AI_LOG prompts are redacted at write time per S-2.7)
-            model.AuditLogs = aiLogsToday
+            // AUD-7: real administrative audit trail. The previous "audit" panel
+            // was fed from AI_LOG rows (AI calls, not admin actions — audit
+            // report Admin Scope #5). Latest 10 ADMIN_AUDIT_LOG rows; actor
+            // names resolved from the users list already loaded above.
+            var auditEntries = await _dbContext.AdminAuditLogs
+                .AsNoTracking()
                 .OrderByDescending(l => l.CreatedAt)
                 .Take(10)
+                .ToListAsync();
+            model.AuditLogs = auditEntries
                 .Select(l => new SystemAuditLogItemViewModel
                 {
                     Timestamp = l.CreatedAt.ToString("HH:mm"),
-                    Action = $"AI {l.RequestType}",
-                    Actor = l.ModelUsed,
-                    Status = l.LatencyMs > 8000 || l.TokensUsed <= 0 ? "Warning" : "Success",
-                    Details = $"Case {(l.CaseId?.ToString() ?? "chat")} · {l.LatencyMs}ms · {l.TokensUsed} tokens"
+                    Action = l.Action,
+                    Actor = users.FirstOrDefault(u => u.Id == l.AdminUserId)?.FullName
+                            ?? $"Admin #{l.AdminUserId}",
+                    Status = "Success",
+                    Details = string.Join(" · ", new[] {
+                            l.Details,
+                            l.TargetUserId.HasValue ? $"User #{l.TargetUserId}" : null,
+                            l.TargetEntityId.HasValue ? $"Entity #{l.TargetEntityId}" : null
+                        }.Where(p => !string.IsNullOrWhiteSpace(p)))
                 })
                 .ToList();
         }
