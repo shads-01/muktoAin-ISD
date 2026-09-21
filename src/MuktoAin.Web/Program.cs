@@ -68,14 +68,20 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 
 // Schema is authored and controlled directly in SSMS via scripts/*.sql (T-1.6) --
 // this context only maps onto that predefined schema. No EF migrations by design.
-builder.Services.AddDbContext<AppDbContext>(options =>
+// Real-time notifications: every saved NOTIFICATION change is pushed to its
+// owner over SignalR (see NotificationPushInterceptor / Hubs/NotificationHub).
+builder.Services.AddSignalR();
+builder.Services.AddScoped<MuktoAin.Web.Services.NotificationPushInterceptor>();
+
+builder.Services.AddDbContext<AppDbContext>((sp, options) =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         sqlOptions =>
         {
             sqlOptions.CommandTimeout(60);
             sqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
-        }));
+        })
+        .AddInterceptors(sp.GetRequiredService<MuktoAin.Web.Services.NotificationPushInterceptor>()));
 
 // S-1.1: ASP.NET Core Identity against the manually-authored [dbo].[USER] table.
 // Role tables do not exist in the SSMS schema by design -- authorization runs off
@@ -336,6 +342,8 @@ builder.Services.AddScoped<LawyerReviewService>();
 builder.Services.AddScoped<PaymentService>();
 // AUD-7: administrative audit trail (fail-safe writer).
 builder.Services.AddScoped<IAdminAuditService, AdminAuditService>();
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<LawyerQueueNotifier>();
 
 var app = builder.Build();
 
@@ -461,6 +469,8 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHub<MuktoAin.Web.Hubs.NotificationHub>(MuktoAin.Web.Hubs.NotificationHub.Path);
 
 app.Run();
 

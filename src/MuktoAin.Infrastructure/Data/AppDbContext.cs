@@ -45,6 +45,9 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<int>, int>
     // AUD-7 (scripts/14_add_admin_audit_log.sql)
     public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
 
+    // 2026-09-12 (scripts/11_notifications_table.sql)
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

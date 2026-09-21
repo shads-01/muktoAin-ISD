@@ -24,18 +24,20 @@ public class LawyerReviewServiceTests
     private readonly Mock<IRepository<ActSection>> _sectionRepo = new();
     private readonly Mock<IRepository<Act>> _actRepo = new();
     private readonly Mock<IEncryptionService> _encryptionService = new();
+    private readonly Mock<IRepository<Notification>> _notificationRepo = new();
     private readonly CaseService _caseService;
     private readonly LawyerReviewService _service;
 
     public LawyerReviewServiceTests()
     {
         _caseService = new CaseService(
-            _caseRepo.Object, _categoryRepo.Object, _districtRepo.Object, _encryptionService.Object);
+            _caseRepo.Object, _categoryRepo.Object, _districtRepo.Object, _encryptionService.Object,
+            new Mock<IRepository<Notification>>().Object);
 
         _service = new LawyerReviewService(
             _docRepo.Object, _reviewRepo.Object, _profileRepo.Object, _caseRepo.Object,
             _categoryRepo.Object, _districtRepo.Object, _refRepo.Object, _sectionRepo.Object,
-            _actRepo.Object, _encryptionService.Object, _caseService);
+            _actRepo.Object, _encryptionService.Object, _caseService, _notificationRepo.Object);
 
         _encryptionService.Setup(e => e.Decrypt(It.IsAny<string>())).Returns((string s) => s);
     }
@@ -436,7 +438,6 @@ public class LawyerReviewServiceTests
         Assert.Equal(DocumentStatus.Approved, doc.Status);
         Assert.Equal("AI Draft Content", doc.ContentFinal);
         Assert.Equal(CaseStatus.Finalized, caseEntity.Status);
-        Assert.True(caseEntity.HasUnreadActivity);
         _reviewRepo.Verify(r => r.AddAsync(It.Is<LawyerReview>(rev =>
             rev.DocumentId == 1 && rev.LawyerProfileId == 5 && rev.Decision == ReviewDecision.Approved)), Times.Once);
     }
@@ -464,7 +465,6 @@ public class LawyerReviewServiceTests
         Assert.Equal("Original AI Draft", doc.ContentDraft); // Immutable
         Assert.Equal("Lawyer modified finalized draft", doc.ContentFinal);
         Assert.Equal(CaseStatus.Finalized, caseEntity.Status);
-        Assert.True(caseEntity.HasUnreadActivity);
     }
 
     [Fact]
@@ -488,7 +488,6 @@ public class LawyerReviewServiceTests
         Assert.True(result);
         Assert.Equal(DocumentStatus.Rejected, doc.Status);
         Assert.Null(doc.ContentFinal);
-        Assert.True(caseEntity.HasUnreadActivity);
         _reviewRepo.Verify(r => r.AddAsync(It.Is<LawyerReview>(rev => rev.Decision == ReviewDecision.Rejected)), Times.Once);
     }
 
@@ -576,6 +575,42 @@ public class LawyerReviewServiceTests
         var result = await _service.SubmitReviewAsync(dto);
 
         Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SubmitReviewAsync_NotifiesTheCaseOwner()
+    {
+        var doc = new GeneratedDocument { DocumentId = 1, CaseId = 10, Status = DocumentStatus.UnderReview };
+        _docRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(doc);
+        var owner = new Case { CaseId = 10, UserId = 55, IsAnonymous = false };
+        _caseRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(owner);
+        Notification? captured = null;
+        _notificationRepo.Setup(n => n.AddAsync(It.IsAny<Notification>()))
+            .Callback<Notification>(n => captured = n)
+            .Returns(Task.CompletedTask);
+
+        await _service.SubmitReviewAsync(new SubmitReviewDto(1, LawyerProfileId: 3,
+            Decision: ReviewDecision.Approved, Comments: "ok", EditedContent: null));
+
+        Assert.NotNull(captured);
+        Assert.Equal(55, captured!.UserId);
+        Assert.Equal(NotificationType.DocumentDecided, captured.Type);
+        Assert.Equal(10, captured.RelatedCaseId);
+        Assert.Equal(1, captured.RelatedDocumentId);
+    }
+
+    [Fact]
+    public async Task SubmitReviewAsync_SkipsNotification_WhenCaseIsAnonymous()
+    {
+        var doc = new GeneratedDocument { DocumentId = 1, CaseId = 10, Status = DocumentStatus.UnderReview };
+        _docRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(doc);
+        var anon = new Case { CaseId = 10, UserId = null, IsAnonymous = true };
+        _caseRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(anon);
+
+        await _service.SubmitReviewAsync(new SubmitReviewDto(1, LawyerProfileId: 3,
+            Decision: ReviewDecision.Approved, Comments: "ok", EditedContent: null));
+
+        _notificationRepo.Verify(n => n.AddAsync(It.IsAny<Notification>()), Times.Never);
     }
 
     private void SetUpCase(

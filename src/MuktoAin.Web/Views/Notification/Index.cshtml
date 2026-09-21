@@ -1,0 +1,56 @@
+@model MuktoAin.Web.ViewModels.NotificationListViewModel
+@{
+    ViewData["Title"] = "বিজ্ঞপ্তি / Notifications";
+    var totalPages = (int)System.Math.Ceiling(Model.TotalCount / (double)Model.PageSize);
+}
+
+<div class="container" style="max-width: 720px; margin: 24px auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+        <h1 data-bn="বিজ্ঞপ্তি" data-en="Notifications">বিজ্ঞপ্তি</h1>
+        @if (Model.Items.Any(i => !i.IsRead))
+        {
+            <form asp-controller="Notification" asp-action="MarkAllRead" method="post" id="mark-all-read-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-outline btn-sm" data-bn="সব পঠিত করুন" data-en="Mark all read">সব পঠিত করুন</button>
+            </form>
+        }
+    </div>
+
+    @if (!Model.Items.Any())
+    {
+        <p class="muted" data-bn="কোনো বিজ্ঞপ্তি নেই।" data-en="No notifications yet.">কোনো বিজ্ঞপ্তি নেই।</p>
+    }
+    else
+    {
+        <ul style="list-style:none; padding:0; display:flex; flex-direction:column; gap:8px;">
+            @foreach (var item in Model.Items)
+            {
+                <li style="border:1px solid var(--border); border-radius:8px; padding:12px 14px; @(item.IsRead ? "" : "background: var(--surface-2);")">
+                    <a asp-action="MarkAndGo" asp-route-id="@item.NotificationId" asp-route-returnUrl="@item.Url"
+                       style="display:block; text-decoration:none; color:inherit;">
+                        <span data-bn="@item.TextBn" data-en="@item.TextEn">@item.TextBn</span>
+                        <div class="muted tiny" style="margin-top:4px;">@item.CreatedAt.ToString("d MMM yyyy, HH:mm")</div>
+                    </a>
+                </li>
+            }
+        </ul>
+
+        @if (totalPages > 1)
+        {
+            <div class="pagination" style="margin-top: 12px">
+                @if (Model.Page > 1)
+                {
+                    <a asp-action="Index" asp-route-page="@(Model.Page - 1)"><i data-lucide="chevron-left"></i></a>
+                }
+                @for (var p = 1; p <= totalPages; p++)
+                {
+                    <a class="@(p == Model.Page ? "active" : "")" asp-action="Index" asp-route-page="@p">@p</a>
+                }
+                @if (Model.Page < totalPages)
+                {
+                    <a asp-action="Index" asp-route-page="@(Model.Page + 1)"><i data-lucide="chevron-right"></i></a>
+                }
+            </div>
+        }
+    }
+</div>

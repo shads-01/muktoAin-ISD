@@ -1592,6 +1592,182 @@
       if (!e.target.closest(".pop-wrap")) closePops();
     });
 
+    /* notifications: bell badge + poll dropdown (no-ops when logged out --
+       #notif-bell only renders in _Layout.cshtml's authenticated branch) */
+    (function () {
+      var bell = document.getElementById("notif-bell");
+      if (!bell) return;
+
+      var badge = document.getElementById("notif-badge");
+      var list = document.getElementById("notif-pop-list");
+
+      // AUD-1: same csrf-token <meta> that chat.js / Case/Result.cshtml
+      // already read for every other authenticated POST -- guaranteed on
+      // every page (unlike a hidden form input, which depends on markup
+      // elsewhere on the page).
+      function antiForgeryToken() {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute("content") : "";
+      }
+
+      var headCount = document.getElementById("notif-pop-count");
+
+      function isEn() { return document.documentElement.lang === "en"; }
+
+      function num(n) { return isEn() ? String(n) : toBengaliDigits(n); }
+
+      // CreatedAt is stored as UTC but EF hands it back as Unspecified, so
+      // the JSON has no offset -- treat an offset-less stamp as UTC.
+      function timeAgo(stamp) {
+        if (!stamp) return "";
+        if (!/(Z|[+-]\d\d:?\d\d)$/.test(stamp)) stamp += "Z";
+        var secs = Math.max(0, (Date.now() - new Date(stamp).getTime()) / 1000);
+        var mins = Math.floor(secs / 60), hrs = Math.floor(mins / 60), days = Math.floor(hrs / 24);
+        if (mins < 1) return isEn() ? "Just now" : "এইমাত্র";
+        if (hrs < 1) return isEn() ? mins + " min ago" : num(mins) + " মিনিট আগে";
+        if (days < 1) return isEn() ? hrs + " hr ago" : num(hrs) + " ঘণ্টা আগে";
+        if (days < 7) return isEn() ? days + (days === 1 ? " day ago" : " days ago") : num(days) + " দিন আগে";
+        return new Date(stamp).toLocaleDateString(isEn() ? "en-GB" : "bn-BD", { day: "numeric", month: "short", year: "numeric" });
+      }
+
+      function post(url) {
+        return fetch(url, {
+          method: "POST",
+          headers: { "RequestVerificationToken": antiForgeryToken() }
+        });
+      }
+
+      function el(tag, cls, text) {
+        var node = document.createElement(tag);
+        if (cls) node.className = cls;
+        if (text != null) node.textContent = text;
+        return node;
+      }
+
+      function render(data) {
+        if (data.count > 0) {
+          badge.textContent = num(data.count > 99 ? "99+" : data.count);
+          badge.hidden = false;
+          headCount.textContent = isEn() ? data.count + " new" : num(data.count) + "টি নতুন";
+          headCount.hidden = false;
+        } else {
+          badge.hidden = true;
+          headCount.hidden = true;
+        }
+        list.innerHTML = "";
+        if (!data.items || !data.items.length) {
+          var empty = el("div", "notif-empty");
+          var icon = el("i");
+          icon.setAttribute("data-lucide", "bell-off");
+          empty.appendChild(icon);
+          empty.appendChild(el("span", null, isEn() ? "You're all caught up." : "কোনো বিজ্ঞপ্তি নেই।"));
+          list.appendChild(empty);
+          renderIcons(list);
+          return;
+        }
+        data.items.forEach(function (item) {
+          var row = el("div", "notif-item" + (item.isRead ? "" : " unread"));
+
+          var link = el("a", "notif-item-link");
+          link.href = item.url;
+          link.appendChild(el("span", "notif-dot"));
+          var body = el("span", "notif-item-body");
+          body.appendChild(el("span", "notif-item-text", isEn() ? item.textEn : item.textBn));
+          body.appendChild(el("span", "notif-item-time", timeAgo(item.createdAt)));
+          link.appendChild(body);
+          link.addEventListener("click", function (e) {
+            e.preventDefault();
+            post("/Notification/MarkRead?id=" + encodeURIComponent(item.id))
+              .finally(function () { window.location.href = item.url; });
+          });
+
+          var del = el("button", "notif-del");
+          del.type = "button";
+          del.setAttribute("aria-label", isEn() ? "Delete notification" : "বিজ্ঞপ্তি মুছুন");
+          del.title = del.getAttribute("aria-label");
+          var trash = el("i");
+          trash.setAttribute("data-lucide", "trash-2");
+          del.appendChild(trash);
+          del.addEventListener("click", function (e) {
+            // keep the dropdown open: the document-level click handler
+            // closes pops when the target is outside .pop-wrap, and this
+            // row is about to be detached from the DOM.
+            e.stopPropagation();
+            del.disabled = true;
+            function deleteFailed() {
+              del.disabled = false;
+              if (typeof window.showToast === "function") {
+                window.showToast(isEn()
+                  ? "Could not delete the notification. Please try again."
+                  : "বিজ্ঞপ্তি মুছে ফেলা যায়নি। আবার চেষ্টা করুন।", "error");
+              }
+            }
+            post("/Notification/Delete?id=" + encodeURIComponent(item.id))
+              .then(function (r) { if (r.ok) poll(); else deleteFailed(); })
+              .catch(deleteFailed);
+          });
+
+          row.appendChild(link);
+          row.appendChild(del);
+          list.appendChild(row);
+        });
+        renderIcons(list);
+      }
+
+      function poll() {
+        return fetch("/Notification/Unread")
+          .then(function (r) { return r.json(); })
+          .then(function (data) { render(data); return data; })
+          .catch(function () { return null; });
+      }
+
+      // On open: refresh (so times and language are current), then mark
+      // everything *seen* -- clears the badge only. Rows stay bold until
+      // each one is actually opened (IsRead), which also keeps My Cases'
+      // unread-activity dot intact.
+      var pop = document.getElementById("notif-pop");
+      bell.addEventListener("click", function () {
+        if (!pop.classList.contains("open")) return; // this click closed it
+        poll().then(function (data) {
+          if (!data || !data.count) return;
+          badge.hidden = true;
+          post("/Notification/MarkAllSeen").catch(function () {});
+        });
+      });
+      poll();
+
+      // Real-time: the server pushes a content-free "notificationsChanged"
+      // signal (Hubs/NotificationHub) whenever this user's notifications
+      // change, and we re-fetch. Polling only runs while the socket is down
+      // (or if the SignalR client script failed to load).
+      var pollTimer = null;
+      function startPolling() { if (!pollTimer) pollTimer = setInterval(poll, 30000); }
+      function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+
+      if (!window.signalR) { startPolling(); return; }
+
+      var connection = new window.signalR.HubConnectionBuilder()
+        .withUrl("/hubs/notifications")
+        .withAutomaticReconnect()
+        .build();
+      connection.on("notificationsChanged", poll);
+      // catch up on anything missed while disconnected
+      connection.onreconnecting(startPolling);
+      connection.onreconnected(function () { stopPolling(); poll(); });
+
+      function connect() {
+        connection.start()
+          .then(function () { stopPolling(); poll(); })
+          .catch(function () {
+            // automatic reconnect only covers drops after a successful start
+            startPolling();
+            setTimeout(connect, 15000);
+          });
+      }
+      connection.onclose(function () { startPolling(); setTimeout(connect, 15000); });
+      connect();
+    })();
+
     /* modals & bottom sheets */
     document.querySelectorAll("[data-open-modal]").forEach(function (t) {
       t.addEventListener("click", function (e) {

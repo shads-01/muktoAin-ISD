@@ -24,6 +24,7 @@ public class LawyerReviewService
     private readonly IRepository<Act> _actRepo;
     private readonly IEncryptionService _encryptionService;
     private readonly CaseService _caseService;
+    private readonly IRepository<Notification> _notificationRepo;
 
     public LawyerReviewService(
         IRepository<GeneratedDocument> docRepo,
@@ -36,7 +37,8 @@ public class LawyerReviewService
         IRepository<ActSection> sectionRepo,
         IRepository<Act> actRepo,
         IEncryptionService encryptionService,
-        CaseService caseService)
+        CaseService caseService,
+        IRepository<Notification> notificationRepo)
     {
         _docRepo = docRepo;
         _reviewRepo = reviewRepo;
@@ -49,6 +51,7 @@ public class LawyerReviewService
         _actRepo = actRepo;
         _encryptionService = encryptionService;
         _caseService = caseService;
+        _notificationRepo = notificationRepo;
     }
 
     // Queue = documents in UnderReview, oldest-first (SLA age shown by the view).
@@ -198,12 +201,25 @@ public class LawyerReviewService
                 break;
         }
 
-        // Flag unread activity for the citizen (unread dot on My Cases)
         var c2 = await _caseRepo.GetByIdAsync(d.CaseId);
-        if (c2 != null)
+        if (c2 is { UserId: not null, IsAnonymous: false })
         {
-            c2.HasUnreadActivity = true;
-            await _caseRepo.SaveChangesAsync();
+            try
+            {
+                await _notificationRepo.AddAsync(new Notification
+                {
+                    UserId = c2.UserId.Value,
+                    Type = NotificationType.DocumentDecided,
+                    RelatedCaseId = c2.CaseId,
+                    RelatedDocumentId = d.DocumentId,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _notificationRepo.SaveChangesAsync();
+            }
+            catch
+            {
+                // A notification-write failure must not fail the review submission it's attached to.
+            }
         }
         return true;
     }

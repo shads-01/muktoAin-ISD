@@ -14,6 +14,7 @@ public class CaseServiceTests
     private readonly Mock<IRepository<CaseCategory>> _categoryRepo = new();
     private readonly Mock<IRepository<District>> _districtRepo = new();
     private readonly Mock<IEncryptionService> _encryptionService = new();
+    private readonly Mock<IRepository<Notification>> _notificationRepo = new();
     private readonly CaseService _service;
 
     public CaseServiceTests()
@@ -23,7 +24,7 @@ public class CaseServiceTests
         _encryptionService.Setup(e => e.Decrypt(It.IsAny<string>()))
             .Returns<string>(s => s.StartsWith("ENC_") ? s.Substring(4) : s);
 
-        _service = new CaseService(_caseRepo.Object, _categoryRepo.Object, _districtRepo.Object, _encryptionService.Object);
+        _service = new CaseService(_caseRepo.Object, _categoryRepo.Object, _districtRepo.Object, _encryptionService.Object, _notificationRepo.Object);
     }
 
     [Fact]
@@ -368,6 +369,31 @@ public class CaseServiceTests
 
         _caseRepo.Verify(r => r.AddAsync(It.Is<Case>(c => c.Status == CaseStatus.Submitted)), Times.Once);
         _caseRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task SubmitCaseAsync_NotifiesTheSubmittingUser()
+    {
+        Notification? captured = null;
+        _notificationRepo.Setup(n => n.AddAsync(It.IsAny<Notification>()))
+            .Callback<Notification>(n => captured = n)
+            .Returns(Task.CompletedTask);
+
+        var dto = new CaseSubmissionDto(1, 5, "Title", "Desc", "bn", IsAnonymous: false);
+        await _service.SubmitCaseAsync(dto, userId: 7);
+
+        Assert.NotNull(captured);
+        Assert.Equal(7, captured!.UserId);
+        Assert.Equal(NotificationType.CaseSubmitted, captured.Type);
+    }
+
+    [Fact]
+    public async Task SubmitCaseAsync_SkipsNotification_WhenAnonymous()
+    {
+        var dto = new CaseSubmissionDto(1, 5, "Title", "Desc", "bn", IsAnonymous: true);
+        await _service.SubmitCaseAsync(dto, userId: null);
+
+        _notificationRepo.Verify(n => n.AddAsync(It.IsAny<Notification>()), Times.Never);
     }
 
     private void SetupLookups(Case c)

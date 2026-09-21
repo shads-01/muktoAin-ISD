@@ -46,7 +46,8 @@ public class ChatControllerTests
             Mock.Of<IRepository<District>>(),
             Mock.Of<MuktoAin.Domain.Interfaces.IAiService>(),
             Mock.Of<IAiLogService>(),
-            Mock.Of<IChatHistoryRepository>());
+            Mock.Of<IChatHistoryRepository>(),
+            Mock.Of<IRepository<Notification>>());
 
         var budgetService = new AiBudgetService(
             Mock.Of<IRepository<AiLog>>(), _store.Object);
@@ -92,7 +93,8 @@ public class ChatControllerTests
             Mock.Of<IRightsExplanationService>(), null!, Mock.Of<IEncryptionService>(),
             Mock.Of<IScenarioMappingRepository>(), Mock.Of<IKeywordSectionSearch>(),
             Mock.Of<IRepository<District>>(), Mock.Of<IAiService>(), Mock.Of<IAiLogService>(),
-            Mock.Of<IChatHistoryRepository>());
+            Mock.Of<IChatHistoryRepository>(),
+            Mock.Of<IRepository<Notification>>());
         var controller = new ChatController(service,
             new AiBudgetService(Mock.Of<IRepository<AiLog>>(), DefaultReservationStore().Object),
             Mock.Of<IActSectionRepository>()) { ControllerContext = _controller.ControllerContext };
@@ -308,7 +310,8 @@ public class ChatControllerTests
             Mock.Of<IRepository<District>>(),
             Mock.Of<MuktoAin.Domain.Interfaces.IAiService>(),
             Mock.Of<IAiLogService>(),
-            Mock.Of<IChatHistoryRepository>());
+            Mock.Of<IChatHistoryRepository>(),
+            Mock.Of<IRepository<Notification>>());
         var controller = new ChatController(chatService, new AiBudgetService(Mock.Of<IRepository<AiLog>>(), store.Object), Mock.Of<IActSectionRepository>())
         {
             ControllerContext = _controller.ControllerContext
@@ -370,7 +373,8 @@ public class ChatControllerTests
             Mock.Of<IRepository<District>>(),
             Mock.Of<MuktoAin.Domain.Interfaces.IAiService>(),
             Mock.Of<IAiLogService>(),
-            Mock.Of<IChatHistoryRepository>());
+            Mock.Of<IChatHistoryRepository>(),
+            Mock.Of<IRepository<Notification>>());
         var controller = new ChatController(chatService, new AiBudgetService(Mock.Of<IRepository<AiLog>>(), store.Object), Mock.Of<IActSectionRepository>())
         {
             ControllerContext = _controller.ControllerContext
@@ -413,7 +417,8 @@ public class ChatControllerTests
             Mock.Of<IRepository<District>>(),
             Mock.Of<MuktoAin.Domain.Interfaces.IAiService>(),
             Mock.Of<IAiLogService>(),
-            Mock.Of<IChatHistoryRepository>());
+            Mock.Of<IChatHistoryRepository>(),
+            Mock.Of<IRepository<Notification>>());
         var controller = new ChatController(chatService, new AiBudgetService(
             Mock.Of<IRepository<AiLog>>(), DefaultReservationStore().Object), sectionRepo.Object)
         {
@@ -463,7 +468,8 @@ public class ChatControllerTests
             Mock.Of<IRepository<District>>(),
             Mock.Of<MuktoAin.Domain.Interfaces.IAiService>(),
             Mock.Of<IAiLogService>(),
-            Mock.Of<IChatHistoryRepository>());
+            Mock.Of<IChatHistoryRepository>(),
+            Mock.Of<IRepository<Notification>>());
         var controller = new ChatController(chatService, new AiBudgetService(
             Mock.Of<IRepository<AiLog>>(), DefaultReservationStore().Object), Mock.Of<IActSectionRepository>())
         {
@@ -516,7 +522,8 @@ public class ChatControllerTests
             Mock.Of<IRepository<District>>(),
             Mock.Of<MuktoAin.Domain.Interfaces.IAiService>(),
             Mock.Of<IAiLogService>(),
-            Mock.Of<IChatHistoryRepository>());
+            Mock.Of<IChatHistoryRepository>(),
+            Mock.Of<IRepository<Notification>>());
         var controller = new ChatController(chatService, new AiBudgetService(Mock.Of<IRepository<AiLog>>(), store.Object), Mock.Of<IActSectionRepository>())
         {
             ControllerContext = _controller.ControllerContext
@@ -565,7 +572,8 @@ public class ChatControllerTests
             Mock.Of<IRepository<District>>(),
             Mock.Of<MuktoAin.Domain.Interfaces.IAiService>(),
             Mock.Of<IAiLogService>(),
-            Mock.Of<IChatHistoryRepository>());
+            Mock.Of<IChatHistoryRepository>(),
+            Mock.Of<IRepository<Notification>>());
         var controller = new ChatController(chatService, new AiBudgetService(Mock.Of<IRepository<AiLog>>(), store.Object), Mock.Of<IActSectionRepository>())
         {
             ControllerContext = _controller.ControllerContext

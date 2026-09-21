@@ -23,13 +23,14 @@ public class PaymentServiceTests
     private readonly Mock<IRepository<LawyerProfile>> _lawyerRepo = new();
     private readonly Mock<ICaseRepository> _caseRepo = new();
     private readonly Mock<IAdminAuditService> _auditMock = new();
+    private readonly Mock<IRepository<Notification>> _notificationRepo = new();
     private readonly PaymentService _service;
 
     public PaymentServiceTests()
     {
         _service = new PaymentService(
             _orderRepo.Object, _payoutRepo.Object, _lawyerRepo.Object, _caseRepo.Object,
-            NewUserManager(), _auditMock.Object);
+            NewUserManager(), _auditMock.Object, _notificationRepo.Object);
     }
 
     private static UserManager<User> NewUserManager()
@@ -64,5 +65,57 @@ public class PaymentServiceTests
 
         _auditMock.Verify(a => a.LogAdminActionAsync(
             1, "MarkOrderPaid", null, 7, It.IsAny<string?>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateHonorariumOrderAsync_DoesNotNotify_WhilePaymentIsPending()
+    {
+        var doc = new GeneratedDocument { DocumentId = 1, CaseId = 5, AssignedLawyerProfileId = 42 };
+        var c = new Case { CaseId = 5, Documents = new List<GeneratedDocument> { doc } };
+        _caseRepo.Setup(r => r.GetWithDocumentsAsync(5)).ReturnsAsync(c);
+
+        await _service.CreateHonorariumOrderAsync(caseId: 5, userId: 7, amount: 1000m);
+
+        _notificationRepo.Verify(n => n.AddAsync(It.IsAny<Notification>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task MarkPaidAsync_NotifiesTheLawyer_OnFirstConfirmationOnly()
+    {
+        var order = new PaymentOrder
+        {
+            PaymentOrderId = 9, CaseId = 5, LawyerProfileId = 42,
+            Purpose = PaymentPurpose.Honorarium, Status = PaymentStatus.Pending, Amount = 1000m
+        };
+        _orderRepo.Setup(r => r.GetByIdAsync(9)).ReturnsAsync(order);
+        _lawyerRepo.Setup(r => r.GetByIdAsync(42)).ReturnsAsync(new LawyerProfile { LawyerProfileId = 42, UserId = 88 });
+        Notification? captured = null;
+        _notificationRepo.Setup(n => n.AddAsync(It.IsAny<Notification>()))
+            .Callback<Notification>(n => captured = n)
+            .Returns(Task.CompletedTask);
+
+        await _service.MarkPaidAsync(9, "SBX-1");
+        await _service.MarkPaidAsync(9, "SBX-1"); // repeat confirmation
+
+        Assert.NotNull(captured);
+        Assert.Equal(88, captured!.UserId);
+        Assert.Equal(NotificationType.PaymentReceived, captured.Type);
+        Assert.Equal(5, captured.RelatedCaseId);
+        _notificationRepo.Verify(n => n.AddAsync(It.IsAny<Notification>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task MarkPaidAsync_SkipsNotification_WhenNoLawyerAssigned()
+    {
+        var order = new PaymentOrder
+        {
+            PaymentOrderId = 9, CaseId = 5, LawyerProfileId = null,
+            Purpose = PaymentPurpose.Honorarium, Status = PaymentStatus.Pending, Amount = 1000m
+        };
+        _orderRepo.Setup(r => r.GetByIdAsync(9)).ReturnsAsync(order);
+
+        await _service.MarkPaidAsync(9, "SBX-1");
+
+        _notificationRepo.Verify(n => n.AddAsync(It.IsAny<Notification>()), Times.Never);
     }
 }

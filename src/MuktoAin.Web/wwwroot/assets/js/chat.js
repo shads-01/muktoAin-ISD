@@ -91,7 +91,7 @@
         var dEmail = el("draft-email");
         if (dEmail) dEmail.value = "";
         var dAnon = el("draft-anonymous");
-        if (dAnon) dAnon.checked = dAnon.defaultChecked; // ticked for guests only (server-rendered)
+        if (dAnon) dAnon.checked = false;
         ["draft-category-label", "draft-district-label", "draft-title-label"].forEach(function (id) {
             var lbl = el(id);
             if (lbl) lbl.textContent = "—";

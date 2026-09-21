@@ -11,11 +11,12 @@ public class LawyerVerificationServiceTests
 {
     private readonly Mock<IRepository<LawyerProfile>> _profileRepo = new();
     private readonly Mock<IAdminAuditService> _auditMock = new();
+    private readonly Mock<IRepository<Notification>> _notificationRepo = new();
     private readonly LawyerVerificationService _service;
 
     public LawyerVerificationServiceTests()
     {
-        _service = new LawyerVerificationService(_profileRepo.Object, _auditMock.Object);
+        _service = new LawyerVerificationService(_profileRepo.Object, _auditMock.Object, _notificationRepo.Object);
     }
 
     [Fact]
@@ -125,5 +126,23 @@ public class LawyerVerificationServiceTests
 
         _auditMock.Verify(a => a.LogAdminActionAsync(
             1, "RejectLawyerVerification", 42, 4, "Bar number not found"), Times.Once);
+    }
+
+    [Fact]
+    public async Task VerifyAsync_NotifiesTheLawyer()
+    {
+        var profile = new LawyerProfile { LawyerProfileId = 3, UserId = 21, VerificationStatus = VerificationStatus.Pending };
+        _profileRepo.Setup(r => r.GetByIdAsync(3)).ReturnsAsync(profile);
+        Notification? captured = null;
+        _notificationRepo.Setup(n => n.AddAsync(It.IsAny<Notification>()))
+            .Callback<Notification>(n => captured = n)
+            .Returns(Task.CompletedTask);
+
+        await _service.VerifyAsync(lawyerProfileId: 3, adminUserId: 1, approve: true);
+
+        Assert.NotNull(captured);
+        Assert.Equal(21, captured!.UserId);
+        Assert.Equal(NotificationType.LawyerVerified, captured.Type);
+        Assert.Equal(3, captured.RelatedLawyerProfileId);
     }
 }

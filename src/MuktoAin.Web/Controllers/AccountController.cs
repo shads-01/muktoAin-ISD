@@ -21,6 +21,7 @@ public class AccountController : Controller
     private readonly IChatHistoryRepository _chatHistory;
     private readonly ILogger<AccountController> _logger;
     private readonly IStringLocalizer<SharedResource> _localizer;
+    private readonly NotificationService _notificationService;
 
     public AccountController(
         SignInManager<User> signInManager,
@@ -28,7 +29,8 @@ public class AccountController : Controller
         IRepository<LawyerProfile> lawyerProfileRepo,
         ILogger<AccountController> logger,
         IStringLocalizer<SharedResource> localizer,
-        IChatHistoryRepository chatHistory)
+        IChatHistoryRepository chatHistory,
+        NotificationService notificationService)
     {
         _signInManager = signInManager;
         _userManager = userManager;
@@ -36,6 +38,7 @@ public class AccountController : Controller
         _logger = logger;
         _localizer = localizer;
         _chatHistory = chatHistory;
+        _notificationService = notificationService;
     }
 
     [HttpGet]
@@ -160,6 +163,9 @@ public class AccountController : Controller
 
             await _lawyerProfileRepo.AddAsync(profile);
             await _lawyerProfileRepo.SaveChangesAsync();
+
+            await _notificationService.NotifyAllAdminsAsync(NotificationType.NewLawyerApplication,
+                lawyerProfileId: profile.LawyerProfileId);
         }
 
         TempData["Success"] = "নিবন্ধন সম্পন্ন হয়েছে! আপনার একাউন্টে প্রবেশ করুন।";

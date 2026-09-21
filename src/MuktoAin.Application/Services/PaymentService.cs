@@ -21,6 +21,7 @@ public class PaymentService
     private readonly ICaseRepository _caseRepo;
     private readonly UserManager<User> _userManager;
     private readonly IAdminAuditService _audit;
+    private readonly IRepository<Notification> _notificationRepo;
 
     public PaymentService(
         IRepository<PaymentOrder> orderRepo,
@@ -28,7 +29,8 @@ public class PaymentService
         IRepository<LawyerProfile> lawyerRepo,
         ICaseRepository caseRepo,
         UserManager<User> userManager,
-        IAdminAuditService audit)
+        IAdminAuditService audit,
+        IRepository<Notification> notificationRepo)
     {
         _orderRepo = orderRepo;
         _payoutRepo = payoutRepo;
@@ -36,6 +38,7 @@ public class PaymentService
         _caseRepo = caseRepo;
         _userManager = userManager;
         _audit = audit;
+        _notificationRepo = notificationRepo;
     }
 
     public async Task<PaymentOrder> CreateHonorariumOrderAsync(
@@ -97,10 +100,16 @@ public class PaymentService
     {
         var o = await _orderRepo.GetByIdAsync(paymentOrderId)
                 ?? throw new ArgumentException("Order not found");
+        var wasAlreadyPaid = o.Status == PaymentStatus.Paid;
         o.Status = PaymentStatus.Paid;
         o.GatewayRef = gatewayRef;
         o.PaidAt = DateTime.UtcNow;
         await _orderRepo.SaveChangesAsync();
+
+        // Tell the lawyer only once the money is actually confirmed (not when
+        // the order is merely created), and only on the first confirmation.
+        if (!wasAlreadyPaid && o.Purpose == PaymentPurpose.Honorarium && o.LawyerProfileId.HasValue)
+            await NotifyLawyerOfPaymentAsync(o);
 
         if (actingAdminId.HasValue)
         {
@@ -108,6 +117,28 @@ public class PaymentService
                 actingAdminId.Value, "MarkOrderPaid",
                 targetEntityId: paymentOrderId,
                 details: $"GatewayRef {gatewayRef} · {o.Amount:0.00} BDT");
+        }
+    }
+
+    private async Task NotifyLawyerOfPaymentAsync(PaymentOrder o)
+    {
+        try
+        {
+            var lawyerProfile = await _lawyerRepo.GetByIdAsync(o.LawyerProfileId!.Value);
+            if (lawyerProfile == null) return;
+            await _notificationRepo.AddAsync(new Notification
+            {
+                UserId = lawyerProfile.UserId,
+                Type = NotificationType.PaymentReceived,
+                RelatedCaseId = o.CaseId,
+                RelatedLawyerProfileId = lawyerProfile.LawyerProfileId,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _notificationRepo.SaveChangesAsync();
+        }
+        catch
+        {
+            // A notification-write failure must not fail the payment confirmation.
         }
     }
 

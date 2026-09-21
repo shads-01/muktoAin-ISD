@@ -13,17 +13,20 @@ public class CaseService
     private readonly IRepository<CaseCategory> _categoryRepo;
     private readonly IRepository<District> _districtRepo;
     private readonly IEncryptionService _encryptionService;
+    private readonly IRepository<Notification> _notificationRepo;
 
     public CaseService(
         ICaseRepository caseRepo,
         IRepository<CaseCategory> categoryRepo,
         IRepository<District> districtRepo,
-        IEncryptionService encryptionService)
+        IEncryptionService encryptionService,
+        IRepository<Notification> notificationRepo)
     {
         _caseRepo = caseRepo;
         _categoryRepo = categoryRepo;
         _districtRepo = districtRepo;
         _encryptionService = encryptionService;
+        _notificationRepo = notificationRepo;
     }
 
     public async Task<CaseSubmissionResultDto> SubmitCaseAsync(CaseSubmissionDto dto, int? userId)
@@ -49,6 +52,25 @@ public class CaseService
 
         await _caseRepo.AddAsync(caseEntity);
         await _caseRepo.SaveChangesAsync();
+
+        if (userId.HasValue && !dto.IsAnonymous)
+        {
+            try
+            {
+                await _notificationRepo.AddAsync(new Notification
+                {
+                    UserId = userId.Value,
+                    Type = NotificationType.CaseSubmitted,
+                    RelatedCaseId = caseEntity.CaseId,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _notificationRepo.SaveChangesAsync();
+            }
+            catch
+            {
+                // A notification-write failure must not fail the case submission it's attached to.
+            }
+        }
 
         return new CaseSubmissionResultDto(caseEntity.CaseId, trackingCode);
     }
