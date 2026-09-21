@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
@@ -25,6 +26,7 @@ public class AccountControllerTests
     private readonly Mock<SignInManager<User>> _signInManager;
     private readonly Mock<IRepository<LawyerProfile>> _lawyerProfileRepo;
     private readonly Mock<IChatHistoryRepository> _chatHistory = new();
+    private readonly Mock<IRepository<Notification>> _notificationRepo;
     private readonly AccountController _controller;
 
     public AccountControllerTests()
@@ -37,6 +39,11 @@ public class AccountControllerTests
         _userManager = NewUserManager();
         _signInManager = NewSignInManager(_userManager.Object);
 
+        _notificationRepo = new Mock<IRepository<Notification>>();
+        _notificationRepo.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+        var notificationService = new NotificationService(
+            _notificationRepo.Object, _userManager.Object, Mock.Of<ILogger<NotificationService>>());
+
         var httpContext = new DefaultHttpContext { Session = new TestSession() };
         _controller = new AccountController(
             _signInManager.Object,
@@ -44,7 +51,8 @@ public class AccountControllerTests
             _lawyerProfileRepo.Object,
             Mock.Of<ILogger<AccountController>>(),
             TestStringLocalizer.Create(),
-            _chatHistory.Object)
+            _chatHistory.Object,
+            notificationService)
         {
             ControllerContext = new ControllerContext { HttpContext = httpContext },
             TempData = new TempDataDictionary(httpContext, Mock.Of<ITempDataProvider>())
@@ -194,6 +202,26 @@ public class AccountControllerTests
         Assert.Equal(VerificationStatus.Pending, addedProfile.VerificationStatus);
         Assert.Equal("Family Law", addedProfile.Specialization);
         _lawyerProfileRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task Register_LawyerRole_NotifiesAllAdmins()
+    {
+        var admin = new User { Id = 1, Role = UserRole.Admin, Email = "admin@example.com" };
+        _userManager.Setup(m => m.Users).Returns(new List<User> { admin }.AsQueryable());
+        _userManager.Setup(m => m.CreateAsync(It.IsAny<User>(), It.IsAny<string>()))
+            .ReturnsAsync(IdentityResult.Success);
+
+        var model = new RegisterViewModel
+        {
+            FullName = "New Lawyer", Email = "lawyer@example.com", Password = "Passw0rd!",
+            Role = "Lawyer", BarRegistrationNumber = "BAR-123"
+        };
+
+        await _controller.Register(model);
+
+        _notificationRepo.Verify(n => n.AddAsync(It.Is<Notification>(x =>
+            x.UserId == 1 && x.Type == NotificationType.NewLawyerApplication)), Times.Once);
     }
 
     [Fact]

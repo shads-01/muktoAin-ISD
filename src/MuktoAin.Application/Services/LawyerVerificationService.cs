@@ -9,11 +9,15 @@ public class LawyerVerificationService
 {
     private readonly IRepository<LawyerProfile> _profileRepo;
     private readonly IAdminAuditService _audit;
+    private readonly IRepository<Notification> _notificationRepo;
 
-    public LawyerVerificationService(IRepository<LawyerProfile> profileRepo, IAdminAuditService audit)
+    public LawyerVerificationService(
+        IRepository<LawyerProfile> profileRepo, IAdminAuditService audit,
+        IRepository<Notification> notificationRepo)
     {
         _profileRepo = profileRepo;
         _audit = audit;
+        _notificationRepo = notificationRepo;
     }
 
     public async Task<int> ApplyAsync(int userId, LawyerApplicationDto dto)
@@ -57,6 +61,22 @@ public class LawyerVerificationService
             targetUserId: profile.UserId,
             targetEntityId: lawyerProfileId,
             details: approve ? null : reason);
+
+        try
+        {
+            await _notificationRepo.AddAsync(new Notification
+            {
+                UserId = profile.UserId,
+                Type = NotificationType.LawyerVerified,
+                RelatedLawyerProfileId = profile.LawyerProfileId,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _notificationRepo.SaveChangesAsync();
+        }
+        catch
+        {
+            // Notification write failure should not block verification completion
+        }
     }
 
     public async Task<IEnumerable<LawyerProfile>> GetPendingApplicationsAsync()

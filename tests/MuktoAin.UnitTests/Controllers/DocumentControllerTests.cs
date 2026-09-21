@@ -39,7 +39,8 @@ public class DocumentControllerTests
         districtRepo.Setup(r => r.GetByIdAsync(It.IsAny<byte>()))
                     .ReturnsAsync(new District { DistrictId = 1, Name = "Dhaka" });
         var caseService = new CaseService(
-            _caseRepo.Object, categoryRepo.Object, districtRepo.Object, encryption.Object);
+            _caseRepo.Object, categoryRepo.Object, districtRepo.Object, encryption.Object,
+            new Mock<IRepository<Notification>>().Object);
 
         var httpContext = new DefaultHttpContext
         {
@@ -193,7 +194,8 @@ public class DocumentControllerTests
             caseRepo.Object,
             Mock.Of<IRepository<CaseCategory>>(),
             Mock.Of<IRepository<District>>(),
-            Mock.Of<MuktoAin.Domain.Interfaces.IEncryptionService>());
+            Mock.Of<MuktoAin.Domain.Interfaces.IEncryptionService>(),
+            Mock.Of<IRepository<Notification>>());
 
         var controller = new DocumentController(
             Mock.Of<ILogger<DocumentController>>(),
@@ -234,7 +236,8 @@ public class DocumentControllerTests
             caseRepo.Object,
             Mock.Of<IRepository<CaseCategory>>(),
             Mock.Of<IRepository<District>>(),
-            Mock.Of<MuktoAin.Domain.Interfaces.IEncryptionService>());
+            Mock.Of<MuktoAin.Domain.Interfaces.IEncryptionService>(),
+            Mock.Of<IRepository<Notification>>());
 
         var controller = new DocumentController(
             Mock.Of<ILogger<DocumentController>>(),

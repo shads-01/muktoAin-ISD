@@ -43,6 +43,7 @@ public class ChatServiceTests
     private readonly Mock<IRepository<CaseCategory>> _categoryRepo = new();
     private readonly Mock<IPdfExporter> _pdfExporter = new();
     private readonly Mock<IDocumentTemplate> _template = new();
+    private readonly Mock<IRepository<Notification>> _notificationRepo = new();
 
     private readonly ChatService _service;
 
@@ -64,7 +65,7 @@ public class ChatServiceTests
             _sessionRepo.Object, _messageRepo.Object, _caseRepo.Object, _caseRepoTyped.Object,
             _cacheRepo.Object, _rightsService.Object, documentService, _encryptionService.Object,
             _scenarioRepo.Object, _keywordSearch.Object, _districtRepo.Object,
-            _aiService.Object, _aiLogService.Object, _historyRepo.Object);
+            _aiService.Object, _aiLogService.Object, _historyRepo.Object, _notificationRepo.Object);
     }
 
     [Theory]
@@ -735,6 +736,72 @@ public class ChatServiceTests
         Assert.Contains("Banglish", p);                       // mixed-language tolerance
         Assert.Contains("never classify them as probing", p); // benign meta-questions
         Assert.Contains("reporting harm", p);                 // victim protection
+    }
+
+    // ── Task 5: CaseSubmitted notification on commit ─────────────────────
+
+    private void SetUpSuccessfulCommitPipeline(int sessionId, int? sessionUserId)
+    {
+        _sessionRepo.Setup(r => r.GetByIdAsync(sessionId))
+            .ReturnsAsync(new ChatSession { ChatSessionId = sessionId, UserId = sessionUserId, Status = ChatSessionStatus.InProgress });
+        _messageRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<ChatMessage>
+        {
+            new() { ChatSessionId = sessionId, Role = "user", Content = "hello" }
+        });
+
+        Case? saved = null;
+        _caseRepo.Setup(r => r.AddAsync(It.IsAny<Case>()))
+            .Callback<Case>(c => { c.CaseId = 99; saved = c; })
+            .Returns(Task.CompletedTask);
+        _caseRepo.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+
+        _caseRepoTyped.Setup(r => r.GetWithDocumentsAsync(It.IsAny<int>())).ReturnsAsync(() => saved);
+        _caseRepoTyped.Setup(r => r.GetByIdAsync(It.IsAny<object>())).ReturnsAsync(() => saved);
+        _districtRepo.Setup(r => r.GetByIdAsync(It.IsAny<object>())).ReturnsAsync((District?)null);
+        _categoryRepo.Setup(r => r.GetByIdAsync(It.IsAny<object>())).ReturnsAsync((CaseCategory?)null);
+
+        _template.Setup(t => t.RenderAsync(It.IsAny<Case>(), It.IsAny<RightsExplanationDto>()))
+            .ReturnsAsync("rendered content");
+        _rightsService.Setup(s => s.ExplainRightsAsync(It.IsAny<Case>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RightsExplanationDto("explanation", new List<CitedSectionDto>(), "disclaimer"));
+
+        _docRepo.Setup(r => r.AddAsync(It.IsAny<GeneratedDocument>())).Returns(Task.CompletedTask);
+        _docRepo.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+    }
+
+    [Fact]
+    public async Task CommitToCaseAsync_NotifiesTheCommittingUser()
+    {
+        const int sessionId = 1;
+        const int categoryId = 3; // RTI Request — matches the RtiRequest template wired in the constructor
+        SetUpSuccessfulCommitPipeline(sessionId, sessionUserId: 7);
+
+        Notification? captured = null;
+        _notificationRepo.Setup(n => n.AddAsync(It.IsAny<Notification>()))
+            .Callback<Notification>(n => captured = n)
+            .Returns(Task.CompletedTask);
+
+        await _service.CommitToCaseAsync(
+            chatSessionId: sessionId, categoryId: categoryId, districtId: 1, title: "t",
+            notificationEmail: null, isAnonymous: false, userId: 7);
+
+        Assert.NotNull(captured);
+        Assert.Equal(7, captured!.UserId);
+        Assert.Equal(NotificationType.CaseSubmitted, captured.Type);
+    }
+
+    [Fact]
+    public async Task CommitToCaseAsync_SkipsNotification_WhenAnonymous()
+    {
+        const int sessionId = 1;
+        const int categoryId = 3; // RTI Request — matches the RtiRequest template wired in the constructor
+        SetUpSuccessfulCommitPipeline(sessionId, sessionUserId: null);
+
+        await _service.CommitToCaseAsync(
+            chatSessionId: sessionId, categoryId: categoryId, districtId: 1, title: "t",
+            notificationEmail: null, isAnonymous: true, userId: null);
+
+        _notificationRepo.Verify(n => n.AddAsync(It.IsAny<Notification>()), Times.Never);
     }
 }
 

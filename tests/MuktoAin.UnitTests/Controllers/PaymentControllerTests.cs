@@ -30,7 +30,8 @@ public class PaymentControllerTests
             Mock.Of<IRepository<LawyerProfile>>(),
             Mock.Of<ICaseRepository>(),
             NewUserManager(),
-            Mock.Of<IAdminAuditService>());
+            Mock.Of<IAdminAuditService>(),
+            Mock.Of<IRepository<Notification>>());
 
         _controller = new PaymentController(
             paymentService,
@@ -87,7 +88,8 @@ public class PaymentControllerTests
             Mock.Of<IRepository<LawyerProfile>>(),
             caseRepo.Object,
             NewUserManager(),
-            Mock.Of<IAdminAuditService>());
+            Mock.Of<IAdminAuditService>(),
+            Mock.Of<IRepository<Notification>>());
 
         var controller = new PaymentController(
             paymentService,
@@ -131,7 +133,8 @@ public class PaymentControllerTests
             Mock.Of<IRepository<LawyerProfile>>(),
             Mock.Of<ICaseRepository>(),
             NewUserManager(),
-            Mock.Of<IAdminAuditService>());
+            Mock.Of<IAdminAuditService>(),
+            Mock.Of<IRepository<Notification>>());
 
         var controller = new PaymentController(
             paymentService,

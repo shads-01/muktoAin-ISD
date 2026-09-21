@@ -39,6 +39,7 @@ public class ChatService
     private readonly IAiLogService _aiLogService;
     private readonly IChatHistoryRepository _historyRepo;
     private readonly ChatSafetyFilter _safetyFilter = new();
+    private readonly IRepository<Notification> _notificationRepo;
 
     public ChatService(
         IRepository<ChatSession> sessionRepo,
@@ -54,7 +55,8 @@ public class ChatService
         IRepository<District> districtRepo,
         IAiService aiService,
         IAiLogService aiLogService,
-        IChatHistoryRepository historyRepo)
+        IChatHistoryRepository historyRepo,
+        IRepository<Notification> notificationRepo)
     {
         _sessionRepo = sessionRepo;
         _messageRepo = messageRepo;
@@ -70,6 +72,7 @@ public class ChatService
         _aiService = aiService;
         _aiLogService = aiLogService;
         _historyRepo = historyRepo;
+        _notificationRepo = notificationRepo;
     }
 
     // ---------- session management ----------
@@ -588,6 +591,25 @@ public class ChatService
         session.CommittedCaseId = caseEntity.CaseId;
         session.UpdatedAt = DateTime.UtcNow;
         await _sessionRepo.SaveChangesAsync();
+
+        if (userId.HasValue && !isAnonymous)
+        {
+            try
+            {
+                await _notificationRepo.AddAsync(new Notification
+                {
+                    UserId = userId.Value,
+                    Type = NotificationType.CaseSubmitted,
+                    RelatedCaseId = caseEntity.CaseId,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _notificationRepo.SaveChangesAsync();
+            }
+            catch
+            {
+                // A notification-write failure must not fail the case submission it's attached to.
+            }
+        }
 
         return new ChatCommitResultDto(caseEntity.CaseId, trackingCode, doc.DocumentId, doc.ContentDraft);
     }
