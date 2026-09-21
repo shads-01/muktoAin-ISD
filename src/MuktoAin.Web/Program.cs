@@ -343,6 +343,7 @@ builder.Services.AddScoped<PaymentService>();
 // AUD-7: administrative audit trail (fail-safe writer).
 builder.Services.AddScoped<IAdminAuditService, AdminAuditService>();
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<LawyerQueueNotifier>();
 
 var app = builder.Build();
 

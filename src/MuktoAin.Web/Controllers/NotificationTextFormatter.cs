@@ -36,6 +36,16 @@ public static class NotificationTextFormatter
             "A new lawyer application is awaiting verification.",
             "/Admin/Lawyers"),
 
+        NotificationType.NewCaseInQueue => (
+            "আইনজীবী সারিতে একটি নতুন মামলা পর্যালোচনার অপেক্ষায়।",
+            "A new case is waiting for review in the lawyer queue.",
+            "/Lawyer/Queue?filter=Unclaimed"),
+
+        NotificationType.DocumentResubmitted => (
+            "আপনার পর্যালোচনাধীন একটি নথি নাগরিক আবার জমা দিয়েছেন।",
+            "A citizen resubmitted a document you are reviewing.",
+            $"/Lawyer/Review/{dto.RelatedDocumentId}"),
+
         _ => ("বিজ্ঞপ্তি", "Notification", "/")
     };
 }

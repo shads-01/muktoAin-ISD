@@ -25,6 +25,7 @@ public class CaseController : Controller
     private readonly IRepository<LawyerProfile> _lawyerProfileRepo;
     private readonly IModerationService _moderationService;
     private readonly IRepository<Notification> _notificationRepo;
+    private readonly LawyerQueueNotifier _lawyerQueueNotifier;
 
     public CaseController(
         CaseService caseService,
@@ -37,7 +38,8 @@ public class CaseController : Controller
         IRepository<LawyerReview> reviewRepo,
         IRepository<LawyerProfile> lawyerProfileRepo,
         IModerationService moderationService,
-        IRepository<Notification> notificationRepo)
+        IRepository<Notification> notificationRepo,
+        LawyerQueueNotifier lawyerQueueNotifier)
     {
         _caseService = caseService;
         _rightsExplanationService = rightsExplanationService;
@@ -50,6 +52,7 @@ public class CaseController : Controller
         _lawyerProfileRepo = lawyerProfileRepo;
         _moderationService = moderationService;
         _notificationRepo = notificationRepo;
+        _lawyerQueueNotifier = lawyerQueueNotifier;
     }
 
     [HttpGet]
@@ -323,6 +326,8 @@ public class CaseController : Controller
         doc.Status = DocumentStatus.UnderReview;
         await _docRepo.SaveChangesAsync();
         await _caseService.TransitionStatusAsync(id, CaseStatus.UnderReview);
+        await _lawyerQueueNotifier.NotifyDocumentQueuedAsync(
+            id, doc.DocumentId, caseEntity!.CategoryId, doc.AssignedLawyerProfileId);
 
         TempData["Success"] = "আপনার খসড়া আইনজীবী পুলে পাঠানো হয়েছে।";
         TempData["SuccessEn"] = "Your draft was sent to the lawyer pool.";

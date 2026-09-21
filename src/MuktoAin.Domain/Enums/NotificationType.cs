@@ -6,5 +6,7 @@ public enum NotificationType
     DocumentDecided = 1,
     LawyerVerified = 2,
     PaymentReceived = 3,
-    NewLawyerApplication = 4
+    NewLawyerApplication = 4,
+    NewCaseInQueue = 5,
+    DocumentResubmitted = 6
 }
