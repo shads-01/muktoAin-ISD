@@ -12,7 +12,6 @@ public class CaseConfiguration : IEntityTypeConfiguration<Case>
         builder.HasKey(c => c.CaseId);
         // Redesign columns (scripts/08_redesign_tables.sql) — additive
         builder.Property(c => c.NotificationEmail).HasMaxLength(256);
-        builder.Property(c => c.HasUnreadActivity).HasDefaultValue(false);
         builder.Property(c => c.HonorariumPaid).HasDefaultValue(false);
     }
 }

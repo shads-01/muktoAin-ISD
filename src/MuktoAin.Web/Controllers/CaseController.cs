@@ -24,6 +24,7 @@ public class CaseController : Controller
     private readonly IRepository<LawyerReview> _reviewRepo;
     private readonly IRepository<LawyerProfile> _lawyerProfileRepo;
     private readonly IModerationService _moderationService;
+    private readonly IRepository<Notification> _notificationRepo;
 
     public CaseController(
         CaseService caseService,
@@ -35,7 +36,8 @@ public class CaseController : Controller
         IRepository<GeneratedDocument> docRepo,
         IRepository<LawyerReview> reviewRepo,
         IRepository<LawyerProfile> lawyerProfileRepo,
-        IModerationService moderationService)
+        IModerationService moderationService,
+        IRepository<Notification> notificationRepo)
     {
         _caseService = caseService;
         _rightsExplanationService = rightsExplanationService;
@@ -47,6 +49,7 @@ public class CaseController : Controller
         _reviewRepo = reviewRepo;
         _lawyerProfileRepo = lawyerProfileRepo;
         _moderationService = moderationService;
+        _notificationRepo = notificationRepo;
     }
 
     [HttpGet]
@@ -166,13 +169,6 @@ public class CaseController : Controller
             var docDto = await _documentService.GenerateDocumentAsync(id, explanation);
             doc = await _docRepo.GetByIdAsync(docDto.DocumentId);
             if (doc == null) return NotFound();
-        }
-
-        // Unread dot clear-on-view
-        if (caseEntity.HasUnreadActivity)
-        {
-            caseEntity.HasUnreadActivity = false;
-            await _caseRepo.SaveChangesAsync();
         }
 
         // Reviews are NOT loaded by GetWithDocumentsAsync (no lazy loading) —
@@ -380,12 +376,22 @@ public class CaseController : Controller
 
         var currentUserId = GetCurrentUserId();
 
+        var unreadCaseIds = currentUserId.HasValue
+            ? (await _notificationRepo.GetAllAsync())
+                .Where(n => n.UserId == currentUserId.Value
+                            && n.Type == NotificationType.DocumentDecided
+                            && !n.IsRead
+                            && n.RelatedCaseId.HasValue)
+                .Select(n => n.RelatedCaseId!.Value)
+                .ToHashSet()
+            : new HashSet<int>();
+
         if (currentUserId.HasValue)
         {
             var userCases = await _caseService.GetUserCasesAsync(currentUserId.Value);
             foreach (var detail in userCases)
             {
-                vm.Cases.Add(await ToListItemAsync(detail, string.Empty));
+                vm.Cases.Add(ToListItem(detail, string.Empty, unreadCaseIds));
             }
         }
 
@@ -395,7 +401,7 @@ public class CaseController : Controller
             var detail = await _caseService.GetCaseDetailAsync(
                 caseId, userId: null, UserRole.Citizen, sessionCode);
             if (detail == null) continue;
-            vm.Cases.Add(await ToListItemAsync(detail, sessionCode));
+            vm.Cases.Add(ToListItem(detail, sessionCode, unreadCaseIds));
         }
 
         // Server-side status filter (real param — fixes decorative chips)
@@ -422,9 +428,8 @@ public class CaseController : Controller
             _ => caseStatus == filter // UnderReview / Submitted map directly
         };
 
-    private async Task<CaseListItemViewModel> ToListItemAsync(CaseDetailDto detail, string code)
+    private static CaseListItemViewModel ToListItem(CaseDetailDto detail, string code, HashSet<int> unreadCaseIds)
     {
-        var entity = await _caseRepo.GetByIdAsync(detail.CaseId);
         return new CaseListItemViewModel
         {
             CaseId = detail.CaseId,
@@ -433,7 +438,7 @@ public class CaseController : Controller
             CategoryName = detail.CategoryName,
             Status = detail.Status,
             CreatedAt = detail.CreatedAt,
-            HasUnread = entity?.HasUnreadActivity ?? false
+            HasUnread = unreadCaseIds.Contains(detail.CaseId)
         };
     }
 

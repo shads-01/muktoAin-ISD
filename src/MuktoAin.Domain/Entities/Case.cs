@@ -30,10 +30,6 @@ public class Case
     // ("no account created" — used ONLY for status-change emails, FR-22)
     public string? NotificationEmail { get; set; }
 
-    // Redesign 2026-09: set when a lawyer acts (claim/decision); cleared
-    // when the citizen opens the case page (unread dot on My Cases)
-    public bool HasUnreadActivity { get; set; }
-
     // Redesign 2026-09 (FR-24): honorarium paid marker for approved case
     public bool HonorariumPaid { get; set; }
 
