@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using MuktoAin.Application.DTOs;
+using MuktoAin.Domain.Common;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces;
@@ -115,8 +116,15 @@ public class LawyerReviewService
 
         d.AssignedLawyerProfileId = lawyerProfileId;
         d.ClaimedAt = DateTime.UtcNow;
-        await _docRepo.SaveChangesAsync();
-        return true;
+        try
+        {
+            await _docRepo.SaveChangesAsync();
+            return true;
+        }
+        catch (ConcurrencyConflictException)
+        {
+            return false; // another lawyer claimed it first (AUD-4)
+        }
     }
 
     public async Task<ReviewWorkspaceDto?> GetForReviewAsync(int documentId)
@@ -182,7 +190,15 @@ public class LawyerReviewService
             ReviewedAt = DateTime.UtcNow
         };
         await _reviewRepo.AddAsync(review);
-        await _reviewRepo.SaveChangesAsync();
+        try
+        {
+            // Review row + claim save together, so a conflict persists neither.
+            await _reviewRepo.SaveChangesAsync();
+        }
+        catch (ConcurrencyConflictException)
+        {
+            return false; // document changed by someone else meanwhile (AUD-4)
+        }
 
         switch (dto.Decision)
         {

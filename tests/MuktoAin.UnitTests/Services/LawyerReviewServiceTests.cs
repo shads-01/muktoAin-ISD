@@ -1,5 +1,6 @@
 using MuktoAin.Application.DTOs;
 using MuktoAin.Application.Services;
+using MuktoAin.Domain.Common;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces;
@@ -300,6 +301,48 @@ public class LawyerReviewServiceTests
         Assert.Equal(5, doc.AssignedLawyerProfileId);
         Assert.NotNull(doc.ClaimedAt);
         _docRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task ClaimAsync_ReturnsFalse_WhenConcurrencyConflict()
+    {
+        var doc = new GeneratedDocument
+        {
+            DocumentId = 7,
+            Status = DocumentStatus.UnderReview,
+            AssignedLawyerProfileId = null
+        };
+        _docRepo.Setup(r => r.GetByIdAsync(7)).ReturnsAsync(doc);
+        _docRepo.Setup(r => r.SaveChangesAsync())
+            .ThrowsAsync(new ConcurrencyConflictException("rowversion conflict"));
+
+        var result = await _service.ClaimAsync(documentId: 7, lawyerProfileId: 42);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task SubmitReviewAsync_ReturnsFalse_WhenConcurrencyConflict()
+    {
+        var doc = new GeneratedDocument
+        {
+            DocumentId = 8,
+            CaseId = 80,
+            Status = DocumentStatus.UnderReview,
+            AssignedLawyerProfileId = 42
+        };
+        _docRepo.Setup(r => r.GetByIdAsync(8)).ReturnsAsync(doc);
+        _reviewRepo.Setup(r => r.SaveChangesAsync())
+            .ThrowsAsync(new ConcurrencyConflictException("rowversion conflict"));
+
+        var result = await _service.SubmitReviewAsync(new SubmitReviewDto(
+            8, 42, ReviewDecision.Approved, "looks fine", null));
+
+        Assert.False(result);
+        // Nothing past the failed save runs: no status change, no case transition.
+        Assert.Equal(DocumentStatus.UnderReview, doc.Status);
+        _docRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
+        _caseRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
     }
 
     [Fact]

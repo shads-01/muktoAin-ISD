@@ -202,8 +202,8 @@ public class LawyerController : Controller
 
         if (!ok)
         {
-            TempData["Error"] = "পর্যালোচনা সংরক্ষণ হয়নি — মন্তব্য আবশ্যক (এবং সম্পাদনার সাথে অনুমোদনের ক্ষেত্রে সম্পাদিত পাঠ্য)।";
-            TempData["ErrorEn"] = "Review not saved — comments are mandatory (and edited text for approve-with-edits).";
+            TempData["Error"] = "পর্যালোচনা সংরক্ষণ হয়নি — মন্তব্য আবশ্যক (এবং সম্পাদনার সাথে অনুমোদনের ক্ষেত্রে সম্পাদিত পাঠ্য)। অন্য কেউ নথিটি বদলে থাকলে পাতাটি আবার লোড করুন।";
+            TempData["ErrorEn"] = "Review not saved — comments are mandatory (and edited text for approve-with-edits). If someone else changed this document, reload and try again.";
             return RedirectToAction(nameof(Review), new { id = vm.DocumentId });
         }
 
