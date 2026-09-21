@@ -1,0 +1,60 @@
+# Continuous deployment to Azure App Service (free F1 Linux plan).
+# Setup and required secrets: docs/deployment-plan.md, section 6.
+#
+# Runs on every push to main (after merge) and on demand from the Actions tab.
+# ci.yml stays the build/test gate; this workflow only publishes and deploys.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never run two deploys at once; a newer push cancels an in-flight one.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    # Skipped until the repo variable AZURE_WEBAPP_NAME is set, so forks and
+    # repos without Azure configured stay green.
+    if: vars.AZURE_WEBAPP_NAME != ''
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # wwwroot/lib vendor libraries are git-ignored -- restore them via LibMan
+      # so Bootstrap/jQuery ship inside the published output (same as Dockerfile).
+      - name: Restore LibMan vendor libraries
+        working-directory: src/MuktoAin.Web
+        run: |
+          dotnet tool install -g Microsoft.Web.LibraryManager.Cli
+          libman restore
+
+      - name: Unit tests
+        run: dotnet test tests/MuktoAin.UnitTests/MuktoAin.UnitTests.csproj -c Release
+
+      - name: Publish
+        run: dotnet publish src/MuktoAin.Web/MuktoAin.Web.csproj -c Release -o ${{ runner.temp }}/publish
+
+      # Startup seeders read data/*.json (SeedCategories reads categories.json on
+      # every start) and SeedDataPathResolver looks in <ContentRoot>/data first.
+      # Only the small committed seed files exist in the checkout; the large
+      # git-ignored datasets are never shipped.
+      - name: Bundle seed data
+        run: |
+          mkdir -p ${{ runner.temp }}/publish/data
+          cp data/*.json ${{ runner.temp }}/publish/data/
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ${{ runner.temp }}/publish

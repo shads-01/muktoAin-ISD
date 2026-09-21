@@ -15,3 +15,4 @@ tests/
 # (districts.json, categories.json, scenario-mappings.json) MUST ship in the
 # image -- SeedDistricts/SeedCategories throw without them.
 data/bangladesh-acts-dataset.json
+data/bangladesh-legal-qa-dataset.json
