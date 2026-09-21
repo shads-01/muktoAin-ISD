@@ -536,6 +536,77 @@ a.card.click { color: var(--ink); }
 .badge-neutral   { color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--border); }
 .badge-neutral::before { display: none; }
 
+/* Notification bell unread-count bubble -- .badge above is a status chip
+   (dot + label), not a count overlay, so scope an override for #notif-bell's
+   badge instead of repurposing it globally. */
+#notif-bell { position: relative; }
+#notif-bell .badge {
+  position: absolute; top: -2px; right: -2px;
+  background: var(--danger); color: #fff;
+  border-radius: 999px; font-size: 10px; line-height: 1;
+  padding: 2px 5px; font-variant-numeric: tabular-nums;
+}
+#notif-bell .badge::before { content: none; }
+/* .badge's unconditional display:inline-flex otherwise beats the browser's
+   own [hidden] default (same specificity, but author styles win) -- same
+   pattern as .doc-expand-btn[hidden] / .act-filter-panel[hidden] above. */
+#notif-bell .badge[hidden] { display: none; }
+
+/* Notification dropdown: header / scrolling list / "see all" footer.
+   .menu-pop's generic a/button rules are overridden per element below. */
+.menu-pop.notif-pop { width: 360px; max-width: calc(100vw - 24px); padding: 0; overflow: hidden; }
+.notif-pop-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+}
+.notif-pop-title { font-family: var(--font-display); font-size: 17px; font-weight: 600; color: var(--ink-heading); }
+.notif-pop-count {
+  font-size: 11.5px; font-weight: 700; color: var(--primary);
+  background: var(--primary-soft); border-radius: 999px; padding: 2px 8px;
+}
+.notif-pop-count[hidden] { display: none; }
+.notif-pop-list { max-height: 360px; overflow-y: auto; padding: 6px; }
+.notif-item {
+  position: relative; display: flex; align-items: flex-start; gap: 10px;
+  border-radius: var(--radius-btn); transition: background .15s var(--ease);
+}
+.notif-item:hover { background: var(--surface-2); }
+.menu-pop .notif-item-link {
+  flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 4px 10px 10px; background: none; font-weight: 400;
+}
+.menu-pop .notif-item-link:hover { background: none; }
+.notif-dot {
+  flex-shrink: 0; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%;
+  background: transparent;
+}
+.notif-item.unread .notif-dot { background: var(--primary); }
+.notif-item-body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.notif-item-text { font-size: 13.5px; line-height: 1.4; color: var(--ink-2); }
+.notif-item.unread .notif-item-text { color: var(--ink); font-weight: 600; }
+.notif-item-time { font-size: 12px; color: var(--ink-3); }
+.menu-pop .notif-del {
+  flex-shrink: 0; width: 30px; height: 30px; margin: 6px 6px 0 0; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--ink-3); opacity: 0; transition: opacity .15s var(--ease);
+}
+.menu-pop .notif-del svg { width: 15px; height: 15px; }
+.notif-item:hover .notif-del, .menu-pop .notif-del:focus-visible { opacity: 1; }
+.menu-pop .notif-del:hover { color: var(--danger); background: var(--danger-soft); }
+@media (hover: none) { .menu-pop .notif-del { opacity: 1; } }
+.notif-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 28px 16px; color: var(--ink-3); font-size: 13.5px; text-align: center;
+}
+.notif-empty svg { width: 26px; height: 26px; opacity: .7; }
+.menu-pop .notif-pop-foot {
+  justify-content: center; gap: 6px; border-radius: 0;
+  padding: 12px 16px; border-top: 1px solid var(--border);
+  font-size: 13.5px; font-weight: 700; color: var(--primary);
+}
+.menu-pop .notif-pop-foot svg { width: 15px; height: 15px; }
+.menu-pop .notif-pop-foot:hover { background: var(--primary-soft); }
+
 .chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .chip {
   display: inline-flex; align-items: center; gap: 7px;

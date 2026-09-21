@@ -139,6 +139,23 @@
                 else
                 {
                     <div class="pop-wrap">
+                        <button class="icon-btn" type="button" data-pop="notif-pop" aria-label="বিজ্ঞপ্তি" id="notif-bell">
+                            <i data-lucide="bell"></i>
+                            <span class="badge" id="notif-badge" hidden>0</span>
+                        </button>
+                        <div class="menu-pop notif-pop" id="notif-pop">
+                            <div class="notif-pop-head">
+                                <span class="notif-pop-title" data-bn="বিজ্ঞপ্তি" data-en="Notifications">বিজ্ঞপ্তি</span>
+                                <span class="notif-pop-count" id="notif-pop-count" hidden></span>
+                            </div>
+                            <div class="notif-pop-list" id="notif-pop-list"></div>
+                            <a asp-controller="Notification" asp-action="Index" class="notif-pop-foot">
+                                <span data-bn="সব বিজ্ঞপ্তি দেখুন" data-en="See all notifications">সব বিজ্ঞপ্তি দেখুন</span>
+                                <i data-lucide="arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="pop-wrap">
                         <button class="avatar" type="button" data-pop="user-pop" aria-label="ব্যবহারকারী মেনু" title="@userDisplayName">
                             @userInitial
                         </button>
