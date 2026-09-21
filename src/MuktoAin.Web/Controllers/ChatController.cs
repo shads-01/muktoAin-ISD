@@ -366,8 +366,10 @@ public class ChatController : Controller
                 redirectUrl = Url.Action("Result", "Case", new { id = result.CaseId })
             });
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            HttpContext?.RequestServices?.GetService<ILogger<ChatController>>()
+                ?.LogError(ex, "Chat commit failed for session {ChatSessionId}", body.ChatSessionId);
             return Json(new
             {
                 success = false,

@@ -688,6 +688,7 @@ details.acc .acc-body.cited-body {
 .timeline { display: flex; margin: 8px 0 4px; }
 .t-step { flex: 1; text-align: center; position: relative; }
 .t-step .t-dot {
+.alert[hidden] { display: none; }
   width: 28px; height: 28px; border-radius: 50%; margin: 0 auto 6px;
   display: flex; align-items: center; justify-content: center;
   background: var(--surface); border: 2px solid var(--border-strong); color: var(--ink-3);
