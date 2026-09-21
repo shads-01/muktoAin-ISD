@@ -22,4 +22,7 @@ RUN dotnet publish MuktoAin.Web/MuktoAin.Web.csproj -c Release -o /app/publish
 
 FROM base AS final
 COPY --from=build /app/publish .
+# Startup seeders read data/*.json (SeedCategories on every start) and
+# SeedDataPathResolver checks <ContentRoot>/data first -- /app/data here.
+COPY data/*.json ./data/
 ENTRYPOINT ["dotnet", "MuktoAin.Web.dll"]
