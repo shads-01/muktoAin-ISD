@@ -24,11 +24,13 @@
                 <div style="margin-bottom: 14px">
                     <label class="form-label" asp-for="CategoryId" data-bn="অভিযোগের ধরন" data-en="Category">অভিযোগের ধরন</label>
                     <select class="input" asp-for="CategoryId" asp-items="Model.Categories"></select>
+                    <span class="text-danger" asp-validation-for="CategoryId"></span>
                 </div>
 
                 <div style="margin-bottom: 14px">
                     <label class="form-label" asp-for="DistrictId" data-bn="জেলা (৬৪)" data-en="District (64)">জেলা (৬৪)</label>
                     <select class="input" asp-for="DistrictId" asp-items="Model.Districts"></select>
+                    <span class="text-danger" asp-validation-for="DistrictId"></span>
                 </div>
 
                 <div style="margin-bottom: 14px">

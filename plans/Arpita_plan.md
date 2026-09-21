@@ -1204,15 +1204,15 @@ NO UNRESOLVED DECISIONS
    - How to run the full suite
 2. Target: ~500 lines.
 
-#### A-3.11: Input Validation Hardening Across All Forms
+#### A-3.11: Input Validation Hardening Across All Forms [COMPLETED]
 
 > `[Blocked by: E-3.4]`
 
-1. Add server-side `[Required]`, `[StringLength]`, `[RegularExpression]` to all ViewModels.
-2. Add client-side validation scripts for all forms.
-3. Add XSS prevention (HTML encoding, sanitization).
-4. Add length guards matching DB column widths.
-5. Target: ~500 lines.
+1. Add server-side `[Required]`, `[StringLength]`, `[RegularExpression]` to all ViewModels. (Completed - CaseSubmitViewModel, SearchViewModel, LawyerApplyViewModel, LawyerReviewViewModel, RegisterViewModel, ResetPasswordViewModel)
+2. Add client-side validation scripts for all forms. (Completed - _ValidationScriptsPartial wired, validation spans added)
+3. Add XSS prevention (HTML encoding, sanitization). (Completed - Markdig DisableHtml pipeline verified by MarkdownTextTests)
+4. Add length guards matching DB column widths. (Completed - DB column length synchronization across all models)
+5. Target: ~500 lines. (Completed - ~530 lines across ViewModels, views, and test suites)
 
 #### A-3.12: Error Handling Improvements + User-Friendly Error Pages
 

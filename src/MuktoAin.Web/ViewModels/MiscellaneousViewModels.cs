@@ -1,9 +1,18 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace MuktoAin.Web.ViewModels;
 
 public class SearchViewModel
 {
+    // Free-text keyword search input — guard against oversized/abusive queries
+    // before they reach FTS CONTAINS.
+    [StringLength(200, ErrorMessage = "সার্চ ২০০ অক্ষরের মধ্যে হতে হবে / Search must be at most 200 characters")]
     public string Query { get; set; } = string.Empty;
+
+    [Range(1, 1000, ErrorMessage = "অবৈধ পৃষ্ঠা / Invalid page")]
     public int Page { get; set; } = 1;
+
+    [Range(1, 50, ErrorMessage = "অবৈধ পৃষ্ঠার আকার / Invalid page size")]
     public int PageSize { get; set; } = 10;
     public int TotalResults { get; set; }
     public int? ActId { get; set; }
@@ -44,8 +53,17 @@ public class CategoryViewModel
 
 public class LawyerApplyViewModel
 {
+    // LAWYER_PROFILE.BarRegistrationNumber is NVARCHAR(100) (scripts/02_schema.sql:149)
+    [Required(ErrorMessage = "বার রেজিস্ট্রেশন নম্বর প্রয়োজন / Bar Registration Number is required")]
+    [StringLength(100, ErrorMessage = "সর্বোচ্চ ১০০ অক্ষর / Maximum 100 characters")]
     public string BarRegistrationNumber { get; set; } = string.Empty;
+
+    // LAWYER_PROFILE.Specialization is NVARCHAR(200) (line 152)
+    [StringLength(200, ErrorMessage = "সর্বোচ্চ ২০০ অক্ষর / Maximum 200 characters")]
     public string? Specialization { get; set; }
+
+    // No dedicated DB column persisted today (rendered profile data) — app-level guard only.
+    [StringLength(500, ErrorMessage = "সর্বোচ্চ ৫০০ অক্ষর / Maximum 500 characters")]
     public string? ChamberAddress { get; set; }
 }
 
@@ -57,7 +75,13 @@ public class LawyerReviewViewModel
     public string CategoryName { get; set; } = string.Empty;
     public string ContentDraft { get; set; } = string.Empty;
     public string? EditedContent { get; set; }
+    [RegularExpression("^(Approved|EditedApproved|Rejected)$",
+        ErrorMessage = "সিদ্ধান্ত অবশ্যই Approved, EditedApproved অথবা Rejected হতে হবে / Decision must be Approved, EditedApproved or Rejected")]
     public string Decision { get; set; } = "Approved"; // Approved, EditedApproved, Rejected
+
+    // FR-14: review comments are mandatory; app-level cap (DB column is NVARCHAR(MAX)).
+    [Required(ErrorMessage = "পর্যালোচনার মন্তব্য প্রয়োজন / Review comments are required")]
+    [StringLength(4000, ErrorMessage = "সর্বোচ্চ ৪০০০ অক্ষর / Maximum 4000 characters")]
     public string Comments { get; set; } = string.Empty;
 }
 
