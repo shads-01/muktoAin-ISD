@@ -130,6 +130,37 @@ public class ChatControllerTests
     }
 
     [Theory]
+    [InlineData(ChatSessionStatus.InProgress)]
+    [InlineData(ChatSessionStatus.Committed)]
+    public async Task Delete_OwnedSession_RemovesItAndSaves(ChatSessionStatus status)
+    {
+        var session = new ChatSession { ChatSessionId = 15, UserId = 42, Status = status };
+        _sessionRepo.Setup(r => r.GetByIdAsync(15)).ReturnsAsync(session);
+        var result = await _controller.Delete(new ChatDeleteRequest { ChatSessionId = 15 });
+        Assert.IsType<JsonResult>(result);
+        _sessionRepo.Verify(r => r.DeleteAsync(session), Times.Once);
+        _sessionRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task Delete_ForeignGuestOrMissingSession_DeletesNothing()
+    {
+        _sessionRepo.Setup(r => r.GetByIdAsync(15)).ReturnsAsync(new ChatSession
+            { ChatSessionId = 15, UserId = 7 });
+        _sessionRepo.Setup(r => r.GetByIdAsync(16)).ReturnsAsync(new ChatSession
+            { ChatSessionId = 16, SessionKey = "guest-b" });
+        Assert.IsType<ForbidResult>(await _controller.Delete(new ChatDeleteRequest { ChatSessionId = 15 }));
+        _controller.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
+        _controller.HttpContext.Session.SetString("mkt-chatkey", "guest-a");
+        Assert.IsType<ForbidResult>(await _controller.Delete(new ChatDeleteRequest { ChatSessionId = 16 }));
+        Assert.IsType<NotFoundObjectResult>(await _controller.Delete(new ChatDeleteRequest { ChatSessionId = 99 }));
+        Assert.IsType<BadRequestObjectResult>(await _controller.Delete(new ChatDeleteRequest { ChatSessionId = 0 }));
+        Assert.IsType<BadRequestObjectResult>(await _controller.Delete(null));
+        _sessionRepo.Verify(r => r.DeleteAsync(It.IsAny<ChatSession>()), Times.Never);
+        _sessionRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task GuestOwnership_RejectsUnrelatedOrAdoptedSession(bool adopted)
