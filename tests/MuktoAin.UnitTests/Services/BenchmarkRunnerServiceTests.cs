@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Moq;
 using MuktoAin.Application.DTOs;
 using MuktoAin.Application.Services;
@@ -161,5 +162,87 @@ public class BenchmarkRunnerServiceTests
     public void VariantLabel_Maps_Enum_To_Report_Names()
     {
         Assert.Equal("zero-shot", BenchmarkRunnerService.VariantLabel(BenchmarkPromptVariant.ZeroShot));
+    }
+
+    [Fact]
+    public async Task RunAsync_FewShotIrac_Uses_The_FewShot_Assembler()
+    {
+        SetupHappyPath(Question(1, "A"));
+        _promptMock
+            .Setup(p => p.AssembleFewShotIracPromptAsync(
+                It.IsAny<string>(), It.IsAny<IEnumerable<RetrievedSection>>(), It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync("FEW-SHOT IRAC PROMPT");
+        var service = CreateService();
+
+        var result = await service.RunAsync(new BenchmarkRunOptions
+        {
+            Variant = BenchmarkPromptVariant.FewShotIrac,
+            OutputPath = Path.Combine(Path.GetTempPath(), $"bench-{Guid.NewGuid():N}.json")
+        });
+
+        Assert.Equal("few-shot-irac", result.Variant);
+        _promptMock.Verify(p => p.AssembleFewShotIracPromptAsync(
+            It.IsAny<string>(), It.IsAny<IEnumerable<RetrievedSection>>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _promptMock.Verify(p => p.AssemblePromptAsync(
+            It.IsAny<string>(), It.IsAny<IEnumerable<RetrievedSection>>(), It.IsAny<string>(),
+            It.IsAny<AiRequestType>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public void VariantLabel_Maps_FewShotIrac()
+    {
+        Assert.Equal("few-shot-irac", BenchmarkRunnerService.VariantLabel(BenchmarkPromptVariant.FewShotIrac));
+    }
+
+    [Fact]
+    public async Task CompareAsync_Detects_Improvement_Regression_And_Writes_Report()
+    {
+        var zeroShot = new BenchmarkRunResultDto
+        {
+            Variant = "zero-shot",
+            MeanF1 = 0.4,
+            Questions =
+            [
+                new() { DatasetId = 1, Category = "Cat A", F1 = 0.6, Error = null },
+                new() { DatasetId = 2, Category = "Cat A", F1 = 0.2, Error = null },
+                new() { DatasetId = 3, Category = "Cat B", F1 = 0.4, Error = null }
+            ]
+        };
+        var fewShot = new BenchmarkRunResultDto
+        {
+            Variant = "few-shot-irac",
+            MeanF1 = 0.7,
+            Questions =
+            [
+                new() { DatasetId = 1, Category = "Cat A", F1 = 0.8, Error = null },  // improved
+                new() { DatasetId = 2, Category = "Cat A", F1 = 0.1, Error = null },  // regressed
+                new() { DatasetId = 3, Category = "Cat B", F1 = 0.9, Error = null }   // improved
+            ]
+        };
+        var dir = Path.Combine(Path.GetTempPath(), $"bench-cmp-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        var zeroPath = Path.Combine(dir, "zero.json");
+        var fewPath = Path.Combine(dir, "few.json");
+        File.WriteAllText(zeroPath, JsonSerializer.Serialize(zeroShot));
+        File.WriteAllText(fewPath, JsonSerializer.Serialize(fewShot));
+        var service = CreateService();
+
+        var comparison = await service.CompareAsync(zeroPath, fewPath);
+
+        Assert.Equal(zeroPath, comparison.ZeroShotResultsPath);
+        Assert.Equal(fewPath, comparison.FewShotResultsPath);
+        Assert.Equal(0.4, comparison.ZeroShotMeanF1);
+        Assert.Equal(0.7, comparison.FewShotMeanF1);
+        Assert.Equal(0.3, comparison.MeanF1Delta, precision: 4);
+        Assert.Equal(2, comparison.QuestionsImproved);
+        Assert.Equal(1, comparison.QuestionsRegressed);
+        Assert.Equal(2, comparison.Categories.Count);
+        var catA = comparison.Categories.Single(c => c.Category == "Cat A");
+        Assert.Equal(0.4, catA.ZeroShotMeanF1, precision: 4);                      // (0.6+0.2)/2 = 0.4
+        Assert.Equal(0.45, catA.FewShotMeanF1, precision: 4);                      // (0.8+0.1)/2 = 0.45
+        Assert.True(File.Exists(comparison.OutputPath));
+        Directory.Delete(dir, recursive: true);
     }
 }

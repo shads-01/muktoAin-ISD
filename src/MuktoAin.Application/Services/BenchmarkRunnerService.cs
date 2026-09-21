@@ -16,6 +16,7 @@ namespace MuktoAin.Application.Services;
 public class BenchmarkRunnerService : IBenchmarkRunner
 {
     private static readonly JsonSerializerOptions JsonWriteOptions = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions JsonReadOptions = new() { PropertyNameCaseInsensitive = true };
 
     private readonly IBenchmarkLoader _loader;
     private readonly IRagContextBuilder _ragContextBuilder;
@@ -40,6 +41,7 @@ public class BenchmarkRunnerService : IBenchmarkRunner
     public static string VariantLabel(BenchmarkPromptVariant variant) => variant switch
     {
         BenchmarkPromptVariant.ZeroShot => "zero-shot",
+        BenchmarkPromptVariant.FewShotIrac => "few-shot-irac",
         _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, "Unknown benchmark prompt variant.")
     };
 
@@ -123,6 +125,8 @@ public class BenchmarkRunnerService : IBenchmarkRunner
         {
             BenchmarkPromptVariant.ZeroShot => await _promptAssembler.AssemblePromptAsync(
                 question.Question, sections, question.Language, AiRequestType.RightsExplanation, null, ct),
+            BenchmarkPromptVariant.FewShotIrac => await _promptAssembler.AssembleFewShotIracPromptAsync(
+                question.Question, sections, question.Language, ct),
             _ => throw new ArgumentOutOfRangeException(nameof(options.Variant), options.Variant, "Unknown benchmark prompt variant.")
         };
 
@@ -147,6 +151,73 @@ public class BenchmarkRunnerService : IBenchmarkRunner
             Recall = recall,
             F1 = f1
         };
+    }
+
+    public async Task<BenchmarkComparisonDto> CompareAsync(
+        string zeroShotResultsPath,
+        string fewShotResultsPath,
+        string? outputPath = null,
+        CancellationToken ct = default)
+    {
+        var zeroShot = JsonSerializer.Deserialize<BenchmarkRunResultDto>(
+            await File.ReadAllTextAsync(zeroShotResultsPath, ct), JsonReadOptions)
+            ?? throw new InvalidOperationException($"'{zeroShotResultsPath}' deserialized to no data.");
+        var fewShot = JsonSerializer.Deserialize<BenchmarkRunResultDto>(
+            await File.ReadAllTextAsync(fewShotResultsPath, ct), JsonReadOptions)
+            ?? throw new InvalidOperationException($"'{fewShotResultsPath}' deserialized to no data.");
+
+        var zeroScores = zeroShot.Questions
+            .Where(q => q.Error is null)
+            .ToDictionary(q => q.DatasetId, q => q.F1);
+        var fewScores = fewShot.Questions
+            .Where(q => q.Error is null)
+            .ToDictionary(q => q.DatasetId, q => q.F1);
+
+        var zeroByCategory = zeroShot.Categories.Count > 0
+            ? zeroShot.Categories.ToDictionary(c => c.Category, c => c.MeanF1)
+            : zeroShot.Questions
+                .Where(q => q.Error is null)
+                .GroupBy(q => q.Category)
+                .ToDictionary(g => g.Key, g => g.Average(q => q.F1));
+
+        var fewByCategory = fewShot.Categories.Count > 0
+            ? fewShot.Categories.ToDictionary(c => c.Category, c => c.MeanF1)
+            : fewShot.Questions
+                .Where(q => q.Error is null)
+                .GroupBy(q => q.Category)
+                .ToDictionary(g => g.Key, g => g.Average(q => q.F1));
+        var categories = zeroByCategory.Keys.Union(fewByCategory.Keys)
+            .OrderBy(k => k, StringComparer.Ordinal)
+            .Select(k =>
+            {
+                var zero = zeroByCategory.GetValueOrDefault(k);
+                var few = fewByCategory.GetValueOrDefault(k);
+                return new BenchmarkCategoryComparisonDto(k, zero, few, few - zero);
+            })
+            .ToList();
+
+        var comparison = new BenchmarkComparisonDto(
+            zeroShotResultsPath,
+            fewShotResultsPath,
+            zeroShot.MeanF1,
+            fewShot.MeanF1,
+            fewShot.MeanF1 - zeroShot.MeanF1,
+            fewScores.Count(kv => zeroScores.TryGetValue(kv.Key, out var zeroF1) && kv.Value > zeroF1),
+            fewScores.Count(kv => zeroScores.TryGetValue(kv.Key, out var zeroF1) && kv.Value < zeroF1),
+            categories);
+
+        var resolvedOutputPath = outputPath ?? BenchmarkDataPathResolver.ResolveResultsOutputPath(
+            AppContext.BaseDirectory, "benchmark/results/comparison-zero-shot-vs-few-shot.json");
+        var dir = Path.GetDirectoryName(resolvedOutputPath);
+        if (!string.IsNullOrEmpty(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+        await File.WriteAllTextAsync(
+            resolvedOutputPath, JsonSerializer.Serialize(comparison, JsonWriteOptions), ct);
+        comparison.OutputPath = resolvedOutputPath;
+
+        return comparison;
     }
 
     private static void Aggregate(BenchmarkRunResultDto run)
