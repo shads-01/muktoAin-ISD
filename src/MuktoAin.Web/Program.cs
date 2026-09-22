@@ -38,7 +38,9 @@ builder.Services.AddSession(options =>
 // this context only maps onto that predefined schema. No EF migrations by design.
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions => sqlOptions.UseCompatibilityLevel(120)
+    ));
 
 // S-1.1: ASP.NET Core Identity against the manually-authored [dbo].[USER] table.
 // Role tables do not exist in the SSMS schema by design -- authorization runs off
