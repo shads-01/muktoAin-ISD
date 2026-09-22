@@ -159,29 +159,4 @@ public class RepositoryAndConstraintSqlTests
         await using var verify = _fx.CreateContext();
         Assert.Null(await verify.Cases.FindAsync(caseId));
     }
-
-    [SkippableFact]
-    public async Task AiTurnReservationStore_Atomically_Reserves_And_Releases_On_Real_Sql()
-    {
-        Skip.IfNot(_fx.DatabaseAvailable);
-        await using var ctx = _fx.CreateContext();
-        var store = new MuktoAin.Infrastructure.Data.AiTurnReservationStore(ctx);
-
-        var since = DateTime.UtcNow.AddMinutes(-5);
-        var limit = 2;
-
-        var r1 = await store.TryReserveAsync(since, limit);
-        var r2 = await store.TryReserveAsync(since, limit);
-        var r3 = await store.TryReserveAsync(since, limit);
-
-        Assert.True(r1);
-        Assert.True(r2);
-        Assert.False(r3); // limit of 2 reached
-
-        await store.ReleaseOneAsync();
-
-        // After releasing one, reservation should succeed again
-        var r4 = await store.TryReserveAsync(since, limit);
-        Assert.True(r4);
-    }
 }

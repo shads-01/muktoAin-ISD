@@ -42,7 +42,6 @@ public class AdminControllerTests
     [InlineData(nameof(AdminController.PromoteAdmin))]
     [InlineData(nameof(AdminController.RefundOrder))]
     [InlineData(nameof(AdminController.ApprovePayout))]
-    [InlineData(nameof(AdminController.MarkOrderPaid))]
     public void Action_IsGatedBySuperAdminOnlyPolicy(string actionName)
     {
         var methods = typeof(AdminController).GetMethods()

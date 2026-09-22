@@ -583,8 +583,16 @@ public class AdminController : Controller
     {
         var adminId = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
             out var id) ? id : 0;
-        await _paymentService.RefundAsync(orderId, adminId);
-        TempData["Success"] = "Order refunded (sandbox) — ledger reversed.";
+        try
+        {
+            await _paymentService.RefundAsync(orderId, adminId);
+            TempData["Success"] = "Order refunded — ledger reversed.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            // AUD-11: not Paid (already refunded, pending, failed) or unknown.
+            TempData["Error"] = ex.Message;
+        }
         return RedirectToAction(nameof(Transactions));
     }
 
@@ -595,19 +603,6 @@ public class AdminController : Controller
     {
         await _paymentService.ApprovePayoutAsync(payoutRequestId);
         TempData["Success"] = "Payout marked paid (sandbox).";
-        return RedirectToAction(nameof(Transactions));
-    }
-
-    [HttpPost]
-    [Authorize(Policy = "SuperAdminOnly")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> MarkOrderPaid(int orderId)
-    {
-        // Sandbox gateway confirm (in lieu of real SSLCommerz IPN)
-        var adminId = int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
-            out var id) ? id : 0;
-        await _paymentService.MarkPaidAsync(orderId, $"SBX-{Guid.NewGuid().ToString("N")[..12].ToUpper()}", adminId);
-        TempData["Success"] = "Order marked Paid (sandbox gateway).";
         return RedirectToAction(nameof(Transactions));
     }
 

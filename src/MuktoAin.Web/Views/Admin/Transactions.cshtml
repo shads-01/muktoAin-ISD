@@ -16,7 +16,7 @@
         <span class="kicker"><i data-lucide="receipt"></i> FR-24</span>
         <h1 class="page-title">Transactions</h1>
         <p class="page-sub">
-            <span class="badge badge-warn sandbox-badge">ডেমো মোড — স্যান্ডবক্স পেমেন্ট / Sandbox — no real money</span>
+            <span class="badge badge-warn sandbox-badge">ডেমো মোড — সিমুলেটেড গেটওয়ে / Simulated gateway — no real money</span>
         </p>
     </div>
 
@@ -38,18 +38,11 @@
                         <td>৳@o.NetToLawyer @(o.LawyerName != null ? $"· {o.LawyerName}" : "")</td>
                         <td><span class="badge badge-@(o.Status == "Paid" ? "final" : o.Status == "Refunded" ? "neutral" : o.Status == "Failed" ? "rejected" : "draft")">@o.Status</span></td>
                         <td>
-                            @if (o.Status == "Pending")
-                            {
-                                <form asp-action="MarkOrderPaid" method="post" style="display:inline">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="orderId" value="@o.PaymentOrderId" />
-                                    <button class="btn btn-outline btn-sm" type="submit">Mark paid (SBX)</button>
-                                </form>
-                            }
-                            else if (o.Status == "Paid")
+                            @* Orders become Paid only through the gateway (PaymentService.ConfirmPaymentAsync). *@
+                            @if (o.Status == "Paid")
                             {
                                 <form asp-action="RefundOrder" method="post" style="display:inline"
-                                      data-confirm="এই অর্ডারের টাকা রিফান্ড (স্যান্ডবক্স) করে লেজার সমন্বয় করবেন? / Refund this order (sandbox) and reverse the ledger?"
+                                      data-confirm="এই অর্ডারের টাকা রিফান্ড করে লেজার সমন্বয় করবেন? / Refund this order and reverse the ledger?"
                                       data-confirm-title="রিফান্ড নিশ্চিতকরণ / Refund Confirmation"
                                       data-confirm-ok="রিফান্ড করুন / Refund"
                                       data-confirm-cancel="বাতিল / Cancel">
@@ -63,7 +56,7 @@
                 }
                 @if (!Model.Any())
                 {
-                    <tr><td colspan="8" class="muted" style="text-align:center">No orders yet (sandbox).</td></tr>
+                    <tr><td colspan="8" class="muted" style="text-align:center">No orders yet.</td></tr>
                 }
             </tbody>
         </table>

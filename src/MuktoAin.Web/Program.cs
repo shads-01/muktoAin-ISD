@@ -192,6 +192,26 @@ builder.Services.AddSingleton<GeminiEmbeddingService>();
 builder.Services.AddSingleton<MuktoAin.Domain.Interfaces.IEmbeddingService>(
     sp => sp.GetRequiredService<GeminiEmbeddingService>());
 
+// FR-24 payment gateways. PaymentGatewayResolver picks one per order from
+// the citizen's method and Payments:Mode: Simulator (default) sends every
+// method to the built-in SimulatedGateway (singleton, it holds the checkout
+// sessions its GatewaySimulatorController pages drive); Sandbox sends bKash to
+// the bKash sandbox and card to the SSLCommerz sandbox (typed HttpClients,
+// credentials in the Bkash / SslCommerz sections).
+builder.Services.Configure<MuktoAin.Infrastructure.Payments.PaymentGatewayOptions>(
+    builder.Configuration.GetSection(MuktoAin.Infrastructure.Payments.PaymentGatewayOptions.SectionName));
+builder.Services.Configure<MuktoAin.Infrastructure.Payments.SslCommerzOptions>(
+    builder.Configuration.GetSection(MuktoAin.Infrastructure.Payments.SslCommerzOptions.SectionName));
+builder.Services.Configure<MuktoAin.Infrastructure.Payments.BkashOptions>(
+    builder.Configuration.GetSection(MuktoAin.Infrastructure.Payments.BkashOptions.SectionName));
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddHttpClient<MuktoAin.Infrastructure.Payments.SslCommerzGatewayClient>();
+builder.Services.AddHttpClient<MuktoAin.Infrastructure.Payments.BkashGatewayClient>();
+builder.Services.AddSingleton<MuktoAin.Infrastructure.Payments.BkashTokenCache>();
+builder.Services.AddSingleton<MuktoAin.Infrastructure.Payments.SimulatedGateway>();
+builder.Services.AddScoped<MuktoAin.Domain.Interfaces.Services.IPaymentGatewayResolver,
+    MuktoAin.Infrastructure.Payments.PaymentGatewayResolver>();
+
 // T-1.11: Qdrant vector store. Registered as both the concrete type (so Program.cs can
 // call EnsureCollectionAsync below) and the IVectorStore interface (so consumers like
 // SimilaritySearchService depend on the Domain abstraction, not Infrastructure).
@@ -424,6 +444,9 @@ using (var scope = app.Services.CreateScope())
             userManager,
             scope.ServiceProvider.GetRequiredService<IRepository<LawyerProfile>>(),
             logger);
+
+        // Finalized, unpaid cases for citizen@muktoain.bd to try the honorarium payment on.
+        await SeedDemoPaymentCases.SeedAsync(context, userManager, encryptionService, logger);
     }
 
     var vectorStore = scope.ServiceProvider.GetRequiredService<QdrantVectorStore>();

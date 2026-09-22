@@ -333,9 +333,9 @@
             <button class="icon-btn" type="button" data-close-modal aria-label="বন্ধ করুন"><i data-lucide="x"></i></button>
         </div>
         <div style="padding: 10px 0;">
-            <p class="muted tiny" data-bn="আপনার দলিলটি পর্যালোচনাকারী আইনজীবীকে ঐচ্ছিক স্বেচ্ছাসেবী সম্মানী পাঠিয়ে কৃতজ্ঞতা প্রকাশ করতে পারেন (স্যান্ডবক্স পেমেন্ট)।"
-               data-en="You may express gratitude to the reviewing advocate by sending an optional voluntary honorarium (sandbox payment).">
-                আপনার দলিলটি পর্যালোচনাকারী আইনজীবীকে ঐচ্ছিক স্বেচ্ছাসেবী সম্মানী পাঠিয়ে কৃতজ্ঞতা প্রকাশ করতে পারেন (স্যান্ডবক্স পেমেন্ট)।
+            <p class="muted tiny" data-bn="আপনার দলিলটি পর্যালোচনাকারী আইনজীবীকে ঐচ্ছিক স্বেচ্ছাসেবী সম্মানী পাঠিয়ে কৃতজ্ঞতা প্রকাশ করতে পারেন (স্যান্ডবক্স পেমেন্ট — কোনো আসল টাকা নয়)।"
+               data-en="You may express gratitude to the reviewing advocate by sending an optional voluntary honorarium (sandbox payment — no real money).">
+                আপনার দলিলটি পর্যালোচনাকারী আইনজীবীকে ঐচ্ছিক স্বেচ্ছাসেবী সম্মানী পাঠিয়ে কৃতজ্ঞতা প্রকাশ করতে পারেন (স্যান্ডবক্স পেমেন্ট — কোনো আসল টাকা নয়)।
             </p>
             <div style="margin: 16px 0;">
                 <label for="honorarium-amount" style="font-weight:600; font-size:13px; display:block; margin-bottom:6px" data-bn="সম্মানীর পরিমাণ (টাকা):" data-en="Honorarium Amount (BDT):">সম্মানীর পরিমাণ (টাকা):</label>
@@ -344,9 +344,10 @@
                     <input type="number" id="honorarium-amount" class="input" style="flex:1;" value="500" min="50" step="50" placeholder="500" />
                 </div>
             </div>
+            <partial name="_PaymentMethodPicker" model="@("honorarium-method")" />
             <div id="honorarium-feedback" style="display:none; margin-bottom: 12px;"></div>
             <button id="btn-submit-honorarium" class="btn btn-gold btn-block" type="button">
-                <i data-lucide="credit-card"></i> <span data-bn="সম্মানী পাঠান (স্যান্ডবক্স)" data-en="Pay Honorarium (Sandbox)">সম্মানী পাঠান (স্যান্ডবক্স)</span>
+                <i data-lucide="credit-card"></i> <span data-bn="সম্মানী পাঠান" data-en="Pay Honorarium">সম্মানী পাঠান</span>
             </button>
         </div>
     </div>
@@ -379,17 +380,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 method: "POST",
                 headers: { "Content-Type": "application/json",
                            "RequestVerificationToken": (csrfMeta ? csrfMeta.getAttribute("content") : "") },
-                body: JSON.stringify({ caseId: @Model.CaseId, amount: amount, trackingCode: '@Model.TrackingCode' })
+                body: JSON.stringify({ caseId: @Model.CaseId, amount: amount, trackingCode: '@Model.TrackingCode',
+                                      method: (document.querySelector('input[name="honorarium-method"]:checked') || {}).value || "card" })
             });
             var data = await res.json();
-            if (data.success) {
-                if (window.showToast) {
-                    showToast(data.message || "সম্মানী প্রদান সম্পন্ন হয়েছে! / Payment successful!", "success");
-                }
-                setTimeout(function () { location.reload(); }, 1200);
+            if (data.success && data.gatewayUrl) {
+                // Pay on the gateway's checkout page; it sends the browser
+                // back to /Payment/Result when done.
+                window.location.href = data.gatewayUrl;
             } else {
                 btn.disabled = false;
-                btn.innerHTML = '<i data-lucide="credit-card"></i> সম্মানী পাঠান (স্যান্ডবক্স)';
+                btn.innerHTML = '<i data-lucide="credit-card"></i> সম্মানী পাঠান';
                 if (window.lucide) lucide.createIcons();
                 if (feedback) {
                     feedback.style.display = "block";
@@ -399,7 +400,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         } catch (err) {
             btn.disabled = false;
-            btn.innerHTML = '<i data-lucide="credit-card"></i> সম্মানী পাঠান (স্যান্ডবক্স)';
+            btn.innerHTML = '<i data-lucide="credit-card"></i> সম্মানী পাঠান';
             if (window.lucide) lucide.createIcons();
             if (feedback) {
                 feedback.style.display = "block";

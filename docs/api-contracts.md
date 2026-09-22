@@ -76,10 +76,44 @@ This document specifies the implicit and explicit service contracts for the `Muk
 | `/Admin/Lawyers/{id}/Verify`| `POST`| `[Authorize(Roles = "Admin")]` | `int id, bool approve` | `ILawyerVerificationService` | Approves or rejects lawyer verification applications |
 | `/Admin/Acts` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IActRepository`, `IEmbeddingBatchJob` | Bangladesh Acts corpus management and embedding status |
 | `/Admin/ScenarioMappings` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IScenarioMappingRepository`, `IScenarioMappingService` | Keyword-to-statute grounding boosts management (FR-18) |
+| `/Admin/Transactions` | `GET` | `[Authorize(Roles = "Admin")]` | — | `PaymentService` | Payment orders and pending lawyer payouts. There is no "mark paid" action: orders become Paid only through the gateway (§8) |
+| `/Admin/RefundOrder` | `POST` | `SuperAdminOnly`, antiforgery | `int orderId` | `PaymentService`, `IAdminAuditService` | Refunds a **Paid** order as a ledger reversal (clears `Case.HonorariumPaid`) and writes an audit row. A non-Paid order shows an error (AUD-11) |
 
 ---
 
-## 8. State Machine & Review Guard Contract
+## 8. PaymentController (FR-24)
+
+Orders go `Pending` → gateway checkout → `Paid` / `Failed`. The citizen picks a method (`bkash` or `card`); `IPaymentGatewayResolver` maps it to a gateway using `Payments:Mode`. `Simulator` (default): both methods go to the built-in simulator (§9). `Sandbox`: `bkash` goes to the bKash tokenized-checkout sandbox (`Bkash` section), `card` to the SSLCommerz sandbox (`SslCommerz` section). The gateway is stored on the order (`PAYMENT_ORDER.Gateway`), and the same gateway validates it.
+
+| Route | Method | Authorization | Parameters / ViewModel | Injected Services & Dependencies | Description |
+|---|---|---|---|---|---|
+| `/Payment/Honorarium` | `POST` | Case owner, tracking-code holder or Admin; antiforgery; `payment` rate limit | JSON `{ caseId, amount, trackingCode?, method? }` (`method`: `bkash` or `card`, default `card`) | `PaymentService`, `ICaseRepository` | Creates a Pending honorarium order (10% commission) and starts a gateway session. Returns `{ success: true, orderId, gatewayUrl }`; the page sends the browser to `gatewayUrl`. If the gateway can't start, the order is Failed and the response is `{ success: false, orderId, message }` |
+| `/Payment/TopUp` | `POST` | Signed-in only (`401` for guests); antiforgery; `payment` rate limit | JSON `{ amount, method? }`; `amount` ≥ 50 and a multiple of 5 BDT, else `400` | `PaymentService` | Same as Honorarium, for a chat credit order worth `amount / 5` credits (`PAYMENT_ORDER.ChatCredits`) |
+| `/Payment/Success?orderId={id}` | `POST` | AllowAnonymous, no antiforgery (gateway posts cross-site) | form `tran_id, val_id, amount, status, bank_tran_id` | `PaymentService` | Gateway return URL. `ConfirmPaymentAsync` validates `val_id` server-to-server; Paid only if the validated `tran_id` **and** amount match the order. Idempotent on replays. Redirects to `/Payment/Result` |
+| `/Payment/Fail?orderId={id}` | `POST` | AllowAnonymous, no antiforgery | form (as above) | `PaymentService` | Marks the order Failed only if it is Pending and the posted `tran_id` matches. Redirects to `/Payment/Result` |
+| `/Payment/Cancel?orderId={id}` | `POST` | AllowAnonymous, no antiforgery | form (as above) | `PaymentService` | As Fail; redirects to `/Payment/Result?cancelled=true` |
+| `/Payment/BkashCallback/{orderId}` | `GET` | AllowAnonymous (bKash redirects the browser) | query `paymentID, status` (`success`, `failure`, `cancel`) | `PaymentService` | bKash return URL for every outcome. The `paymentID` must be the one stored on the order (`GatewaySessionId`), else nothing changes. `success`: `ConfirmPaymentAsync` runs bKash execute (or the status query if already executed); Paid only if the returned `merchantInvoiceNumber` **and** amount match. `failure`/`cancel`: marks Failed. Redirects to `/Payment/Result` |
+| `/Payment/Result?orderId={id}` | `GET` | AllowAnonymous (another signed-in user's order shows as not found) | `int orderId, bool cancelled` | `IRepository<PaymentOrder>` | Outcome page. Status is read from the database, never from the query string |
+| `/Payment/Status/{id}` | `GET` | Order owner or Admin | `int id` | `IRepository<PaymentOrder>` | Order JSON (`status`, `amount`, `commission`, `netToLawyer`, `gatewayRef`, `paidAt`) |
+
+---
+
+## 9. GatewaySimulatorController (built-in simulated gateway)
+
+Stands in for an external gateway site when `Payments:Mode = Simulator`. Sessions live in memory for 30 minutes. No real money moves.
+
+| Route | Method | Authorization | Parameters | Description |
+|---|---|---|---|---|
+| `/GatewaySim/Checkout/{key}` | `GET` | AllowAnonymous | session key, `method?` (preselected tab) | Checkout page: bKash / Nagad / Rocket / card, then OTP. A finished session renders the return form |
+| `/GatewaySim/Checkout/{key}` | `POST` | AllowAnonymous, antiforgery | `method, account, secret, expiry?` | Wallet number + PIN, or card number + CVV + `MM/YY` expiry |
+| `/GatewaySim/Otp/{key}` | `POST` | AllowAnonymous, antiforgery | `otp` | Completes the payment |
+| `/GatewaySim/Cancel/{key}` | `POST` | AllowAnonymous, antiforgery | — | Cancels the payment |
+
+When a session finishes, the page auto-submits a form POST to the order's success / fail / cancel URL with the fields listed in §8. Test values: wallet PIN `12121`; card `4111 1111 1111 1111`, CVV `123`, any future expiry; OTP `123456`; wallet `01700000099` = insufficient balance; card `4000 0000 0000 0002` = declined; 3 wrong entries fail the session.
+
+---
+
+## 10. State Machine & Review Guard Contract
 
 1. **Document Lifecycle:**
    - `Draft` → AI generated; citizen can view text preview in `/Case/Result/{id}` or `/Document/Preview/{id}`. PDF download is **locked**.

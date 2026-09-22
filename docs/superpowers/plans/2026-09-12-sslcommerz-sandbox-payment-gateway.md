@@ -1,5 +1,7 @@
 # SSLCommerz Sandbox Payment Gateway Implementation Plan
 
+> **Status (2026-09-22): implemented, with changes.** See `docs/superpowers/specs/2026-09-22-payment-gateway-simulation-design.md`. A built-in simulated gateway (`SimulatedGateway`, `/GatewaySim`) is the default adapter; the SSLCommerz adapter below is built and switched on with `Payments:Gateway = SslCommerz`. The schema script is `scripts/18_payment_gateway.sql` (also adds `RowVersion`). The admin "Mark paid" action was removed, and AUD-11 was folded in.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the instant-`Paid` sandbox stub in `PaymentController`/`PaymentService` with a real SSLCommerz sandbox integration, so Honorarium and Top-Up payments actually redirect through SSLCommerz's sandbox checkout (real bKash/Rocket/Nagad/card test screens) and get confirmed server-side instead of being marked paid unconditionally.

@@ -53,5 +53,6 @@ public record ChatCommitResultDto(
 public record QuotaSnapshotDto(
     int RemainingToday,
     int DailyLimit,
-    bool IsLoggedIn
+    bool IsLoggedIn,
+    int Credits = 0      // paid chat credits left (signed-in users only)
 );

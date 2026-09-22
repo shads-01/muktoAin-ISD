@@ -1,0 +1,59 @@
+@* Stand-alone layout: the simulated gateway is meant to look like a
+   separate payment site, not a MuktoAin page. *@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>@ViewData["Title"] — SimuPay</title>
+    <style>
+        :root { --bg:#f3f5f9; --card:#fff; --ink:#1b2430; --muted:#5d6b7a; --line:#dde3ea;
+                --brand:#0b6e4f; --brand-2:#e2136e; --warn-bg:#fff4d6; --warn:#7a5a00; --err:#b3261e; }
+        * { box-sizing:border-box; }
+        body { margin:0; font-family: "Hind Siliguri", "Noto Sans Bengali", system-ui, sans-serif;
+               background:var(--bg); color:var(--ink); }
+        .sim-banner { background:var(--warn-bg); color:var(--warn); text-align:center; font-size:13px;
+                      padding:8px 16px; font-weight:600; border-bottom:1px solid #f0dc9c; }
+        .sim-wrap { max-width:440px; margin:32px auto; padding:0 16px; }
+        .sim-card { background:var(--card); border:1px solid var(--line); border-radius:14px;
+                    box-shadow:0 6px 24px rgba(20,30,50,.08); overflow:hidden; }
+        .sim-head { background:var(--brand); color:#fff; padding:18px 20px; }
+        .sim-head .brand { font-weight:800; letter-spacing:.02em; font-size:18px; }
+        .sim-head .merchant { opacity:.9; font-size:13px; margin-top:4px; }
+        .sim-amount { font-size:28px; font-weight:800; margin-top:10px; }
+        .sim-body { padding:20px; }
+        .sim-meta { font-size:12px; color:var(--muted); display:flex; justify-content:space-between; gap:8px;
+                    margin-bottom:16px; }
+        .methods { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:16px; }
+        .methods label { border:1px solid var(--line); border-radius:10px; padding:10px 4px; text-align:center;
+                         cursor:pointer; font-size:13px; font-weight:700; }
+        .methods input { position:absolute; opacity:0; pointer-events:none; }
+        .methods input:checked + span { color:var(--brand-2); }
+        .methods label:has(input:checked) { border-color:var(--brand-2); box-shadow:0 0 0 2px rgba(226,19,110,.15); }
+        .field { margin-bottom:12px; }
+        .field label { display:block; font-size:13px; font-weight:600; margin-bottom:4px; }
+        .field input { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-size:15px; }
+        .row2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .btn { width:100%; border:0; border-radius:10px; padding:12px; font-size:15px; font-weight:700; cursor:pointer; }
+        .btn-pay { background:var(--brand-2); color:#fff; }
+        .btn-cancel { background:transparent; color:var(--muted); margin-top:8px; }
+        .err { background:#fdecea; color:var(--err); border-radius:8px; padding:10px 12px; font-size:13px; margin-bottom:12px; }
+        .hint { font-size:12px; color:var(--muted); background:#f7f9fb; border:1px dashed var(--line);
+                border-radius:8px; padding:10px 12px; margin-top:16px; line-height:1.6; }
+        .hint code { background:#eef2f6; padding:1px 5px; border-radius:4px; }
+        .hidden { display:none; }
+        .foot { text-align:center; font-size:11px; color:var(--muted); margin-top:14px; }
+    </style>
+</head>
+<body>
+    <div class="sim-banner" role="note">
+        সিমুলেটেড পেমেন্ট গেটওয়ে — কোনো আসল টাকা লেনদেন হয় না · SIMULATED GATEWAY — no real money moves
+    </div>
+    <main class="sim-wrap">
+        @RenderBody()
+        <div class="foot">SimuPay · MuktoAin payment simulator</div>
+    </main>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

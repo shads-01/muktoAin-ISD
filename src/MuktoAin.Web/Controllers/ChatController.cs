@@ -130,35 +130,42 @@ public class ChatController : Controller
 
         // Cache-first (A1: cache hits stretch the daily quota — a repeated
         // question is served from ANSWER_CACHE without any model call;
-        // only a MISS consumes budget). AskAsync returns FromCache=true and
-        // the controller releases the reservation (free turn).
+        // only a MISS consumes budget).
         // AUD-3: reserve BEFORE the metered call so two concurrent asks
-        // cannot both pass a stale count (TOCTOU). The reservation IS an
-        // AI_LOG row that GetRemainingToday counts. Heuristic-blocked turns
-        // (turn.Blocked) release it and are free (spec 6).
-        if (!await _budgetService.TryReserveTurnAsync(userId, key))
+        // cannot both pass a stale count (TOCTOU). The reservation (a free
+        // turn, else a paid chat credit) is kept only when a model call was
+        // made; cache hits, retrieval-only and heuristic-blocked turns are
+        // free (spec 6) and release it, which also gives back the credit.
+        var reservation = await _budgetService.TryReserveTurnAsync(userId, key);
+        if (reservation == null)
         {
             var wall = await _budgetService.GetRemainingToday(userId, key);
             return Json(new
             {
                 tier = "wall",
                 remainingToday = wall.RemainingToday,
-                dailyLimit = wall.DailyLimit
+                dailyLimit = wall.DailyLimit,
+                credits = wall.Credits,
+                isLoggedIn = wall.IsLoggedIn
             });
         }
 
-        var turn = await _chatService.AskAsync(body.ChatSessionId, body.Question, language);
+        ChatTurnDto turn;
+        try
+        {
+            turn = await _chatService.AskAsync(body.ChatSessionId, body.Question, language);
+        }
+        catch
+        {
+            // No answer reached the citizen: do not charge the turn or credit.
+            await _budgetService.ReleaseReservationAsync(reservation);
+            throw;
+        }
 
-        // AUD-3: the release rule is symmetric — every completed turn releases
-        // the (reserved) sentinel row; the orchestration pipeline writes its
-        // own counted AI_LOG rows for real model calls. Only a mid-flight
-        // exception keeps the reservation — one turn lost, the conservative
-        // direction.
-        await _budgetService.ReleaseReservationAsync();
+        if (turn.FromCache || turn.RetrievalOnly || turn.Blocked)
+            await _budgetService.ReleaseReservationAsync(reservation);
 
-        var quota = turn.Blocked
-            ? await _budgetService.GetRemainingToday(userId, key) // blocked = free
-            : await _budgetService.RecordTurnUsed(userId, key);
+        var quota = await _budgetService.RecordTurnUsed(userId, key);
 
         await _chatService.AppendMessageAsync(body.ChatSessionId, "user", body.Question, null);
         await _chatService.AppendMessageAsync(
@@ -188,7 +195,8 @@ public class ChatController : Controller
                 relevance = Math.Round(s.RelevanceScore * 100) + "%"
             }),
             remainingToday = quota.RemainingToday,
-            dailyLimit = quota.DailyLimit
+            dailyLimit = quota.DailyLimit,
+            credits = quota.Credits
         });
     }
 
@@ -315,7 +323,8 @@ public class ChatController : Controller
         {
             remainingToday = snap.RemainingToday,
             dailyLimit = snap.DailyLimit,
-            isLoggedIn = snap.IsLoggedIn
+            isLoggedIn = snap.IsLoggedIn,
+            credits = snap.Credits
         });
     }
 

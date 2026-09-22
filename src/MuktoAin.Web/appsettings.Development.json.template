@@ -11,7 +11,9 @@
     ],
     "EmbeddingModel": "gemini-embedding-001",
     "GenerationModel": "gemini-3.6-flash",
-    "GenerationModel_Comment": "gemini-3.6-flash is the current free-tier generation model (gemini-2.0-flash was retired by Google). Switch models for benchmark evaluation as needed."
+    "GenerationModel_Comment": "gemini-3.6-flash is the current free-tier generation model (gemini-2.0-flash was retired by Google). Switch models for benchmark evaluation as needed.",
+    "GenerationTokenLimitPerMinute": 250000,
+    "GenerationTokenLimitPerMinute_Comment": "Display-only budget for the admin dashboard's per-key Gemini token tracker (GeminiClient.Snapshot()) — generation calls only, checked against the free-tier TPM cap (verified 2026-09-09 in AI Studio for gemini-3.6-flash). Does not affect key rotation/parking behavior."
   },
   "Qdrant": {
     "Endpoint": "https://your-cluster-id.cloud.qdrant.io:6333",
@@ -39,5 +41,19 @@
       "Microsoft.AspNetCore": "Warning",
       "Microsoft.EntityFrameworkCore.Database.Command": "Information"
     }
+  },
+  "Payments": {
+    "Mode": "Simulator",
+    "Mode_Comment": "Set to Sandbox to pay through the real bKash and SSLCommerz sandboxes (needs internet). The credentials below are the vendors' public sandbox merchants, not secrets. bKash test wallet 01619777282, OTP 123456, PIN 12121."
+  },
+  "SslCommerz": {
+    "StoreId": "testbox",
+    "StorePassword": "qwerty"
+  },
+  "Bkash": {
+    "Username": "sandboxTokenizedUser02",
+    "Password": "sandboxTokenizedUser02@12345",
+    "AppKey": "4f6o0cjiki2rfm34kfdadl1eqq",
+    "AppSecret": "2is7hdktrekvrbljjh44ll3d9l1dtjo4pasmjvs5vl5qr3fug4b"
   }
 }

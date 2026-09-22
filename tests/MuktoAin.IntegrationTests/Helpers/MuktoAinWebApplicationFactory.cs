@@ -43,6 +43,11 @@ public class MuktoAinWebApplicationFactory : WebApplicationFactory<Program>
             services.AddDbContext<AppDbContext>(options =>
                 options.UseInMemoryDatabase(_dbName));
 
+            // Chat quota/credits: the real store is raw SQL Server T-SQL.
+            services.RemoveAll<IAiTurnReservationStore>();
+            services.AddSingleton<InMemoryAiTurnReservationStore.TurnLog>();
+            services.AddScoped<IAiTurnReservationStore, InMemoryAiTurnReservationStore>();
+
             // Register TestAuthHandler so X-Test-UserId / X-Test-Role authenticate seamlessly
             services.AddAuthentication(defaultScheme: TestAuthHandler.SchemeName)
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(

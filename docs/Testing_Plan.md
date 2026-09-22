@@ -32,7 +32,7 @@ Test only what is actually implemented and wired up (checking `plans/Dependency_
 - Document preview/download + PDF gate + real PDF rendering (FR-9): `DocumentController` / `PdfExportService` (QuestPDF, Bengali font — `A-2.5` is done, no longer a stub)
 - Lawyer flow: `LawyerController` (Status, Resubmit, Queue, Claim, Review, SubmitReview)
 - Admin console: `AdminController` (Dashboard, Analytics, HealthStatus, EmbeddingProgress, Users, Suspend, Lawyers, VerifyLawyer, Corpus, Scenarios)
-- Sandbox payments (FR-24): `PaymentController` (Honorarium, TopUp, Status)
+- Payments (FR-24): `PaymentController` (Honorarium, TopUp, gateway callbacks, Result, Status) and the simulated gateway (`GatewaySimulatorController`)
 - Cross-cutting: 3-surface disclaimer policy, bn/en localization, guest/anonymous access
 
 **Out of scope for this lab pass (not yet implemented per `plans/Dependency_plan.md` Checkpoint 3 — don't write test cases you can't execute):**
@@ -196,14 +196,20 @@ Legend for **Type**: **N** = Normal, **B** = Boundary, **E** = Exceptional (syst
 | ADM-05 | N | View corpus stats | `/Admin/Corpus` | Correct aggregate counts (1,484 Acts / 35,633 Sections etc.), loads fast (per R-14 DB-side aggregation fix — regression-test that it doesn't regress to an in-memory 42K-entity load) |
 | ADM-06 | I | `/Admin/VerifyLawyer` with a nonexistent `lawyerProfileId` | Tamper the id | Handled gracefully, not a 500 |
 
-### 5.9 Sandbox Payments (`PaymentController`, FR-24)
+### 5.9 Payments (`PaymentController` + simulated gateway, FR-24)
+
+Test values for the simulated gateway (`/GatewaySim`): wallet PIN `12121`; card `4111 1111 1111 1111`, CVV `123`, any future `MM/YY`; OTP `123456`; wallet `01700000099` = insufficient balance; card `4000 0000 0000 0002` = declined.
 
 | ID | Type | Scenario | Steps | Expected result |
 |---|---|---|---|---|
-| PAY-01 | N | Honorarium payment on an approved case | Trigger the honorarium modal on an approved case, submit valid sandbox payment | Payment recorded, status reflects success |
+| PAY-01 | N | Honorarium payment on an approved case | Open the honorarium modal on an approved case, submit an amount, pay on the simulated checkout with bKash (PIN, then OTP) | Browser returns to `/Payment/Result` showing "Payment Successful" and a `BKS…` transaction id; the case page now shows the honorarium as paid; the lawyer gets a notification; `/Payment/Status/{id}` says `Paid` |
 | PAY-02 | E | Honorarium payment on a non-approved case | Attempt the honorarium flow before the case is approved | Blocked — case must be approved first |
 | PAY-03 | I | Negative or zero amount | POST `Honorarium`/`TopUp` with `amount=-100` or `0` | Rejected, no payment row written |
-| PAY-04 | E | Simulated sandbox payment failure | Use whatever "fail" test path the sandbox provider exposes | Failure surfaced to the user clearly, no false "success" state |
+| PAY-04 | E | Payment fails or is cancelled at the gateway | On the checkout: (a) enter a wrong PIN 3 times, (b) use wallet `01700000099`, (c) press Cancel | Result page shows "Payment Failed" (a, b) or "Payment Cancelled" (c); order is `Failed`; no false "success" state |
+| PAY-05 | I | Forged or replayed gateway callback | (a) Resubmit the success callback (refresh / back); (b) POST `/Payment/Cancel?orderId={id}` with a guessed `tran_id`; (c) change `amount` in the callback form | (a) still one Paid order and one lawyer notification; (b) order unchanged; (c) ignored — server-side validation decides |
+| PAY-06 | I | Refund a non-Paid order | Admin → Transactions, refund an order that is not Paid (e.g. by resubmitting an old refund form) | Error message, no change (AUD-11) |
+
+Automated coverage: `PaymentFlowE2ETests` (HTTP, all rows except PAY-02/06), `PaymentBrowserE2ETests` (Chromium: PAY-01, card retry, cancel), `PaymentConfirmRaceSqlTests` (two racing confirmations on SQL Server).
 
 ### 5.10 Cross-cutting: Disclaimer, Localization, Error Pages
 

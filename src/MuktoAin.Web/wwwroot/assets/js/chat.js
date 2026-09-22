@@ -714,7 +714,10 @@
         return t;
     }
 
-    function quotaWallCard() {
+    // data: the "wall" reply (isLoggedIn). Guests cannot buy credits, so
+    // they get Register instead of Top Up.
+    function quotaWallCard(data) {
+        var loggedIn = !!(data && data.isLoggedIn);
         var d = document.createElement("div");
         d.className = "identity-bar";
         d.innerHTML =
@@ -724,9 +727,10 @@
         applyLangToNode(d);
         var actions = document.createElement("div");
         actions.className = "row wrap";
-        [["/Account/Register", "user-plus", "নিবন্ধন করুন (৩× সীমা)", "Register (3× limit)"],
+        [loggedIn ? null : ["/Account/Register", "user-plus", "নিবন্ধন করুন (৩× সীমা)", "Register (3× limit)"],
          ["/Search", "search", "আইন খুঁজুন (বিনামূল্যে)", "Search laws (free)"],
          ["/Case/Submit", "edit-3", "ফর্মে জমা দিন", "Submit a form"]].forEach(function (l) {
+            if (!l) return;
             var a = document.createElement("a");
             a.className = "btn btn-outline btn-sm";
             a.href = l[0];
@@ -737,14 +741,21 @@
             actions.appendChild(a);
         });
 
-        // Top-up button (FR-24 sandbox stub)
-        var topupBtn = document.createElement("button");
-        topupBtn.className = "btn btn-gold btn-sm";
-        topupBtn.type = "button";
-        topupBtn.setAttribute("data-open-modal", "#topup-modal");
-        topupBtn.innerHTML = '<i data-lucide="zap"></i> <span data-bn="টপ-আপ করুন (স্যান্ডবক্স)" data-en="Top Up (Sandbox)">টপ-আপ করুন (স্যান্ডবক্স)</span>';
-        applyLangToNode(topupBtn);
-        actions.appendChild(topupBtn);
+        // Top-up button (FR-24): chat credits, signed-in users only.
+        if (loggedIn) {
+            var topupBtn = document.createElement("button");
+            topupBtn.className = "btn btn-gold btn-sm";
+            topupBtn.type = "button";
+            // Added after load, so main.js's [data-open-modal] binding never
+            // sees this button: open the modal directly.
+            topupBtn.addEventListener("click", function () {
+                var m = el("topup-modal");
+                if (m) m.classList.add("open");
+            });
+            topupBtn.innerHTML = '<i data-lucide="zap"></i> <span data-bn="টপ-আপ করুন" data-en="Top Up">টপ-আপ করুন</span>';
+            applyLangToNode(topupBtn);
+            actions.appendChild(topupBtn);
+        }
 
         d.appendChild(actions);
         thread.appendChild(d);
@@ -874,10 +885,10 @@
                 }
                 state.caseFileJson = data.caseFileJson == null ? null : data.caseFileJson;
                 state.suggestedCategoryId = data.suggestedCategoryId == null ? null : data.suggestedCategoryId;
-                if (data.tier === "wall") quotaWallCard();
+                if (data.tier === "wall") quotaWallCard(data);
                 else if (data.citedSections && data.citedSections.length) answerCard(data, question);
                 else conversationalBubble(data, question);
-                updateQuota(data.remainingToday, data.dailyLimit);
+                updateQuota(data.remainingToday, data.dailyLimit, data.credits);
             } catch (error) {
                 if (!active(version, id)) return;
                 dots.remove();
@@ -898,11 +909,15 @@
         return true;
     }
 
-    function updateQuota(remaining, limit) {
+    function updateQuota(remaining, limit, credits) {
         if (!quotaNote || typeof remaining !== "number") return;
-        quotaNote.textContent = "আজ বাকি: " + bn(remaining) + " / " + bn(limit);
-        quotaNote.setAttribute("data-bn", "আজ বাকি: " + bn(remaining) + " / " + bn(limit));
-        quotaNote.setAttribute("data-en", "Remaining today: " + remaining + " / " + limit);
+        var bnText = "আজ বাকি: " + bn(remaining) + " / " + bn(limit);
+        var enText = "Remaining today: " + remaining + " / " + limit;
+        if (credits > 0) {
+            bnText += " · ক্রেডিট: " + bn(credits);
+            enText += " · Credits: " + credits;
+        }
+        bilingual(quotaNote, bnText, enText);
     }
 
     // ---------- draft confirm card (read-only, prefilled from the AI case file) ----------
@@ -1432,61 +1447,6 @@
         var ds = el("draft-submit");
         if (ds) ds.addEventListener("click", submitDraft);
 
-        var topupSubmit = el("btn-submit-topup");
-        if (topupSubmit) {
-            topupSubmit.addEventListener("click", async function () {
-                var amountInput = el("topup-amount");
-                var amount = parseFloat(amountInput ? amountInput.value : 0);
-                var feedback = el("topup-feedback");
-                if (!amount || amount <= 0) {
-                    if (feedback) {
-                        feedback.style.display = "block";
-                        feedback.className = "alert alert-error tiny";
-                        feedback.textContent = "অনুগ্রহ করে সঠিক টাকার পরিমাণ লিখুন / Please enter a valid amount.";
-                    }
-                    return;
-                }
-
-                topupSubmit.disabled = true;
-                topupSubmit.innerHTML = '<i data-lucide="loader"></i> প্রসেসিং... / Processing...';
-                renderIcons();
-
-                try {
-                    var res = await fetch("/Payment/TopUp", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "RequestVerificationToken": csrfToken() },
-                        body: JSON.stringify({ amount: amount })
-                    });
-                    var data = await res.json();
-                    if (data.success) {
-                        if (window.showToast) {
-                            showToast(data.message || "টপ-আপ সফল হয়েছে! / Top-up successful!", "success");
-                        }
-                        var topupModal = el("topup-modal");
-                        if (topupModal) topupModal.classList.remove("open");
-                        if (feedback) feedback.style.display = "none";
-                    } else {
-                        if (feedback) {
-                            feedback.style.display = "block";
-                            feedback.className = "alert alert-error tiny";
-                            feedback.textContent = data.message || "টপ-আপ ব্যর্থ হয়েছে / Top-up failed.";
-                        }
-                    }
-                } catch (err) {
-                    if (feedback) {
-                        feedback.style.display = "block";
-                        feedback.className = "alert alert-error tiny";
-                        feedback.textContent = "সার্ভারের সাথে সংযোগ করা যায়নি / Could not connect to server.";
-                    }
-                } finally {
-                    topupSubmit.disabled = false;
-                    topupSubmit.innerHTML = '<i data-lucide="credit-card"></i> <span data-bn="টপ-আপ করুন (স্যান্ডবক্স)" data-en="Top Up (Sandbox)">টপ-আপ করুন (স্যান্ডবক্স)</span>';
-                    applyLangToNode(topupSubmit);
-                    renderIcons();
-                }
-            });
-        }
-
         initSidebar();
         window.addEventListener("popstate", routeFromLocation);
         routeFromLocation();
@@ -1502,7 +1462,7 @@
         }
 
         requestJson("/Chat/Quota").then(function (data) {
-            updateQuota(data.remainingToday, data.dailyLimit);
+            updateQuota(data.remainingToday, data.dailyLimit, data.credits);
         }).catch(function () {
             bilingual(quotaNote, "কোটা এখন দেখা যাচ্ছে না।", "Quota is temporarily unavailable.");
         });
