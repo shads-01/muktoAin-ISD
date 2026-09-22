@@ -14,10 +14,17 @@ public interface IPaymentGatewayClient
         string purposeLabel,
         string successUrl,
         string failUrl,
-        string cancelUrl);
+        string cancelUrl,
+        GatewayCustomer? customer = null);
 
     Task<GatewayValidationResult> ValidateAsync(string valId);
 }
+
+// The paying citizen, as the gateway's customer. SSLCommerz keys its saved
+// cards on this, so sending one shared customer for every user would show
+// everyone the same saved-card list. Null (a guest order) falls back to a
+// placeholder customer.
+public record GatewayCustomer(string Name, string? Email, string? Phone);
 
 // SessionId: the gateway's own id for the checkout (bKash paymentID), when the
 // callback identifies the payment by it instead of by our tran_id.

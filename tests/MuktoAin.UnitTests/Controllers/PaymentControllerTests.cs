@@ -79,7 +79,7 @@ public class PaymentControllerTests
     private void GatewayInit(bool success) =>
         _gateway
             .Setup(g => g.InitSessionAsync(It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<GatewayCustomer?>()))
             .ReturnsAsync(success
                 ? new GatewaySessionResult(true, "/GatewaySim/Checkout/xyz", null)
                 : new GatewaySessionResult(false, null, "Invalid Store Id"));
@@ -156,7 +156,8 @@ public class PaymentControllerTests
         Assert.Equal("/GatewaySim/Checkout/xyz", Prop(result, "gatewayUrl"));
         Assert.Equal(PaymentStatus.Pending, created!.Status);
         _gateway.Verify(g => g.InitSessionAsync(It.IsAny<string>(), 500m, "Honorarium",
-            "https://app/Payment/Success", "https://app/Payment/Fail", "https://app/Payment/Cancel"), Times.Once);
+            "https://app/Payment/Success", "https://app/Payment/Fail", "https://app/Payment/Cancel",
+            It.IsAny<GatewayCustomer?>()), Times.Once);
     }
 
     [Fact]
@@ -193,7 +194,7 @@ public class PaymentControllerTests
             .Callback<PaymentOrder>(o => created = o).Returns(Task.CompletedTask);
         _gateway
             .Setup(g => g.InitSessionAsync(It.IsAny<string>(), 300m, "TopUp",
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<GatewayCustomer?>()))
             .ReturnsAsync(new GatewaySessionResult(true, "https://sandbox.payment.bkash.com/?paymentId=TR1", null, "TR1"));
 
         var result = await _controller.TopUp(new TopUpPaymentRequest { Amount = 300m, Method = PaymentMethod.Bkash });
@@ -203,7 +204,7 @@ public class PaymentControllerTests
         Assert.Equal("TR1", created.GatewaySessionId);
         _gateway.Verify(g => g.InitSessionAsync(It.IsAny<string>(), 300m, "TopUp",
             "https://app/Payment/BkashCallback", "https://app/Payment/BkashCallback",
-            "https://app/Payment/BkashCallback"), Times.Once);
+            "https://app/Payment/BkashCallback", It.IsAny<GatewayCustomer?>()), Times.Once);
     }
 
     [Theory]

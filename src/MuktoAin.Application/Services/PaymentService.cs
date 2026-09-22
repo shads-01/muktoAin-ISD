@@ -128,8 +128,10 @@ public class PaymentService
     {
         var tranId = $"MA-{order.PaymentOrderId}-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
         order.Gateway = gateway;
+        var user = order.UserId is int userId ? await _userManager.FindByIdAsync(userId.ToString()) : null;
+        var customer = user is null ? null : new GatewayCustomer(user.FullName, user.Email, user.PhoneNumber);
         var result = await _gateways.Get(gateway).InitSessionAsync(
-            tranId, order.Amount, order.Purpose.ToString(), successUrl, failUrl, cancelUrl);
+            tranId, order.Amount, order.Purpose.ToString(), successUrl, failUrl, cancelUrl, customer);
 
         if (result.Success)
         {

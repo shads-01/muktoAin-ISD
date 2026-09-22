@@ -98,8 +98,8 @@ public class PaymentServiceTests
         string? sentTranId = null;
         _gateway
             .Setup(g => g.InitSessionAsync(It.IsAny<string>(), 500m, "Honorarium",
-                "https://x/s", "https://x/f", "https://x/c"))
-            .Callback<string, decimal, string, string, string, string>((t, _, _, _, _, _) => sentTranId = t)
+                "https://x/s", "https://x/f", "https://x/c", It.IsAny<GatewayCustomer?>()))
+            .Callback<string, decimal, string, string, string, string, GatewayCustomer?>((t, _, _, _, _, _, _) => sentTranId = t)
             .ReturnsAsync(new GatewaySessionResult(true, "/GatewaySim/Checkout/abc", null));
 
         var result = await _service.CreateCheckoutSessionAsync(
@@ -119,7 +119,7 @@ public class PaymentServiceTests
         var order = new PaymentOrder { PaymentOrderId = 2, Amount = 200m, Purpose = PaymentPurpose.TopUp };
         _gateway
             .Setup(g => g.InitSessionAsync(It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(),
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<GatewayCustomer?>()))
             .ReturnsAsync(new GatewaySessionResult(false, null, "Invalid Store Id"));
 
         var result = await _service.CreateCheckoutSessionAsync(
@@ -137,7 +137,7 @@ public class PaymentServiceTests
         var order = new PaymentOrder { PaymentOrderId = 3, Amount = 500m, Purpose = PaymentPurpose.Honorarium };
         var bkash = new Mock<IPaymentGatewayClient>();
         bkash.Setup(g => g.InitSessionAsync(It.IsAny<string>(), 500m, "Honorarium",
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<GatewayCustomer?>()))
             .ReturnsAsync(new GatewaySessionResult(true, "https://sandbox.payment.bkash.com/?paymentId=TR3", null, "TR3"));
         _gateways.Setup(r => r.Get(PaymentGateway.Bkash)).Returns(bkash.Object);
 

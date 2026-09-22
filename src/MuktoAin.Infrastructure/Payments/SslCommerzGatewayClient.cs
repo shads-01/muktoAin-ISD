@@ -29,7 +29,8 @@ public class SslCommerzGatewayClient : IPaymentGatewayClient
         string purposeLabel,
         string successUrl,
         string failUrl,
-        string cancelUrl)
+        string cancelUrl,
+        GatewayCustomer? customer = null)
     {
         var form = new Dictionary<string, string>
         {
@@ -41,12 +42,12 @@ public class SslCommerzGatewayClient : IPaymentGatewayClient
             ["success_url"] = successUrl,
             ["fail_url"] = failUrl,
             ["cancel_url"] = cancelUrl,
-            ["cus_name"] = "MuktoAin Citizen",
-            ["cus_email"] = "citizen@muktoain.local",
+            ["cus_name"] = string.IsNullOrWhiteSpace(customer?.Name) ? "MuktoAin Citizen" : customer.Name,
+            ["cus_email"] = string.IsNullOrWhiteSpace(customer?.Email) ? "citizen@muktoain.local" : customer.Email,
             ["cus_add1"] = "Dhaka",
             ["cus_city"] = "Dhaka",
             ["cus_country"] = "Bangladesh",
-            ["cus_phone"] = "01700000000",
+            ["cus_phone"] = string.IsNullOrWhiteSpace(customer?.Phone) ? "01700000000" : customer.Phone,
             ["shipping_method"] = "NO",
             ["product_name"] = purposeLabel,
             ["product_category"] = "Legal Service",

@@ -50,7 +50,8 @@ public class SimulatedGateway : IPaymentGatewayClient
         string purposeLabel,
         string successUrl,
         string failUrl,
-        string cancelUrl)
+        string cancelUrl,
+        GatewayCustomer? customer = null)
     {
         PruneExpired();
         var session = new SimulatedGatewaySession
