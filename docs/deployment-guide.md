@@ -77,6 +77,28 @@ double-underscore (`__`) hierarchy separator:
 in hosted environments use platform secret stores (Azure App Service
 Configuration / Key Vault references, GitHub Actions secrets).
 
+### Payment gateway mode
+
+`Payments:Mode` (env var `Payments__Mode`) picks where checkout goes:
+
+| Mode | What happens | Needs |
+|---|---|---|
+| `Simulator` (default) | Every method (bKash, Nagad, Rocket, card) goes to the built-in simulated checkout at `/GatewaySim`. No real money, works offline. | Nothing |
+| `Sandbox` | bKash goes to the bKash tokenized-checkout sandbox; card goes to the SSLCommerz sandbox. | Internet access and the `Bkash` / `SslCommerz` credentials below |
+
+Sandbox credentials (the vendors' public sandbox merchants, not real secrets; the values are in `appsettings.Development.json.template`):
+
+| Setting | Env vars |
+|---|---|
+| bKash | `Bkash__Username`, `Bkash__Password`, `Bkash__AppKey`, `Bkash__AppSecret` |
+| SSLCommerz | `SslCommerz__StoreId`, `SslCommerz__StorePassword` |
+
+Test wallets and cards for both modes are listed in the User Guide, section 3.11.
+Simulator sessions live in memory, so an app restart during checkout fails that payment.
+Each order stores the gateway it was sent to, so switching modes does not
+break payments that are already in progress. The honorarium commission is a fixed 10%
+(`PaymentService.DefaultCommissionRate`), and changing it requires a code change.
+
 ### Data Protection keys
 
 Field-level PII encryption uses ASP.NET Data Protection. On a single machine

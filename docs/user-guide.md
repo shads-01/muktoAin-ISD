@@ -355,13 +355,48 @@ Once your case is approved by a verified lawyer:
 ---
 
 ### 3.11 Citizen Wallet, Top-Up & Honorarium Payments
-MuktoAin includes an integrated sandbox payment system to facilitate modest advocate honorariums:
-1. Open your **Wallet** (`/Payment/TopUp`).
-2. Select an amount (e.g., 100 BDT, 500 BDT).
-3. Complete the sandbox payment flow.
-4. When sending a document for review, the specified honorarium is deducted from your balance and held in escrow until the lawyer completes the review.
+Citizens can pay in two places. No real money moves in either payment mode.
 
-> 📷 *[SCREENSHOT: Citizen payment top-up screen with sandbox payment method selection — capture before release]*
+- **Chat credit top-up (signed-in users):** buy extra AI chats. Open **Recharge** on your profile page (`/Account/Profile`), or press **Top Up** in the chat when your daily limit runs out. Enter an amount, pick a payment method and continue to checkout.
+- **Lawyer honorarium (optional):** once a lawyer has reviewed your case, open the case result page and choose **Send Lawyer Honorarium**. Enter an amount, pick a method and continue to checkout. After the payment clears, the case shows the honorarium as paid and the lawyer is notified.
+
+After checkout you land on `/Payment/Result`, which shows whether the payment succeeded, failed or was cancelled.
+
+**Commission:** the platform keeps 10% of each honorarium and the lawyer gets the other 90% (a ৳500 honorarium pays the lawyer ৳450). Top-ups have no commission.
+
+#### Chat limits and credits
+
+- Every signed-in user gets **30 free AI chats a day**. Guests share one pool of **10 free chats a day** across all guests. Both reset at midnight Pacific time.
+- A chat counts only when the AI model answers. Cached answers, section searches and blocked messages are free.
+- **Price:** ৳5 = 1 chat credit. A top-up must be at least ৳50 and a multiple of ৳5, so ৳100 buys 20 credits.
+- Credits are used only after your free chats for the day run out. They never expire.
+- Your balance shows on your profile page and next to the chat counter.
+- Only signed-in users can buy credits. Guests are asked to register or log in.
+- If an administrator refunds a top-up, the credits from it that you have not used yet are removed. Credits you already spent stay spent.
+
+#### Payment modes and test credentials
+
+The payment mode is set by the operator (see the Deployment Guide). The default is the offline simulator.
+
+**Simulator mode (default, works offline).** Every method opens MuktoAin's own checkout page at `/GatewaySim`. You can pay with bKash, Nagad, Rocket or a card, then enter an OTP.
+
+| Method | Test values |
+|---|---|
+| bKash / Nagad / Rocket | Any `01XXXXXXXXX` number, PIN `12121` |
+| Card | `4111 1111 1111 1111`, CVV `123`, any future `MM/YY` |
+| OTP (all methods) | `123456` |
+| Force a failure | Wallet `01700000099` (insufficient balance) or card `4000 0000 0000 0002` (declined) |
+
+Three wrong PIN, card or OTP entries fail the payment. A checkout session expires after 30 minutes.
+
+**Sandbox mode (needs internet).** bKash goes to the real bKash sandbox, and card goes to the SSLCommerz sandbox, which also offers net banking and other wallets.
+
+| Method | Test values |
+|---|---|
+| bKash | Wallet `01619777282` or `01619777283`, OTP `123456`, PIN `12121` |
+| Card | Use the test cards shown on the SSLCommerz sandbox checkout page |
+
+> 📷 *[SCREENSHOT: Simulated checkout page with bKash selected — capture before release]*
 
 ---
 
@@ -602,8 +637,8 @@ When generating documents, the citizen selects their preferred document language
 ---
 
 ### 7.2 AI Chat Rate Limits & Daily Quota Reached
-- **Cause:** Google AI Studio free-tier quotas (15 requests/minute, 1500 requests/day).
-- **Solution:** MuktoAin automatically rotates across multiple configured Gemini API keys (`GEMINI_API_KEY_1`, `GEMINI_API_KEY_2`, etc.). If all keys are exhausted, wait for the hourly reset or check `/Chat/Quota`.
+- **"Daily AI limit reached" in the chat:** you have used your free chats for today (30 for signed-in users, 10 shared by all guests) and have no chat credits left. Wait for the reset at midnight Pacific time, or buy chat credits with **Top Up** (signed-in users, see section 3.11). Guests can register for their own 30 chats a day.
+- **Model errors despite remaining chats:** Google AI Studio free-tier quotas (15 requests/minute, 1500 requests/day) apply to the whole site. MuktoAin rotates across the configured Gemini API keys (`GEMINI_API_KEY_1`, `GEMINI_API_KEY_2`, etc.). If all keys are exhausted, wait for the reset. A chat that fails does not use up a free chat or a credit.
 
 ---
 
