@@ -78,10 +78,15 @@ builder.Services.AddDbContext<AppDbContext>((sp, options) =>
         builder.Configuration.GetConnectionString("DefaultConnection"),
         sqlOptions =>
         {
+            sqlOptions.UseCompatibilityLevel(120);
             sqlOptions.CommandTimeout(60);
-            sqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorNumbersToAdd: null);
         })
-        .AddInterceptors(sp.GetRequiredService<MuktoAin.Web.Services.NotificationPushInterceptor>()));
+        .AddInterceptors(
+            sp.GetRequiredService<MuktoAin.Web.Services.NotificationPushInterceptor>()));
 
 // S-1.1: ASP.NET Core Identity against the manually-authored [dbo].[USER] table.
 // Role tables do not exist in the SSMS schema by design -- authorization runs off

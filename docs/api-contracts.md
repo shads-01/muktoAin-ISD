@@ -70,14 +70,26 @@ This document specifies the implicit and explicit service contracts for the `Muk
 | Route | Method | Authorization | Parameters / ViewModel | Injected Services & Dependencies | Description |
 |---|---|---|---|---|---|
 | `/Admin/Dashboard` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IAdminAnalyticsService`, `AppDbContext` | System metrics, category breakdowns, district distribution, AI failure rates |
-| `/Admin/Users` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IUserManagementService`, `UserManager<User>` | User account administration, role assignment, and suspension toggle |
-| `/Admin/Users/{id}/Suspend`| `POST` | `[Authorize(Roles = "Admin")]` | `int id` | `IUserManagementService` | Toggles user account status between `Active` and `Suspended` |
-| `/Admin/Lawyers` | `GET` | `[Authorize(Roles = "Admin")]` | — | `ILawyerVerificationService` | Admin verification queue for lawyer bar credentials |
-| `/Admin/Lawyers/{id}/Verify`| `POST`| `[Authorize(Roles = "Admin")]` | `int id, bool approve` | `ILawyerVerificationService` | Approves or rejects lawyer verification applications |
-| `/Admin/Acts` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IActRepository`, `IEmbeddingBatchJob` | Bangladesh Acts corpus management and embedding status |
-| `/Admin/ScenarioMappings` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IScenarioMappingRepository`, `IScenarioMappingService` | Keyword-to-statute grounding boosts management (FR-18) |
-| `/Admin/Transactions` | `GET` | `[Authorize(Roles = "Admin")]` | — | `PaymentService` | Payment orders and pending lawyer payouts. There is no "mark paid" action: orders become Paid only through the gateway (§8) |
-| `/Admin/RefundOrder` | `POST` | `SuperAdminOnly`, antiforgery | `int orderId` | `PaymentService`, `IAdminAuditService` | Refunds a **Paid** order as a ledger reversal (clears `Case.HonorariumPaid`) and writes an audit row. A non-Paid order shows an error (AUD-11) |
+| `/Admin/Analytics` | `GET` | `[Authorize(Roles = "Admin")]` | — | `AdminAnalyticsService`, `AppDbContext` | Analytics/KPI view (shares the dashboard model: case/district distributions, AI failure rates, verification queue) |
+| `/Admin/Users` | `GET` | `[Authorize(Roles = "Admin")]` | `string? role, int page = 1` | `IUserManagementService`, `UserManager<User>` | User account administration with role filter (`All`/`Citizen`/`Lawyer`/`Admin`) and pagination (20/page). SuperAdmin viewers additionally get `CreateAdmin`/`SuspendAdmin`/`PromoteAdmin` controls |
+| `/Admin/Suspend` | `POST` | `[Authorize(Roles = "Admin")]`, antiforgery | `int userId, bool suspend` | `IUserManagementService` | Sets account status to `Suspended` (`suspend=true`) or `Active` (`false`). Admins and self-suspension are protected inside the service |
+| `/Admin/CreateAdmin` | `GET`/`POST` | `[Authorize(Policy = "SuperAdminOnly")]`, antiforgery | `CreateAdminViewModel` | `IUserManagementService` | Creates a new Admin/SuperAdmin and returns the password-reset link (relayed securely by the acting SuperAdmin) |
+| `/Admin/SuspendAdmin` | `POST` | `[Authorize(Policy = "SuperAdminOnly")]`, antiforgery | `int userId, bool suspend` | `IUserManagementService` | Suspends/reactivates a non-SuperAdmin admin; SuperAdmin rows are protected |
+| `/Admin/PromoteAdmin` | `POST` | `[Authorize(Policy = "SuperAdminOnly")]`, antiforgery | `int userId` | `IUserManagementService` | Promotes an Admin to SuperAdmin |
+| `/Admin/Lawyers` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IRepository<LawyerProfile>`, `UserManager<User>` | Lawyer verification triage: pending/approved/rejected rows hydrated from real `LAWYER_PROFILE` data |
+| `/Admin/VerifyLawyer` | `POST` | `[Authorize(Roles = "Admin")]`, antiforgery | `int lawyerProfileId, bool approve, string? reason` | `LawyerVerificationService` | Approves or rejects a bar-registration application; rejection requires a reason that is shown to the lawyer |
+| `/Admin/Corpus` | `GET` | `[Authorize(Roles = "Admin")]` | — | `AppDbContext` | Acts corpus management (FR-17) with database-side section/chunk/embedded aggregates; replaces the earlier mock `/Admin/Acts` + `/Admin/Acts/Reindex/{id}` flow |
+| `/Admin/Scenarios` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IScenarioMappingRepository`, `IActSectionRepository`, `IActRepository` | Keyword→section grounding boost list (FR-18); replaces the earlier mock `/Admin/ScenarioMappings` flow |
+| `/Admin/AddScenario` | `POST` | `[Authorize(Roles = "Admin")]`, antiforgery | `int sectionId, string keyword, string? notes` | `IScenarioMappingRepository` | Creates a keyword→`SectionId` boost mapping |
+| `/Admin/DeleteScenario` | `POST` | `[Authorize(Roles = "Admin")]`, antiforgery | `int mappingId` | `IScenarioMappingRepository`, `IAdminAuditService` | Deletes a boost mapping, writing an AUD-7 audit row |
+| `/Admin/Categories` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IRepository<CaseCategory>` | Category listing with per-category template badges |
+| `/Admin/AiLogs` | `GET` | `[Authorize(Roles = "Admin")]` | `string? type, int minLatency = 0, int page = 1` | `IRepository<AiLog>` | Paginated AI audit trail (50/page) with type/latency filters — filters apply to the full dataset (AUD-8) |
+| `/Admin/Transactions` | `GET` | `[Authorize(Roles = "Admin")]` | — | `PaymentService` | Payment orders and pending lawyer payouts. Orders become Paid only through the gateway (§8) |
+| `/Admin/RefundOrder` | `POST` | `[Authorize(Policy = "SuperAdminOnly")]`, antiforgery | `int orderId` | `PaymentService`, `IAdminAuditService` | Refunds a **Paid** order as a ledger reversal (clears `Case.HonorariumPaid`) and writes an audit row; a non-Paid order returns an error (AUD-11) |
+| `/Admin/ApprovePayout` | `POST` | `[Authorize(Policy = "SuperAdminOnly")]`, antiforgery | `int payoutRequestId` | `PaymentService` | Marks a pending payout paid (sandbox) |
+| `/Admin/HealthStatus` | `GET` | `[Authorize(Roles = "Admin")]` | — | `AppDbContext`, `IConfiguration` | JSON health snapshot (DB / Qdrant / Gemini) polled by the dashboard |
+| `/Admin/EmbeddingProgress` | `GET` | `[Authorize(Roles = "Admin")]` | — | `EmbeddingProgressState` | JSON embedding-progress telemetry for the corpus background job |
+| `/Admin/GeminiKeyStatus` | `GET` | `[Authorize(Roles = "Admin")]` | — | `GeminiClient` | JSON per-key token usage / park status for the dashboard key tracker |
 
 ---
 

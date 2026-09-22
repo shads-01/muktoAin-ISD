@@ -87,7 +87,7 @@ public class AdminController : Controller
         return View(model);
     }
 
-    /// <summary>
+/// <summary>
     /// Live Real-time API endpoint polled by the Admin Dashboard to give immediate
     /// feedback as configuration or services change without restarting the server.
     /// </summary>
