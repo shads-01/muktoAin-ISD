@@ -158,7 +158,12 @@
     </div>
 </div>
 
-<partial name="_TopUpModal" />
+@* Chat credits are citizens only (PaymentController.TopUp); chat.js shows
+   the Top Up button only when this modal is on the page. *@
+@if (User.IsInRole("Citizen"))
+{
+    <partial name="_TopUpModal" />
+}
 
 <!-- AI answers come back as markdown (bold, numbered/bulleted lists) — render it
      properly instead of showing literal ** and 1./* markers as plain text.

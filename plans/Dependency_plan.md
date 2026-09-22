@@ -227,7 +227,7 @@
 - [x] **[R-12]** Lawyer review decision timestamps — *Shads* (stamped `ReviewedAt` on approval/rejection).
 - [x] **[R-13]** ChatController tier cap fix — *Shads* (`allowCapped: false` in `ChatController.Ask` restores Tier="full").
 - [x] **[R-14]** Admin Corpus DB-side aggregation — *Shads* (replaced 42K-entity in-memory load with EF Core aggregates in `AdminController.Corpus`).
-- [x] **[R-15]** Citizen Payment modals & endpoints (FR-24) — *Shads* (Honorarium modal on approved cases, Top-Up modal at quota wall, `PaymentController.cs` sandbox endpoints).
+- [x] **[R-15]** Citizen Payment modals & endpoints (FR-24) — *Shads* (Honorarium modal on approved cases, Top-Up modal at quota wall, `PaymentController.cs` sandbox endpoints); top-up restricted to citizens (2026-09-22).
 - [x] **[R-16]** Dependency Plan Redesign Tracking Synchronization — *Shads* (synchronized all tasks with execution state).
 - [x] **[R-17]** Gemini API key usage tracker on admin dashboard — *Shads*.
 - [x] **[R-18]** Profile edit hardening and live language switch — *Hrittika*.

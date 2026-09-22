@@ -64,7 +64,9 @@
         </div>
     </div>
 
-    <!-- AI chat credits (FR-24 top-up) -->
+    <!-- AI chat credits (FR-24 top-up) — citizens only, like PaymentController.TopUp -->
+    @if (isCitizen)
+    {
     <div class="card" style="margin-bottom: 24px; padding: 20px 24px;" data-testid="chat-credits-card">
         <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 220px;">
@@ -80,6 +82,7 @@
             </button>
         </div>
     </div>
+    }
 
     <!-- Main Grid: Info Form + Security / Actions -->
     <div class="grid grid-2" style="align-items: start; gap: 24px;">
@@ -278,7 +281,10 @@
     </div>
 </main>
 
-<partial name="_TopUpModal" />
+@if (isCitizen)
+{
+    <partial name="_TopUpModal" />
+}
 <script src="~/assets/js/payment.js" asp-append-version="true" defer></script>
 
 <script>
