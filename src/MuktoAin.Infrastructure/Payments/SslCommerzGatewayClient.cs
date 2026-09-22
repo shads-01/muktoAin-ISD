@@ -13,6 +13,13 @@ namespace MuktoAin.Infrastructure.Payments;
 // user-facing redirect, so a failed call surfaces at once as an error.
 public class SslCommerzGatewayClient : IPaymentGatewayClient
 {
+    // SSLCommerz's published sandbox test card (Mastercard 5111111111111111
+    // and Amex 371111111111111 work too). Shown to the citizen in Sandbox
+    // mode (_PaymentMethodPicker), next to the bKash test wallet.
+    public const string SandboxCard = "4111 1111 1111 1111";
+    public const string SandboxCardCvv = "111";
+    public const string SandboxOtp = "111111";
+
     private readonly HttpClient _httpClient;
     private readonly SslCommerzOptions _options;
 
