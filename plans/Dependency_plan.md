@@ -26,7 +26,7 @@
 - [x] ~~**[S-1.7]** Implement `EncryptionService.cs` (ASP.NET Data Protection API) — *Shads* `[Unblocks: S-2.5]`~~ — implemented with ASP.NET Data Protection API, registered in DI; verified by 4 unit tests (Bangla/English roundtrips, empty/null safety)
 - [x] ~~**[E-1.1]** Master Layout `_Layout.cshtml` (Bootstrap 5, Nav, Footer) — *Erin* `[Unblocks: E-1.4]`~~
 - [x] ~~**[E-1.2]** `_DisclaimerBanner.cshtml` & `_LanguageToggle.cshtml` — *Erin* `[Unblocks: E-1.1]`~~
-- [x] ~~**[E-1.3]** Static Assets (CSS, JS & Noto Sans Bengali Fonts in `wwwroot/`) — *Erin* `[Unblocks: A-2.5]`~~
+- [x] ~~**[E-1.3]** Static Assets (CSS, JS & Noto Sans Bengali Fonts in `wwwroot/`) — *Erin* `[Unblocks: A-2.5]`~~ — [Sep 2026] Offline font fallback finalized (plan Step 1.4): self-hosted `wwwroot/fonts/NotoSansBengali-Regular.ttf` + `NotoSansBengali-Bold.ttf` (official notofonts/noto-fonts hinted static TTFs, SIL OFL 1.1) + `@font-face` rules at top of `assets/css/main.css` (the stylesheet actually linked by `_Layout.cshtml`; `css/site.css` is only an `@import` shim) — Google Fonts CDN link in `_Layout.cshtml` remains primary, local files are the low-connectivity fallback
 - [x] ~~**[E-1.4]** Home Controller & Views (Landing page with mock data) — *Erin* `[Blocked by: E-1.1]`~~
 - [x] ~~**[E-1.5]** Identity Views (`Login.cshtml`, `Register.cshtml`) — *Erin* `[Blocked by: E-1.1]`~~
 - [x] ~~**[E-1.6]** Checkpoint 1 Frontend Exit Gate — *Erin* `[Blocked by: E-1.1 to E-1.5]`~~
@@ -112,8 +112,8 @@
 
 ### 2. Admin Frontend Views & Integration Wiring
 - [x] ~~**[E-3.1]** Admin Dashboard & Analytics Views (`/Admin/Analytics`) — *Erin* `[Blocked by: E-1.1] [Wires to A-3.2]`~~
-- [ ] **[E-3.2]** Admin Acts Management & Scenario Views (`/Admin/Acts`) — *Erin* `[Blocked by: E-1.1] [Wires to T-3.1, T-3.2]`
-- [ ] **[E-3.3]** Admin User Management Views (`/Admin/Users`) — *Erin* `[Blocked by: E-1.1] [Wires to S-3.6]`
+- [x] ~~**[E-3.2]** Admin Acts Management & Scenario Views (`/Admin/Acts`) — *Erin* `[Blocked by: E-1.1] [Wires to T-3.1, T-3.2]`~~ — implemented (`/Admin/Acts` + `/Admin/Acts/Reindex/{id}`, `/Admin/ScenarioMappings` + `AddMapping`/`DeleteMapping` POST handlers) with `AdminViewModels.cs`, `MockData.SampleActs`/`SampleScenarioSections`/`SampleMappings`, and `// TODO: [Tultul] Wire ScenarioMappingService...` markers; `[Authorize(Roles = "Admin")]` gate + `ViewData["IsAdminPage"]` applied; docs/api-contracts.md updated
+- [x] ~~**[E-3.3]** Admin User Management Views (`/Admin/Users`) — *Erin* `[Blocked by: E-1.1] [Wires to S-3.6]`~~ — implemented (`/Admin/Users` + `/Admin/Users/Suspend/{id}` + `/Admin/Users/Activate/{id}`) and the `/Admin/Lawyers` verification triage view (`Verify` approve/reject POST) from Erin_plan 3.1, both against `MockData.SampleUsers`/`SampleLawyers` with `// TODO: [Shads]`/`// TODO: [Arpita]` service markers
 - [ ] **[E-3.4]** Final Integration: Wiring Controllers to Real Services — *Erin* `[Blocked by: All Backend Services]`
 - [ ] **[E-3.5]** Checkpoint 3 Frontend Integration Exit Gate — *Erin* `[Blocked by: E-3.1 to E-3.4]`
 
