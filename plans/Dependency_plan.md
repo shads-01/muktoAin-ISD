@@ -245,6 +245,7 @@
 - [x] **[R-30]** Lawyer claim and review-submit races return `false` instead of a 500 (AUD-4); SQL race tests added — *Hrittika*.
 - [x] **[R-31]** Payments go through a gateway (simulated by default, SSLCommerz optional); no more instant-Paid stub (SSL-1…5, AUD-11) — *Hrittika*. Dev seed `SeedDemoPaymentCases` keeps 3 payable cases for `citizen@muktoain.bd`.
 - [x] **[R-32]** Payment method picker: bKash via bKash tokenized sandbox, card via SSLCommerz sandbox (`Payments:Mode = Sandbox`) — *Hrittika*. Needs `scripts/19_payment_gateway_routing.sql`. Picker shows the bKash wallet and SSLCommerz test card in Sandbox mode.
+- [x] **[R-33]** Create Admin page text follows the language toggle (`data-bn`/`data-en` pairs) — *Hrittika*.
 
 ---
 
