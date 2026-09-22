@@ -5,6 +5,29 @@
    Mobile-first · flat minimal controls · no gradient washes
    ============================================================ */
 
+/* ---------- Offline font fallback ----------
+   Erin plan Step 1.4: Google Fonts CDN link in _Layout.cshtml stays primary;
+   these self-hosted Noto Sans Bengali TTFs (wwwroot/fonts/) are the offline
+   fallback for low-connectivity users. Served last in the family stack only
+   when the CDN stylesheet is unreachable. Local files copied from
+   notofonts/noto-fonts (hinted/ttf/NotoSansBengali) under SIL OFL 1.1. */
+@font-face {
+  font-family: "Noto Sans Bengali";
+  src: url("../fonts/NotoSansBengali-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0980-09FF, U+200C-200D, U+2018-2019, U+201C-201D, U+20B9, U+25CC;
+}
+@font-face {
+  font-family: "Noto Sans Bengali";
+  src: url("../fonts/NotoSansBengali-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0980-09FF, U+200C-200D, U+2018-2019, U+201C-201D, U+20B9, U+25CC;
+}
+
 /* ---------- Tokens ---------- */
 /* Light = "Reading Room" · matched 1:1 to design-gallery.html option H */
 :root {
