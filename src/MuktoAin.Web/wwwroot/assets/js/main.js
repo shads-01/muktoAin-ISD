@@ -1202,6 +1202,8 @@
       if (demoLawyer) demoLawyer.textContent = currentLang === "en" ? "Lawyer" : "আইনজীবী";
       var demoAdmin = document.querySelector(".demo-role-admin");
       if (demoAdmin) demoAdmin.textContent = currentLang === "en" ? "Admin" : "অ্যাডমিন";
+      var demoSuperAdmin = document.querySelector(".demo-role-superadmin");
+      if (demoSuperAdmin) demoSuperAdmin.textContent = currentLang === "en" ? "SuperAdmin" : "সুপার অ্যাডমিন";
 
       var regPrompts = document.querySelectorAll('.auth-card .text-center, .auth-card p.muted.tiny, .auth-card p:last-of-type');
       regPrompts.forEach(function (el) {

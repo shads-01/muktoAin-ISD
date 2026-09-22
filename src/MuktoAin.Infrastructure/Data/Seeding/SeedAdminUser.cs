@@ -56,6 +56,24 @@ public static class SeedAdminUser
                     logger.LogWarning("Failed to synchronize password for admin user {Email}: {Errors}", email, errors);
                 }
             }
+
+            // Admins seeded before scripts/12_add_user_issuperadmin.sql got the
+            // column default (0), leaving no SuperAdmin to refund, approve payouts,
+            // or promote anyone. The bootstrap admin is always the SuperAdmin.
+            if (existing.Role == UserRole.Admin && !existing.IsSuperAdmin)
+            {
+                existing.IsSuperAdmin = true;
+                var promoteResult = await userManager.UpdateAsync(existing);
+                if (promoteResult.Succeeded)
+                {
+                    logger.LogInformation("Promoted bootstrap admin {Email} to SuperAdmin.", email);
+                }
+                else
+                {
+                    var errors = string.Join("; ", promoteResult.Errors.Select(e => $"{e.Code}: {e.Description}"));
+                    logger.LogWarning("Failed to promote bootstrap admin {Email} to SuperAdmin: {Errors}", email, errors);
+                }
+            }
             return;
         }
 
