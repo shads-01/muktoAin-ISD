@@ -3,6 +3,8 @@
     ViewData["Title"] = "Transactions — Admin — MuktoAin";
     ViewData["IsAdminPage"] = true;
     var payouts = (IReadOnlyList<MuktoAin.Domain.Entities.PayoutRequest>?)ViewData["Payouts"] ?? new List<MuktoAin.Domain.Entities.PayoutRequest>();
+    // RefundOrder / ApprovePayout are [Authorize(Policy = "SuperAdminOnly")].
+    var isSuperAdmin = User.HasClaim("IsSuperAdmin", "true");
 }
 
 <main class="container" id="main">
@@ -39,7 +41,11 @@
                         <td><span class="badge badge-@(o.Status == "Paid" ? "final" : o.Status == "Refunded" ? "neutral" : o.Status == "Failed" ? "rejected" : "draft")">@o.Status</span></td>
                         <td>
                             @* Orders become Paid only through the gateway (PaymentService.ConfirmPaymentAsync). *@
-                            @if (o.Status == "Paid")
+                            @if (o.Status == "Paid" && !isSuperAdmin)
+                            {
+                                <small class="muted">SuperAdmin only</small>
+                            }
+                            else if (o.Status == "Paid")
                             {
                                 <form asp-action="RefundOrder" method="post" style="display:inline"
                                       data-confirm="এই অর্ডারের টাকা রিফান্ড করে লেজার সমন্বয় করবেন? / Refund this order and reverse the ledger?"
@@ -77,11 +83,18 @@
                             <td>৳@p.Amount</td>
                             <td>@p.RequestedAt.ToString("d MMM HH:mm")</td>
                             <td>
-                                <form asp-action="ApprovePayout" method="post" style="display:inline">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="payoutRequestId" value="@p.PayoutRequestId" />
-                                    <button class="btn btn-outline btn-sm" type="submit">Approve → mark paid</button>
-                                </form>
+                                @if (isSuperAdmin)
+                                {
+                                    <form asp-action="ApprovePayout" method="post" style="display:inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="payoutRequestId" value="@p.PayoutRequestId" />
+                                        <button class="btn btn-outline btn-sm" type="submit">Approve → mark paid</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <small class="muted">SuperAdmin only</small>
+                                }
                             </td>
                         </tr>
                     }

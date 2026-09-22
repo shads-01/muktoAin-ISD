@@ -35,7 +35,7 @@ public class PaymentControllerTests
         _gateways.Setup(r => r.ForMethod(It.IsAny<PaymentMethod>()))
             .Returns<PaymentMethod>(m => m == PaymentMethod.Bkash ? PaymentGateway.Bkash : PaymentGateway.SslCommerz);
         _gateways.Setup(r => r.Get(It.IsAny<PaymentGateway>())).Returns(_gateway.Object);
-        _controller = NewController(userId: "123");
+        _controller = NewController(userId: "123", role: "Citizen");
     }
 
     private PaymentController NewController(string? userId, string? role = null)
@@ -125,6 +125,21 @@ public class PaymentControllerTests
         var result = await controller.TopUp(new TopUpPaymentRequest { Amount = 100m });
 
         Assert.IsType<UnauthorizedObjectResult>(result);
+        _orderRepo.Verify(r => r.AddAsync(It.IsAny<PaymentOrder>()), Times.Never);
+    }
+
+    // The chatbot is citizen intake; lawyers and admins never need credits.
+    [Theory]
+    [InlineData("Lawyer")]
+    [InlineData("Admin")]
+    public async Task TopUp_NonCitizen_Returns403_WithoutCreatingOrder(string role)
+    {
+        var controller = NewController(userId: "123", role: role);
+
+        var result = await controller.TopUp(new TopUpPaymentRequest { Amount = 100m });
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status403Forbidden, obj.StatusCode);
         _orderRepo.Verify(r => r.AddAsync(It.IsAny<PaymentOrder>()), Times.Never);
     }
 

@@ -100,6 +100,17 @@ public class PaymentController : Controller
             });
         }
 
+        // The chatbot is citizen intake; lawyers and admins never need credits
+        // (an admin top-up would also put fake revenue in the ledger).
+        if (!User.IsInRole(nameof(UserRole.Citizen)))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new
+            {
+                success = false,
+                message = "শুধু নাগরিকরা চ্যাট ক্রেডিট কিনতে পারেন / Only citizens can buy chat credits."
+            });
+        }
+
         if (body == null || !PaymentService.IsValidTopUpAmount(body.Amount))
         {
             return BadRequest(new

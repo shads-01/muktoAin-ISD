@@ -741,8 +741,9 @@
             actions.appendChild(a);
         });
 
-        // Top-up button (FR-24): chat credits, signed-in users only.
-        if (loggedIn) {
+        // Top-up button (FR-24): chat credits, citizens only — the server
+        // renders #topup-modal just for them.
+        if (loggedIn && el("topup-modal")) {
             var topupBtn = document.createElement("button");
             topupBtn.className = "btn btn-gold btn-sm";
             topupBtn.type = "button";

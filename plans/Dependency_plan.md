@@ -227,7 +227,7 @@
 - [x] **[R-12]** Lawyer review decision timestamps — *Shads* (stamped `ReviewedAt` on approval/rejection).
 - [x] **[R-13]** ChatController tier cap fix — *Shads* (`allowCapped: false` in `ChatController.Ask` restores Tier="full").
 - [x] **[R-14]** Admin Corpus DB-side aggregation — *Shads* (replaced 42K-entity in-memory load with EF Core aggregates in `AdminController.Corpus`).
-- [x] **[R-15]** Citizen Payment modals & endpoints (FR-24) — *Shads* (Honorarium modal on approved cases, Top-Up modal at quota wall, `PaymentController.cs` sandbox endpoints).
+- [x] **[R-15]** Citizen Payment modals & endpoints (FR-24) — *Shads* (Honorarium modal on approved cases, Top-Up modal at quota wall, `PaymentController.cs` sandbox endpoints); top-up restricted to citizens (2026-09-22).
 - [x] **[R-16]** Dependency Plan Redesign Tracking Synchronization — *Shads* (synchronized all tasks with execution state).
 - [x] **[R-17]** Gemini API key usage tracker on admin dashboard — *Shads*.
 - [x] **[R-18]** Profile edit hardening and live language switch — *Hrittika*.
@@ -245,6 +245,7 @@
 - [x] **[R-30]** Lawyer claim and review-submit races return `false` instead of a 500 (AUD-4); SQL race tests added — *Hrittika*.
 - [x] **[R-31]** Payments go through a gateway (simulated by default, SSLCommerz optional); no more instant-Paid stub (SSL-1…5, AUD-11) — *Hrittika*. Dev seed `SeedDemoPaymentCases` keeps 3 payable cases for `citizen@muktoain.bd`.
 - [x] **[R-32]** Payment method picker: bKash via bKash tokenized sandbox, card via SSLCommerz sandbox (`Payments:Mode = Sandbox`) — *Hrittika*. Needs `scripts/19_payment_gateway_routing.sql`. Picker shows the bKash wallet and SSLCommerz test card in Sandbox mode.
+- [x] **[R-33]** Create Admin page text follows the language toggle (`data-bn`/`data-en` pairs) — *Hrittika*.
 
 ---
 
@@ -285,7 +286,7 @@
 - [x] ~~**[TIER-3]** `UserManagementService` SuperAdmin methods + mutual-immutability guard — *Arpita* `[Blocked by: TIER-2]` (~150 lines)~~ — added `CreateAdminAsync`, `SetAdminStatusAsync`, `PromoteToSuperAdminAsync`, `IdentityCreationFailedException`, and mutual-immutability guard rails in `UserManagementService`; updated DTOs (`UserListDto` with 6-arg record, `AdminAccountResultDto`)
 - [x] ~~**[TIER-4]** Admin Users view updates (SuperAdmin management UI) — *Arpita* `[Blocked by: TIER-3]` (~180 lines)~~ — updated `AdminPageViewModels.cs` (`ViewerIsSuperAdmin`, `IsSuperAdmin`), mapped in `AdminController.Users`, updated `Views/Admin/Users.cshtml` with SuperAdmin badge, SuspendAdmin and PromoteAdmin actions, and created `Views/Admin/CreateAdmin.cshtml`
 - [x] ~~**[TIER-5]** Unit tests for all SuperAdmin flows — *Arpita* `[Blocked by: TIER-3]` (~150 lines)~~ — comprehensive unit tests added in `UserRoleClaimsTransformationSuperAdminTests.cs`, `UserManagementServiceTests.cs`, `AdminControllerTests.cs`, and `SeedAdminUserTests.cs` (all 405 unit tests passing)
-- [x] ~~**[TIER-6]** Seed SuperAdmin + exit gate — *Arpita* `[Blocked by: TIER-4, TIER-5]` (~52 lines)~~ — bootstrap admin seeded with `IsSuperAdmin = true` in `SeedAdminUser.cs`, gated financial actions (`RefundOrder`, `ApprovePayout`, `MarkOrderPaid`) behind `SuperAdminOnly` policy; end-to-end verified cleanly
+- [x] ~~**[TIER-6]** Seed SuperAdmin + exit gate — *Arpita* `[Blocked by: TIER-4, TIER-5]` (~52 lines)~~ — bootstrap admin seeded with `IsSuperAdmin = true` in `SeedAdminUser.cs`, gated financial actions (`RefundOrder`, `ApprovePayout`, `MarkOrderPaid`) behind `SuperAdminOnly` policy; end-to-end verified cleanly; seeder now also promotes a pre-existing bootstrap admin, Refund/Approve hidden from non-SuperAdmins, regular demo admin seeded (2026-09-22)
 
 ---
 
