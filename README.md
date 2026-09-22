@@ -40,7 +40,7 @@ Full rationale in [AGENTS.md §2](AGENTS.md).
 | Relational DB | Microsoft SQL Server (schema managed via SSMS scripts) |
 | Vector DB | Qdrant (.NET SDK) |
 | Full-text fallback | SQL Server FTS |
-| Embeddings | Google `text-embedding-004` |
+| Embeddings | Google `gemini-embedding-001` (3072-dim) |
 | Generation | Gemini Flash API (multi-key rotation, Polly resilience) |
 | Frontend | Razor Views + Bootstrap 5 + vanilla JS/Fetch |
 | Auth | ASP.NET Core Identity (Citizen / Lawyer / Admin) |

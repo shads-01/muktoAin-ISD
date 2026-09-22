@@ -1,6 +1,10 @@
+@using MuktoAin.Infrastructure.Data.Seeding
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @model MuktoAin.Web.ViewModels.LoginViewModel
 @{
     ViewData["Title"] = "সাইন ইন — Login";
+    var adminEmail = Configuration["SeedAdmin:Email"] ?? SeedAdminUser.DefaultEmail;
+    var adminPassword = Configuration["SeedAdmin:Password"] ?? SeedAdminUser.DefaultPassword;
 }
 
 <main id="main">
@@ -54,15 +58,18 @@
                         </span>
                         <span class="badge badge-neutral tiny" style="font-size: 11px;">1-Click Fill</span>
                     </div>
-                    <div class="demo-btn-group" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-                        <button type="button" class="btn btn-sm btn-outline demo-btn" onclick="fillDemo('citizen@muktoain.bd', 'Citizen@123', 'Citizen')" style="font-size: 12.5px; padding: 7px 6px; justify-content: center;">
+                    <div class="demo-btn-group" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                        <button type="button" class="btn btn-sm btn-outline demo-btn" onclick="fillDemo('@SeedDemoUsers.CitizenEmail', '@SeedDemoUsers.CitizenPassword', 'Citizen')" style="font-size: 12.5px; padding: 7px 6px; justify-content: center;">
                             <i data-lucide="user" style="width: 13px; height: 13px;"></i> <span class="demo-role-citizen">নাগরিক</span>
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline demo-btn" onclick="fillDemo('lawyer@muktoain.bd', 'Lawyer@123', 'Lawyer')" style="font-size: 12.5px; padding: 7px 6px; justify-content: center;">
+                        <button type="button" class="btn btn-sm btn-outline demo-btn" onclick="fillDemo('@SeedDemoUsers.LawyerEmail', '@SeedDemoUsers.LawyerPassword', 'Lawyer')" style="font-size: 12.5px; padding: 7px 6px; justify-content: center;">
                             <i data-lucide="award" style="width: 13px; height: 13px;"></i> <span class="demo-role-lawyer">আইনজীবী</span>
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline demo-btn" onclick="fillDemo('admin@muktoain.bd', 'muktoAin@123', 'Admin')" style="font-size: 12.5px; padding: 7px 6px; justify-content: center;">
-                            <i data-lucide="shield-check" style="width: 13px; height: 13px;"></i> <span class="demo-role-admin">অ্যাডমিন</span>
+                        <button type="button" class="btn btn-sm btn-outline demo-btn" onclick="fillDemo('@SeedDemoUsers.AdminEmail', '@SeedDemoUsers.AdminPassword', 'Admin')" style="font-size: 12.5px; padding: 7px 6px; justify-content: center;">
+                            <i data-lucide="shield" style="width: 13px; height: 13px;"></i> <span class="demo-role-admin">অ্যাডমিন</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline demo-btn" onclick="fillDemo('@adminEmail', '@adminPassword', 'SuperAdmin')" style="font-size: 12.5px; padding: 7px 6px; justify-content: center;">
+                            <i data-lucide="shield-check" style="width: 13px; height: 13px;"></i> <span class="demo-role-superadmin">সুপার অ্যাডমিন</span>
                         </button>
                     </div>
                 </div>
@@ -79,7 +86,7 @@
                     <div class="field">
                         <div class="row spread">
                             <label asp-for="Password">পাসওয়ার্ড / Password</label>
-                            <a href="#" class="tiny muted" onclick="showToast('পাসওয়ার্ড রিসেট লিংক আপনার ইমেইলে পাঠানো হয়েছে (ডেমো)', 'info'); return false;">পাসওয়ার্ড ভুলে গেছেন?</a>
+                            <a asp-controller="Account" asp-action="ForgotPassword" class="tiny muted">পাসওয়ার্ড ভুলে গেছেন? / Forgot password?</a>
                         </div>
                         <input asp-for="Password" class="input" type="password" placeholder="••••••••" required autocomplete="current-password" />
                         <span asp-validation-for="Password" class="err"></span>
@@ -127,7 +134,8 @@
 
                 var lang = localStorage.getItem("mkt-lang") || "bn";
                 var roleName = role === "Citizen" ? (lang === "en" ? "Citizen" : "নাগরিক") 
-                             : role === "Lawyer" ? (lang === "en" ? "Lawyer" : "আইনজীবী") 
+                             : role === "Lawyer" ? (lang === "en" ? "Lawyer" : "আইনজীবী")
+                             : role === "SuperAdmin" ? (lang === "en" ? "SuperAdmin" : "সুপার অ্যাডমিন")
                              : (lang === "en" ? "Admin" : "অ্যাডমিন");
                 var msg = lang === "en" 
                     ? "Demo " + roleName + " credentials filled: " + email 

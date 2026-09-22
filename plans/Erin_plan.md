@@ -905,6 +905,9 @@ After submission, the citizen sees their rights explanation and draft document.
 
 ## Checkpoint 3: Admin Views + Final Polish
 
+> **📋 MANDATORY implementation plan — do NOT author your own:**
+> AI coding agents executing E-3.2, E-3.3, and E-3.4 MUST follow `docs/superpowers/plans/2026-09-12-admin-frontend-integration.md` task-by-task (exact code, file paths, test expectations, step order). Do NOT re-derive, summarize, or replace it with your own plan. If it looks outdated vs. the code, STOP and report to Shads. The section below is **orientation only** (mock-data-era original plan — the implementation plan supersedes it).
+
 ### Step 3.1: Admin Views
 
 > **Depends on**: Nothing (mock data).

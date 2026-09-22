@@ -70,20 +70,62 @@ This document specifies the implicit and explicit service contracts for the `Muk
 | Route | Method | Authorization | Parameters / ViewModel | Injected Services & Dependencies | Description |
 |---|---|---|---|---|---|
 | `/Admin/Dashboard` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IAdminAnalyticsService`, `AppDbContext` | System metrics, category breakdowns, district distribution, AI failure rates |
-| `/Admin/Users` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IUserManagementService`, `UserManager<User>` | User account administration, role assignment, and suspension toggle. Currently returns `MockData.SampleUsers` |
-| `/Admin/Users/Suspend/{id}` | `POST` | `[Authorize(Roles = "Admin")]` | `int id` | `IUserManagementService` | Sets account status to `Suspended` (`AccountStatus.Suspended`) |
-| `/Admin/Users/Activate/{id}` | `POST` | `[Authorize(Roles = "Admin")]` | `int id` | `IUserManagementService` | Sets account status back to `Active` (`AccountStatus.Active`) |
-| `/Admin/Lawyers` | `GET` | `[Authorize(Roles = "Admin")]` | — | `ILawyerVerificationService` | Admin verification queue for lawyer bar credentials. Currently returns `MockData.SampleLawyers` |
-| `/Admin/Lawyers/Verify/{id}` | `POST` | `[Authorize(Roles = "Admin")]` | `int id, bool approve` | `ILawyerVerificationService` | Approves (`approve=true`) or rejects (`approve=false`) lawyer verification applications |
-| `/Admin/Acts` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IActRepository`, `IEmbeddingBatchJob` | Bangladesh Acts corpus management and embedding status. Currently returns `MockData.SampleActs` |
-| `/Admin/Acts/Reindex/{id}` | `POST` | `[Authorize(Roles = "Admin")]` | `int id` | `IActsManagementService`, `IEmbeddingBatchJob` | Triggers vector re-indexing for a single Act (SHA256 checksum diff) |
-| `/Admin/ScenarioMappings` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IScenarioMappingRepository`, `IScenarioMappingService` | Keyword-to-statute grounding boosts management (FR-18). Currently returns `MockData.SampleMappings` + `MockData.SampleScenarioSections` |
-| `/Admin/ScenarioMappings/AddMapping` | `POST` | `[Authorize(Roles = "Admin")]` | `ScenarioMappingAddViewModel model` | `IScenarioMappingService` | Creates a keyword→`SectionId` boost mapping |
-| `/Admin/ScenarioMappings/DeleteMapping/{id}` | `POST` | `[Authorize(Roles = "Admin")]` | `int id` | `IScenarioMappingService` | Deletes a boost mapping by `MappingId` |
+| `/Admin/Analytics` | `GET` | `[Authorize(Roles = "Admin")]` | — | `AdminAnalyticsService`, `AppDbContext` | Analytics/KPI view (shares the dashboard model: case/district distributions, AI failure rates, verification queue) |
+| `/Admin/Users` | `GET` | `[Authorize(Roles = "Admin")]` | `string? role, int page = 1` | `IUserManagementService`, `UserManager<User>` | User account administration with role filter (`All`/`Citizen`/`Lawyer`/`Admin`) and pagination (20/page). SuperAdmin viewers additionally get `CreateAdmin`/`SuspendAdmin`/`PromoteAdmin` controls |
+| `/Admin/Suspend` | `POST` | `[Authorize(Roles = "Admin")]`, antiforgery | `int userId, bool suspend` | `IUserManagementService` | Sets account status to `Suspended` (`suspend=true`) or `Active` (`false`). Admins and self-suspension are protected inside the service |
+| `/Admin/CreateAdmin` | `GET`/`POST` | `[Authorize(Policy = "SuperAdminOnly")]`, antiforgery | `CreateAdminViewModel` | `IUserManagementService` | Creates a new Admin/SuperAdmin and returns the password-reset link (relayed securely by the acting SuperAdmin) |
+| `/Admin/SuspendAdmin` | `POST` | `[Authorize(Policy = "SuperAdminOnly")]`, antiforgery | `int userId, bool suspend` | `IUserManagementService` | Suspends/reactivates a non-SuperAdmin admin; SuperAdmin rows are protected |
+| `/Admin/PromoteAdmin` | `POST` | `[Authorize(Policy = "SuperAdminOnly")]`, antiforgery | `int userId` | `IUserManagementService` | Promotes an Admin to SuperAdmin |
+| `/Admin/Lawyers` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IRepository<LawyerProfile>`, `UserManager<User>` | Lawyer verification triage: pending/approved/rejected rows hydrated from real `LAWYER_PROFILE` data |
+| `/Admin/VerifyLawyer` | `POST` | `[Authorize(Roles = "Admin")]`, antiforgery | `int lawyerProfileId, bool approve, string? reason` | `LawyerVerificationService` | Approves or rejects a bar-registration application; rejection requires a reason that is shown to the lawyer |
+| `/Admin/Corpus` | `GET` | `[Authorize(Roles = "Admin")]` | — | `AppDbContext` | Acts corpus management (FR-17) with database-side section/chunk/embedded aggregates; replaces the earlier mock `/Admin/Acts` + `/Admin/Acts/Reindex/{id}` flow |
+| `/Admin/Scenarios` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IScenarioMappingRepository`, `IActSectionRepository`, `IActRepository` | Keyword→section grounding boost list (FR-18); replaces the earlier mock `/Admin/ScenarioMappings` flow |
+| `/Admin/AddScenario` | `POST` | `[Authorize(Roles = "Admin")]`, antiforgery | `int sectionId, string keyword, string? notes` | `IScenarioMappingRepository` | Creates a keyword→`SectionId` boost mapping |
+| `/Admin/DeleteScenario` | `POST` | `[Authorize(Roles = "Admin")]`, antiforgery | `int mappingId` | `IScenarioMappingRepository`, `IAdminAuditService` | Deletes a boost mapping, writing an AUD-7 audit row |
+| `/Admin/Categories` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IRepository<CaseCategory>` | Category listing with per-category template badges |
+| `/Admin/AiLogs` | `GET` | `[Authorize(Roles = "Admin")]` | `string? type, int minLatency = 0, int page = 1` | `IRepository<AiLog>` | Paginated AI audit trail (50/page) with type/latency filters — filters apply to the full dataset (AUD-8) |
+| `/Admin/Transactions` | `GET` | `[Authorize(Roles = "Admin")]` | — | `PaymentService` | Payment orders and pending lawyer payouts. Orders become Paid only through the gateway (§8) |
+| `/Admin/RefundOrder` | `POST` | `[Authorize(Policy = "SuperAdminOnly")]`, antiforgery | `int orderId` | `PaymentService`, `IAdminAuditService` | Refunds a **Paid** order as a ledger reversal (clears `Case.HonorariumPaid`) and writes an audit row; a non-Paid order returns an error (AUD-11) |
+| `/Admin/ApprovePayout` | `POST` | `[Authorize(Policy = "SuperAdminOnly")]`, antiforgery | `int payoutRequestId` | `PaymentService` | Marks a pending payout paid (sandbox) |
+| `/Admin/HealthStatus` | `GET` | `[Authorize(Roles = "Admin")]` | — | `AppDbContext`, `IConfiguration` | JSON health snapshot (DB / Qdrant / Gemini) polled by the dashboard |
+| `/Admin/EmbeddingProgress` | `GET` | `[Authorize(Roles = "Admin")]` | — | `EmbeddingProgressState` | JSON embedding-progress telemetry for the corpus background job |
+| `/Admin/GeminiKeyStatus` | `GET` | `[Authorize(Roles = "Admin")]` | — | `GeminiClient` | JSON per-key token usage / park status for the dashboard key tracker |
 
 ---
 
-## 8. State Machine & Review Guard Contract
+## 8. PaymentController (FR-24)
+
+Orders go `Pending` → gateway checkout → `Paid` / `Failed`. The citizen picks a method (`bkash` or `card`); `IPaymentGatewayResolver` maps it to a gateway using `Payments:Mode`. `Simulator` (default): both methods go to the built-in simulator (§9). `Sandbox`: `bkash` goes to the bKash tokenized-checkout sandbox (`Bkash` section), `card` to the SSLCommerz sandbox (`SslCommerz` section). The gateway is stored on the order (`PAYMENT_ORDER.Gateway`), and the same gateway validates it.
+
+| Route | Method | Authorization | Parameters / ViewModel | Injected Services & Dependencies | Description |
+|---|---|---|---|---|---|
+| `/Payment/Honorarium` | `POST` | Case owner, tracking-code holder or Admin; antiforgery; `payment` rate limit | JSON `{ caseId, amount, trackingCode?, method? }` (`method`: `bkash` or `card`, default `card`) | `PaymentService`, `ICaseRepository` | Creates a Pending honorarium order (10% commission) and starts a gateway session. Returns `{ success: true, orderId, gatewayUrl }`; the page sends the browser to `gatewayUrl`. If the gateway can't start, the order is Failed and the response is `{ success: false, orderId, message }` |
+| `/Payment/TopUp` | `POST` | Signed-in only (`401` for guests); antiforgery; `payment` rate limit | JSON `{ amount, method? }`; `amount` ≥ 50 and a multiple of 5 BDT, else `400` | `PaymentService` | Same as Honorarium, for a chat credit order worth `amount / 5` credits (`PAYMENT_ORDER.ChatCredits`) |
+| `/Payment/Success?orderId={id}` | `POST` | AllowAnonymous, no antiforgery (gateway posts cross-site) | form `tran_id, val_id, amount, status, bank_tran_id` | `PaymentService` | Gateway return URL. `ConfirmPaymentAsync` validates `val_id` server-to-server; Paid only if the validated `tran_id` **and** amount match the order. Idempotent on replays. Redirects to `/Payment/Result` |
+| `/Payment/Fail?orderId={id}` | `POST` | AllowAnonymous, no antiforgery | form (as above) | `PaymentService` | Marks the order Failed only if it is Pending and the posted `tran_id` matches. Redirects to `/Payment/Result` |
+| `/Payment/Cancel?orderId={id}` | `POST` | AllowAnonymous, no antiforgery | form (as above) | `PaymentService` | As Fail; redirects to `/Payment/Result?cancelled=true` |
+| `/Payment/BkashCallback/{orderId}` | `GET` | AllowAnonymous (bKash redirects the browser) | query `paymentID, status` (`success`, `failure`, `cancel`) | `PaymentService` | bKash return URL for every outcome. The `paymentID` must be the one stored on the order (`GatewaySessionId`), else nothing changes. `success`: `ConfirmPaymentAsync` runs bKash execute (or the status query if already executed); Paid only if the returned `merchantInvoiceNumber` **and** amount match. `failure`/`cancel`: marks Failed. Redirects to `/Payment/Result` |
+| `/Payment/Result?orderId={id}` | `GET` | AllowAnonymous (another signed-in user's order shows as not found) | `int orderId, bool cancelled` | `IRepository<PaymentOrder>` | Outcome page. Status is read from the database, never from the query string |
+| `/Payment/Status/{id}` | `GET` | Order owner or Admin | `int id` | `IRepository<PaymentOrder>` | Order JSON (`status`, `amount`, `commission`, `netToLawyer`, `gatewayRef`, `paidAt`) |
+
+---
+
+## 9. GatewaySimulatorController (built-in simulated gateway)
+
+Stands in for an external gateway site when `Payments:Mode = Simulator`. Sessions live in memory for 30 minutes. No real money moves.
+
+| Route | Method | Authorization | Parameters | Description |
+|---|---|---|---|---|
+| `/GatewaySim/Checkout/{key}` | `GET` | AllowAnonymous | session key, `method?` (preselected tab) | Checkout page: bKash / Nagad / Rocket / card, then OTP. A finished session renders the return form |
+| `/GatewaySim/Checkout/{key}` | `POST` | AllowAnonymous, antiforgery | `method, account, secret, expiry?` | Wallet number + PIN, or card number + CVV + `MM/YY` expiry |
+| `/GatewaySim/Otp/{key}` | `POST` | AllowAnonymous, antiforgery | `otp` | Completes the payment |
+| `/GatewaySim/Cancel/{key}` | `POST` | AllowAnonymous, antiforgery | — | Cancels the payment |
+
+When a session finishes, the page auto-submits a form POST to the order's success / fail / cancel URL with the fields listed in §8. Test values: wallet PIN `12121`; card `4111 1111 1111 1111`, CVV `123`, any future expiry; OTP `123456`; wallet `01700000099` = insufficient balance; card `4000 0000 0000 0002` = declined; 3 wrong entries fail the session.
+
+---
+
+## 10. State Machine & Review Guard Contract
 
 1. **Document Lifecycle:**
    - `Draft` → AI generated; citizen can view text preview in `/Case/Result/{id}` or `/Document/Preview/{id}`. PDF download is **locked**.

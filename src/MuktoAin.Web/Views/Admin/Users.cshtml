@@ -1,106 +1,157 @@
-@model IEnumerable<MuktoAin.Web.ViewModels.AdminUserViewModel>
+@model AdminUsersViewModel
 @{
-    ViewData["Title"] = "ব্যবহারকারী ব্যবস্থাপনা — Admin Users";
+    ViewData["Title"] = "Users — Admin — MuktoAin";
     ViewData["IsAdminPage"] = true;
-    var activeUsersCount = Model.Count(u => string.Equals(u.AccountStatus, "Active", StringComparison.OrdinalIgnoreCase));
+
+    var totalPages = Model.PageSize > 0
+        ? (int)Math.Ceiling(Model.TotalCount / (double)Model.PageSize)
+        : 1;
 }
 
 <main class="container" id="main">
     <nav class="breadcrumbs" aria-label="Breadcrumb">
-        <a asp-controller="Home" asp-action="Index" data-bn="হোম" data-en="Home">Home</a>
+        <a asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
         <span class="sep">/</span>
-        <a asp-controller="Admin" asp-action="Dashboard" data-bn="অ্যাডমিন কনসোল" data-en="Admin Console">Admin Console</a>
-        <span class="sep">/</span>
-        <span data-bn="ব্যবহারকারী ও রোল ব্যবস্থাপনা" data-en="User & Role Management">ব্যবহারকারী ও রোল ব্যবস্থাপনা</span>
+        <span>Users</span>
     </nav>
 
     <div class="page-head">
-        <span class="kicker" data-bn="FR-17 · User & Role Management" data-en="FR-17 · User & Role Management"><i data-lucide="users" aria-hidden="true"></i> FR-17 · User &amp; Role Management</span>
-        <h1 class="page-title" data-bn="ব্যবহারকারী ও অ্যাকাউন্ট অ্যাডমিনিস্ট্রেশন" data-en="User & Account Administration">ব্যবহারকারী ও অ্যাকাউন্ট অ্যাডমিনিস্ট্রেশন</h1>
-        <p class="page-sub" data-bn="নাগরিক ও আইনজীবী একাউন্টের স্ট্যাটাস এবং রোল পর্যালোচনা, সক্রিয়/স্থগিতকরণ।" data-en="Review citizen and lawyer account statuses, roles, and suspend or activate access.">নাগরিক ও আইনজীবী একাউন্টের স্ট্যাটাস এবং রোল পর্যালোচনা, সক্রিয়/স্থগিতকরণ।</p>
+        <span class="kicker"><i data-lucide="users"></i> FR-18</span>
+        <h1 class="page-title">User Management</h1>
+        <p class="page-sub">Suspend or restore accounts. Admin accounts are protected from modification.</p>
+        @if (Model.ViewerIsSuperAdmin)
+        {
+            <a asp-action="CreateAdmin" class="btn btn-primary btn-sm">+ Create Admin</a>
+        }
     </div>
 
-    <div class="card" style="padding: 24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-            <div>
-                <h2 style="font-size: 18px; margin: 0;"><i data-lucide="user-cog" style="display: inline; vertical-align: middle; color: var(--gold);"></i> <span data-bn="নিবন্ধিত ব্যবহারকারী তালিকা" data-en="Registered Users">নিবন্ধিত ব্যবহারকারী তালিকা</span></h2>
-                <span class="muted tiny" data-bn="@Model.Count() টি একাউন্ট (সব ধরনের রোল শেষ)" data-en="@Model.Count() accounts (all roles)">@Model.Count() টি একাউন্ট (সব ধরনের রোল শেষ)</span>
+    @if (TempData["Info"] is string resetLink)
+    {
+        <div style="background: rgba(30, 130, 60, 0.1); border: 1px solid rgba(30, 130, 60, 0.3); border-left: 4px solid #1e823c; padding: 14px 18px; border-radius: 6px; margin-bottom: 20px;">
+            <strong style="color: #1e823c;">🔑 নতুন অ্যাডমিন সক্রিয়করণ / অ্যাক্টিভেশন লিংক:</strong><br />
+            <span style="font-size: 0.9rem; color: var(--text-muted, #555);">নতুন অ্যাডমিনকে পাসওয়ার্ড সেট করার জন্য নিচের লিংকটি পাঠান:</span>
+            <div style="margin-top: 8px; display: flex; gap: 8px; align-items: center;">
+                <input type="text" value="@resetLink" id="adminResetUrlInput" readonly style="flex: 1; padding: 6px 10px; font-family: monospace; font-size: 0.85rem; border: 1px solid var(--border, #ccc); border-radius: 4px; background: var(--bg-card, #fff);" />
+                <button type="button" class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('adminResetUrlInput').value); this.innerText='কপি হয়েছে!';">Copy Link</button>
             </div>
-            <span class="badge badge-primary" data-bn="@activeUsersCount জন সক্রিয়" data-en="@activeUsersCount Active">@activeUsersCount জন সক্রিয়</span>
         </div>
+    }
 
-        <div class="table-wrap" style="overflow-x: auto;">
-            <table class="table" style="width: 100%; font-size: 14px; text-align: left;">
-                <thead>
-                    <tr style="border-bottom: 1.5px solid var(--border);">
-                        <th style="padding: 8px 10px;" data-bn="নাম" data-en="Name">নাম</th>
-                        <th style="padding: 8px 10px;" data-bn="ইমেইল" data-en="Email">ইমেইল</th>
-                        <th style="padding: 8px 10px;" data-bn="রোল" data-en="Role">রোল</th>
-                        <th style="padding: 8px 10px;" data-bn="স্ট্যাটাস" data-en="Status">স্ট্যাটাস</th>
-                        <th style="padding: 8px 10px;" data-bn="নিবন্ধনের তারিখ" data-en="Created">নিবন্ধনের তারিখ</th>
-                        <th style="padding: 8px 10px; text-align: right;" data-bn="অ্যাকশন" data-en="Actions">অ্যাকশন</th>
+    <div class="chip-row" style="margin-bottom: 16px">
+        @foreach (var f in new[] { "All", "Citizen", "Lawyer", "Admin" })
+        {
+            <a class="chip chip-sm @(Model.RoleFilter == f ? "active" : "")"
+               asp-action="Users" asp-route-role="@f">@f</a>
+        }
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model.Users)
+                {
+                    <tr>
+                        <td>@u.FullName</td>
+                        <td class="mono">@u.Email</td>
+                        <td><span class="badge badge-neutral">@u.Role</span></td>
+                        <td>
+                            <span class="badge badge-@(u.Status == "Suspended" ? "rejected" : "final")">@u.Status</span>
+                        </td>
+                        <td>
+                            @if (u.Role == "Admin")
+                            {
+                                if (u.IsSuperAdmin)
+                                {
+                                    <span class="badge badge-neutral" title="SuperAdmin — Protected">SuperAdmin</span>
+                                }
+                                else if (Model.ViewerIsSuperAdmin)
+                                {
+                                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                        @if (u.Status == "Suspended")
+                                        {
+                                            <form asp-action="SuspendAdmin" method="post" style="display:inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="userId" value="@u.UserId" />
+                                                <input type="hidden" name="suspend" value="false" />
+                                                <button class="btn btn-outline btn-sm" type="submit">Activate</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="SuspendAdmin" method="post" style="display:inline"
+                                                  data-confirm="Suspend this admin? Login will be blocked.">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="userId" value="@u.UserId" />
+                                                <input type="hidden" name="suspend" value="true" />
+                                                <button class="btn btn-danger-outline btn-sm" type="submit">Suspend</button>
+                                            </form>
+                                        }
+                                        <form asp-action="PromoteAdmin" method="post" style="display:inline"
+                                              data-confirm="Promote this admin to SuperAdmin? This cannot be undone through the app.">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="userId" value="@u.UserId" />
+                                            <button class="btn btn-outline btn-sm" type="submit">Promote</button>
+                                        </form>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-neutral" title="Protected">Protected</span>
+                                }
+                            }
+                            else if (u.Status == "Suspended")
+                            {
+                                <form asp-action="Suspend" method="post" style="display:inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@u.UserId" />
+                                    <input type="hidden" name="suspend" value="false" />
+                                    <button class="btn btn-outline btn-sm" type="submit">Activate</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="Suspend" method="post" style="display:inline"
+                                      data-confirm="এই অ্যাকাউন্টটি স্থগিত করবেন? লগইন সাময়িকভাবে বন্ধ থাকবে। / Suspend this account? Login will be blocked."
+                                      data-confirm-title="অ্যাকাউন্ট স্থগিতকরণ / Suspend Account"
+                                      data-confirm-ok="স্থগিত করুন / Suspend"
+                                      data-confirm-cancel="বাতিল / Cancel">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@u.UserId" />
+                                    <input type="hidden" name="suspend" value="true" />
+                                    <button class="btn btn-danger-outline btn-sm" type="submit">Suspend</button>
+                                </form>
+                            }
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @foreach (var user in Model)
+                }
+            </tbody>
+        </table>
+        @if (totalPages > 1)
+        {
+            <div class="pagination" style="margin-top: 12px">
+                @if (Model.Page > 1)
+                {
+                    <a asp-action="Users" asp-route-role="@Model.RoleFilter" asp-route-page="@(Model.Page - 1)"><i data-lucide="chevron-left"></i></a>
+                }
+                @for (var p = 1; p <= totalPages; p++)
+                {
+                    @if (p == Model.Page)
                     {
-                        var isSuspended = string.Equals(user.AccountStatus, "Suspended", StringComparison.OrdinalIgnoreCase);
-                        <tr style="border-bottom: 1px solid var(--border-soft);">
-                            <td style="padding: 10px 10px; font-weight: 600;">@user.FullName</td>
-                            <td style="padding: 10px 10px; font-family: monospace; font-size: 13px; color: var(--ink-2);">@user.Email</td>
-                            <td style="padding: 10px 10px;">
-                                @if (user.Role == "Admin")
-                                {
-                                    <span class="badge badge-warning" style="color:#4a3812; background:var(--gold-soft);" data-bn="অ্যাডমিন" data-en="Admin">অ্যাডমিন</span>
-                                }
-                                else if (user.Role == "Lawyer")
-                                {
-                                    <span class="badge badge-gold" style="color:#92743a;" data-bn="আইনজীবী" data-en="Lawyer">আইনজীবী</span>
-                                }
-                                else
-                                {
-                                    <span class="badge badge-info" data-bn="নাগরিক" data-en="Citizen">নাগরিক</span>
-                                }
-                            </td>
-                            <td style="padding: 10px 10px;">
-                                @if (isSuspended)
-                                {
-                                    <span class="badge badge-rejected" data-bn="স্থগিত (Suspended)" data-en="Suspended">স্থগিত (Suspended)</span>
-                                }
-                                else
-                                {
-                                    <span class="badge badge-success" data-bn="সক্রিয় (Active)" data-en="Active">সক্রিয় (Active)</span>
-                                }
-                            </td>
-                            <td style="padding: 10px 10px; font-size: 13px; color: var(--ink-2);">@user.CreatedAt.ToString("dd MMM yyyy")</td>
-                            <td style="padding: 10px 10px; text-align: right;">
-                                <div style="display: inline-flex; gap: 6px;">
-                                    @if (isSuspended)
-                                    {
-                                        <form method="post" asp-controller="Admin" asp-action="Activate" asp-route-id="@user.UserId" style="display:inline;">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-primary btn-sm" style="min-height:44px; display:inline-flex; align-items:center; gap:6px; font-size:13px; padding:4px 10px;" data-bn="সক্রিয় করুন" data-en="Activate">
-                                                <i data-lucide="user-check" style="width: 15px; height: 15px;"></i> সক্রিয় করুন
-                                            </button>
-                                        </form>
-                                    }
-                                    else
-                                    {
-                                        <form method="post" asp-controller="Admin" asp-action="Suspend" asp-route-id="@user.UserId" style="display:inline;">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-outline btn-sm" style="min-height:44px; display:inline-flex; align-items:center; gap:6px; font-size:13px; padding:4px 10px; color:#b91c1c;" data-bn="স্থগিত করুন" data-en="Suspend">
-                                                <i data-lucide="user-x" style="width: 15px; height: 15px;"></i> স্থগিত করুন
-                                            </button>
-                                        </form>
-                                    }
-                                </div>
-                            </td>
-                        </tr>
+                        <button type="button" class="active" data-page="@p">@p</button>
                     }
-                </tbody>
-            </table>
-        </div>
-
-        <div class="muted tiny" style="margin-top: 16px;" data-bn="টীকা: অ্যাডমিন একাউন্ট স্থগিতকরণ সুরক্ষিত থাকবে (UserManagementService গার্ডরেল)।" data-en="Note: Admin accounts are protected from suspension by UserManagementService guardrails.">টীকা: অ্যাডমিন একাউন্ট স্থগিতকরণ সুরক্ষিত থাকবে (UserManagementService গার্ডরেল)।</div>
+                    else
+                    {
+                        <a asp-action="Users" asp-route-role="@Model.RoleFilter" asp-route-page="@p">@p</a>
+                    }
+                }
+                @if (Model.Page < totalPages)
+                {
+                    <a asp-action="Users" asp-route-role="@Model.RoleFilter" asp-route-page="@(Model.Page + 1)"><i data-lucide="chevron-right"></i></a>
+                }
+            </div>
+        }
     </div>
 </main>

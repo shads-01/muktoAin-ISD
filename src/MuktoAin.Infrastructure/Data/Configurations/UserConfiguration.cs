@@ -23,6 +23,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Role).IsRequired();
         builder.Property(u => u.AccountStatus).IsRequired().HasDefaultValue(AccountStatus.Active);
         builder.Property(u => u.PreferredLanguage).HasMaxLength(10).IsRequired().HasDefaultValue("bn");
+        builder.Property(u => u.IsSuperAdmin).IsRequired().HasDefaultValue(false);
         builder.Property(u => u.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
         builder.HasOne(u => u.CreatedByAdmin)
             .WithMany()

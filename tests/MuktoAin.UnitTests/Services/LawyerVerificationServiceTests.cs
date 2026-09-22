@@ -10,11 +10,13 @@ namespace MuktoAin.UnitTests.Services;
 public class LawyerVerificationServiceTests
 {
     private readonly Mock<IRepository<LawyerProfile>> _profileRepo = new();
+    private readonly Mock<IAdminAuditService> _auditMock = new();
+    private readonly Mock<IRepository<Notification>> _notificationRepo = new();
     private readonly LawyerVerificationService _service;
 
     public LawyerVerificationServiceTests()
     {
-        _service = new LawyerVerificationService(_profileRepo.Object);
+        _service = new LawyerVerificationService(_profileRepo.Object, _auditMock.Object, _notificationRepo.Object);
     }
 
     [Fact]
@@ -98,5 +100,49 @@ public class LawyerVerificationServiceTests
 
         var profile = Assert.Single(pending);
         Assert.Equal(1, profile.LawyerProfileId);
+    }
+
+    // AUD-7: bar-verification decisions must record which admin decided, on
+    // which profile, and the rejection reason.
+    [Fact]
+    public async Task VerifyAsync_Approve_LogsAuditWithProfileTarget()
+    {
+        var profile = new LawyerProfile { LawyerProfileId = 3, UserId = 42 };
+        _profileRepo.Setup(r => r.GetByIdAsync(3)).ReturnsAsync(profile);
+
+        await _service.VerifyAsync(3, adminUserId: 1, approve: true);
+
+        _auditMock.Verify(a => a.LogAdminActionAsync(
+            1, "ApproveLawyerVerification", 42, 3, null), Times.Once);
+    }
+
+    [Fact]
+    public async Task VerifyAsync_Reject_LogsAuditWithReason()
+    {
+        var profile = new LawyerProfile { LawyerProfileId = 4, UserId = 42 };
+        _profileRepo.Setup(r => r.GetByIdAsync(4)).ReturnsAsync(profile);
+
+        await _service.VerifyAsync(4, adminUserId: 1, approve: false, reason: "Bar number not found");
+
+        _auditMock.Verify(a => a.LogAdminActionAsync(
+            1, "RejectLawyerVerification", 42, 4, "Bar number not found"), Times.Once);
+    }
+
+    [Fact]
+    public async Task VerifyAsync_NotifiesTheLawyer()
+    {
+        var profile = new LawyerProfile { LawyerProfileId = 3, UserId = 21, VerificationStatus = VerificationStatus.Pending };
+        _profileRepo.Setup(r => r.GetByIdAsync(3)).ReturnsAsync(profile);
+        Notification? captured = null;
+        _notificationRepo.Setup(n => n.AddAsync(It.IsAny<Notification>()))
+            .Callback<Notification>(n => captured = n)
+            .Returns(Task.CompletedTask);
+
+        await _service.VerifyAsync(lawyerProfileId: 3, adminUserId: 1, approve: true);
+
+        Assert.NotNull(captured);
+        Assert.Equal(21, captured!.UserId);
+        Assert.Equal(NotificationType.LawyerVerified, captured.Type);
+        Assert.Equal(3, captured.RelatedLawyerProfileId);
     }
 }

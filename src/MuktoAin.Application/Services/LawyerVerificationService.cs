@@ -8,10 +8,16 @@ namespace MuktoAin.Application.Services;
 public class LawyerVerificationService
 {
     private readonly IRepository<LawyerProfile> _profileRepo;
+    private readonly IAdminAuditService _audit;
+    private readonly IRepository<Notification> _notificationRepo;
 
-    public LawyerVerificationService(IRepository<LawyerProfile> profileRepo)
+    public LawyerVerificationService(
+        IRepository<LawyerProfile> profileRepo, IAdminAuditService audit,
+        IRepository<Notification> notificationRepo)
     {
         _profileRepo = profileRepo;
+        _audit = audit;
+        _notificationRepo = notificationRepo;
     }
 
     public async Task<int> ApplyAsync(int userId, LawyerApplicationDto dto)
@@ -33,7 +39,7 @@ public class LawyerVerificationService
         return profile.LawyerProfileId;
     }
 
-    public async Task VerifyAsync(int lawyerProfileId, int adminUserId, bool approve)
+    public async Task VerifyAsync(int lawyerProfileId, int adminUserId, bool approve, string? reason = null)
     {
         var profile = await _profileRepo.GetByIdAsync(lawyerProfileId);
         if (profile == null) throw new ArgumentException("Profile not found");
@@ -43,8 +49,34 @@ public class LawyerVerificationService
             : VerificationStatus.Rejected;
         profile.VerifiedByAdminId = adminUserId;
         profile.VerifiedAt = DateTime.UtcNow;
+        profile.RejectionReason = approve ? null : (reason ?? string.Empty);
 
         await _profileRepo.SaveChangesAsync();
+
+        // AUD-7: bar-verification decision is a human-in-the-loop safeguard
+        // action — record which admin made it, on whom, and why (rejections).
+        await _audit.LogAdminActionAsync(
+            adminUserId,
+            approve ? "ApproveLawyerVerification" : "RejectLawyerVerification",
+            targetUserId: profile.UserId,
+            targetEntityId: lawyerProfileId,
+            details: approve ? null : reason);
+
+        try
+        {
+            await _notificationRepo.AddAsync(new Notification
+            {
+                UserId = profile.UserId,
+                Type = NotificationType.LawyerVerified,
+                RelatedLawyerProfileId = profile.LawyerProfileId,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _notificationRepo.SaveChangesAsync();
+        }
+        catch
+        {
+            // Notification write failure should not block verification completion
+        }
     }
 
     public async Task<IEnumerable<LawyerProfile>> GetPendingApplicationsAsync()

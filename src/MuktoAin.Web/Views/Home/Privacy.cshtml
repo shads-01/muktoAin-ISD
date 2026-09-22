@@ -1,6 +1,36 @@
 ﻿@{
-    ViewData["Title"] = "Privacy Policy";
+    ViewData["Title"] = "গোপনীয়তা নীতি — Privacy Policy";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Home</a>
+        <span class="sep">/</span>
+        <span data-bn="গোপনীয়তা নীতি" data-en="Privacy Policy">গোপনীয়তা নীতি</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="shield-check"></i> Privacy · FR-17</span>
+        <h1 class="page-title" data-bn="গোপনীয়তা নীতি" data-en="Privacy Policy">গোপনীয়তা নীতি</h1>
+        <p class="page-sub" data-bn="মুক্ত আইন নাগরিকদের ব্যক্তিগত তথ্যের সুরক্ষাকে সর্বোচ্চ অগ্রাধিকার দেয়।" data-en="MuktoAin treats the protection of citizen personal data as its highest priority.">মুক্ত আইন নাগরিকদের ব্যক্তিগত তথ্যের সুরক্ষাকে সর্বোচ্চ অগ্রাধিকার দেয়।</p>
+    </div>
+
+    <div class="card card-pad-lg" style="margin-bottom: 3rem;">
+        <div class="stack" style="gap: 18px;">
+            <div>
+                <h2 class="section-h" style="margin: 0 0 8px;"><i data-lucide="user-cog"></i> <span data-bn="যা সংগ্রহ করা হয়" data-en="What We Collect">যা সংগ্রহ করা হয়</span></h2>
+                <p class="muted" data-bn="মামলা দাখিলের সময়: সমস্যার বিবরণ, আইনি বিভাগ, জেলা। একাউন্ট তৈরির সময়: নাম, ইমেইল, ফোন (ঐচ্ছিক)। বেনামে জমা দিলে কোনো পরিচিত তথ্য সংরক্ষিত হয় না — শুধু একটি গোপন ট্র্যাকিং কোড জারি হয়।" data-en="When you submit a case: problem description, legal category, and district. When you register: name, email, and phone (optional). Anonymous submissions store no identity at all — only a confidential tracking code is issued.">মামলা দাখিলের সময়: সমস্যার বিবরণ, আইনি বিভাগ, জেলা। একাউন্ট তৈরির সময়: নাম, ইমেইল, ফোন (ঐচ্ছিক)। বেনামে জমা দিলে কোনো পরিচিত তথ্য সংরক্ষিত হয় না — শুধু একটি গোপন ট্র্যাকিং কোড জারি হয়।</p>
+            </div>
+
+            <div>
+                <h2 class="section-h" style="margin: 0 0 8px;"><i data-lucide="lock"></i> <span data-bn="কীভাবে সুরক্ষিত থাকে" data-en="How It Is Protected">কীভাবে সুরক্ষিত থাকে</span></h2>
+                <p class="muted" data-bn="সংবেদনশীল ক্ষেত্র ASP.NET Core Data Protection API দিয়া এনক্রিপ্ট করে সংরক্ষিত হয়। AI লগে নাগরিকের বিবরণ স্বয়ংক্রিয়ভাবে রিড্যাক্ট হয় (S-2.7)। ডেটা কোনো তৃতীয় পক্ষের সাথে বিক্রি বা শেয়ার করা হয় না।" data-en="Sensitive fields are stored encrypted with the ASP.NET Core Data Protection API. Citizen descriptions are automatically redacted in AI logs (S-2.7). No data is ever sold or shared with third parties.">সংবেদনশীল ক্ষেত্র ASP.NET Core Data Protection API দিয়া এনক্রিপ্ট করে সংরক্ষিত হয়। AI লগে নাগরিকের বিবরণ স্বয়ংক্রিয়ভাবে রিড্যাক্ট হয় (S-2.7)। ডেটা কোনো তৃতীয় পক্ষের সাথে বিক্রি বা শেয়ার করা হয় না।</p>
+            </div>
+
+            <div>
+                <h2 class="section-h" style="margin: 0 0 8px;"><i data-lucide="eye-off"></i> <span data-bn="আপনার নিয়ন্ত্রণ" data-en="Your Control">আপনার নিয়ন্ত্রণ</span></h2>
+                <p class="muted" data-bn="যেকোনো সময় বেনামে মামলা দাখিল করতে পারেন, একাউন্ট মুছে ফেলার অনুরোধ করতে পারেন। বেনামে ট্র্যাকিং কোড হারিয়ে ফেললে মামলার তথ্য পুনরুদ্ধার সম্ভব নয় — সেটাই নাম না জানানোর সুরক্ষা।" data-en="You may submit cases anonymously at any time and may request account deletion. If an anonymous tracking code is lost, its case cannot be recovered — that is the trade-off of not storing identity.">যেকোনো সময় বেনামে মামলা দাখিল করতে পারেন, একাউন্ট মুছে ফেলার অনুরোধ করতে পারেন। বেনামে ট্র্যাকিং কোড হারিয়ে ফেললে মামলার তথ্য পুনরুদ্ধার সম্ভব নয় — সেটাই নাম না জানানোর সুরক্ষা।</p>
+            </div>
+        </div>
+    </div>
+</main>

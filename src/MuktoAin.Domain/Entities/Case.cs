@@ -26,8 +26,18 @@ public class Case
     // Guest tracking code for FR-8 (see data pipeline plan Step 1.6; wired by Step 2.1)
     public string? AnonymousTrackingCode { get; set; }
 
+    // Redesign 2026-09: optional notification email for anonymous cases
+    // ("no account created" — used ONLY for status-change emails, FR-22)
+    public string? NotificationEmail { get; set; }
+
+    // Redesign 2026-09 (FR-24): honorarium paid marker for approved case
+    public bool HonorariumPaid { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+
+    // AUD-4: SQL Server rowversion for optimistic concurrency (status changes)
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 
     public ICollection<GeneratedDocument> Documents { get; set; } = new List<GeneratedDocument>();
     public ICollection<CaseActReference> ActReferences { get; set; } = new List<CaseActReference>();

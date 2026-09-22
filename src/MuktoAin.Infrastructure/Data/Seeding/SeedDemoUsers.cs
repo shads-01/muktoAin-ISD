@@ -6,9 +6,10 @@ using MuktoAin.Domain.Interfaces.Repositories;
 
 namespace MuktoAin.Infrastructure.Data.Seeding;
 
-// Dev/seed-only supplement to SeedAdminUser: creates the Citizen and Lawyer demo
-// accounts promised by Views/Account/Login.cshtml's "Quick Demo Fill" buttons
-// (citizen@muktoain.bd / Citizen@123, lawyer@muktoain.bd / Lawyer@123). Same
+// Dev/seed-only supplement to SeedAdminUser: creates the Citizen, Lawyer and
+// regular Admin demo accounts promised by Views/Account/Login.cshtml's "Quick
+// Demo Fill" buttons (citizen@muktoain.bd / Citizen@123, lawyer@muktoain.bd /
+// Lawyer@123, demoadmin@muktoain.bd / DemoAdmin@123). Same
 // idempotent style as SeedAdminUser -- each account is created once and skipped
 // on later startups. Program.cs only invokes this in the Development environment,
 // so staging/production never expose demo credentials.
@@ -23,6 +24,12 @@ public static class SeedDemoUsers
 
     public const string LawyerEmail = "lawyer@muktoain.bd";
     public const string LawyerPassword = "Lawyer@123";
+
+    // A regular (non-Super) admin, so the SuperAdminOnly gates (refund, payout
+    // approval, admin management) can be demoed against the SuperAdmin
+    // bootstrap account from SeedAdminUser.
+    public const string AdminEmail = "demoadmin@muktoain.bd";
+    public const string AdminPassword = "DemoAdmin@123";
 
     // Matches the UNIQUE constraint UQ_LAWYER_PROFILE_BarRegistrationNumber.
     public const string DemoBarRegistrationNumber = "DEMO-BAR-2026-0001";
@@ -58,6 +65,12 @@ public static class SeedDemoUsers
             }
 
             logger.LogInformation("Seeded demo citizen {Email} (role {Role}).", CitizenEmail, UserRole.Citizen);
+        }
+        else if (!await userManager.CheckPasswordAsync(citizen, CitizenPassword))
+        {
+            var token = await userManager.GeneratePasswordResetTokenAsync(citizen);
+            await userManager.ResetPasswordAsync(citizen, token, CitizenPassword);
+            logger.LogInformation("Synchronized password for demo citizen {Email}.", CitizenEmail);
         }
 
         // Seeding the citizen may have failed above and thrown; only reach the
@@ -102,6 +115,45 @@ public static class SeedDemoUsers
             logger.LogInformation(
                 "Seeded demo lawyer {Email} (role {Role}) with Pending LawyerProfile {BarNumber}.",
                 LawyerEmail, UserRole.Lawyer, DemoBarRegistrationNumber);
+        }
+        else if (!await userManager.CheckPasswordAsync(lawyer, LawyerPassword))
+        {
+            var token = await userManager.GeneratePasswordResetTokenAsync(lawyer);
+            await userManager.ResetPasswordAsync(lawyer, token, LawyerPassword);
+            logger.LogInformation("Synchronized password for demo lawyer {Email}.", LawyerEmail);
+        }
+
+        var admin = await userManager.FindByEmailAsync(AdminEmail);
+        if (admin is null)
+        {
+            admin = new User
+            {
+                FullName = "ডেমো অ্যাডমিন / Demo Admin",
+                UserName = AdminEmail,
+                Email = AdminEmail,
+                Role = UserRole.Admin,
+                IsSuperAdmin = false,
+                AccountStatus = AccountStatus.Active,
+                PreferredLanguage = "bn",
+                EmailConfirmed = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var adminResult = await userManager.CreateAsync(admin, AdminPassword);
+            if (!adminResult.Succeeded)
+            {
+                var errors = string.Join("; ", adminResult.Errors.Select(e => $"{e.Code}: {e.Description}"));
+                logger.LogError("Failed to seed demo admin {Email}: {Errors}", AdminEmail, errors);
+                throw new InvalidOperationException($"Demo admin seeding failed for '{AdminEmail}'.");
+            }
+
+            logger.LogInformation("Seeded demo admin {Email} (role {Role}, not SuperAdmin).", AdminEmail, UserRole.Admin);
+        }
+        else if (!await userManager.CheckPasswordAsync(admin, AdminPassword))
+        {
+            var token = await userManager.GeneratePasswordResetTokenAsync(admin);
+            await userManager.ResetPasswordAsync(admin, token, AdminPassword);
+            logger.LogInformation("Synchronized password for demo admin {Email}.", AdminEmail);
         }
     }
 }

@@ -1,0 +1,85 @@
+@model MuktoAin.Web.Controllers.PaymentResultViewModel
+@using MuktoAin.Domain.Enums
+@{
+    ViewData["Title"] = "পেমেন্টের ফলাফল — Payment Result";
+    var outcome = !Model.Found ? "notfound"
+        : Model.Status == PaymentStatus.Paid ? "success"
+        : Model.Status == PaymentStatus.Pending ? "pending"
+        : Model.Status == PaymentStatus.Refunded ? "refunded"
+        : Model.Cancelled ? "cancelled"
+        : "failed";
+}
+
+<main class="container" id="main" style="max-width: 560px; padding-top: 48px; padding-bottom: 64px;">
+    <div class="card card-pad-lg" style="text-align: center;" data-payment-outcome="@outcome">
+        @switch (outcome)
+        {
+            case "success":
+                <i data-lucide="check-circle-2" style="width:56px;height:56px;color:var(--success, #1e8e3e);"></i>
+                <h1 class="page-title" style="font-size:24px;" data-bn="পেমেন্ট সফল হয়েছে" data-en="Payment Successful">পেমেন্ট সফল হয়েছে</h1>
+                <p class="muted" data-bn="গেটওয়ে আপনার লেনদেন নিশ্চিত করেছে।" data-en="The gateway has confirmed your transaction.">গেটওয়ে আপনার লেনদেন নিশ্চিত করেছে।</p>
+                break;
+            case "cancelled":
+                <i data-lucide="x-circle" style="width:56px;height:56px;color:var(--ink-3, #888);"></i>
+                <h1 class="page-title" style="font-size:24px;" data-bn="পেমেন্ট বাতিল করা হয়েছে" data-en="Payment Cancelled">পেমেন্ট বাতিল করা হয়েছে</h1>
+                <p class="muted" data-bn="আপনি পেমেন্টটি বাতিল করেছেন। কোনো টাকা কাটা হয়নি।" data-en="You cancelled the payment. No money was taken.">আপনি পেমেন্টটি বাতিল করেছেন। কোনো টাকা কাটা হয়নি।</p>
+                break;
+            case "pending":
+                <i data-lucide="clock" style="width:56px;height:56px;color:var(--warn, #b8860b);"></i>
+                <h1 class="page-title" style="font-size:24px;" data-bn="পেমেন্ট অপেক্ষমাণ" data-en="Payment Pending">পেমেন্ট অপেক্ষমাণ</h1>
+                <p class="muted" data-bn="গেটওয়ে থেকে এখনো নিশ্চিতকরণ আসেনি।" data-en="The gateway has not confirmed this payment yet.">গেটওয়ে থেকে এখনো নিশ্চিতকরণ আসেনি।</p>
+                break;
+            case "refunded":
+                <i data-lucide="rotate-ccw" style="width:56px;height:56px;color:var(--ink-3, #888);"></i>
+                <h1 class="page-title" style="font-size:24px;" data-bn="পেমেন্ট ফেরত দেওয়া হয়েছে" data-en="Payment Refunded">পেমেন্ট ফেরত দেওয়া হয়েছে</h1>
+                break;
+            case "notfound":
+                <i data-lucide="help-circle" style="width:56px;height:56px;color:var(--ink-3, #888);"></i>
+                <h1 class="page-title" style="font-size:24px;" data-bn="অর্ডার পাওয়া যায়নি" data-en="Order Not Found">অর্ডার পাওয়া যায়নি</h1>
+                break;
+            default:
+                <i data-lucide="alert-circle" style="width:56px;height:56px;color:var(--danger, #c0392b);"></i>
+                <h1 class="page-title" style="font-size:24px;" data-bn="পেমেন্ট ব্যর্থ হয়েছে" data-en="Payment Failed">পেমেন্ট ব্যর্থ হয়েছে</h1>
+                <p class="muted" data-bn="দুঃখিত, পেমেন্টটি সম্পন্ন করা যায়নি। কোনো টাকা কাটা হয়নি।" data-en="Sorry, the payment could not be completed. No money was taken.">দুঃখিত, পেমেন্টটি সম্পন্ন করা যায়নি। কোনো টাকা কাটা হয়নি।</p>
+                break;
+        }
+
+        @if (Model.Found)
+        {
+            <dl class="tiny" style="display:grid; grid-template-columns:auto auto; gap:6px 16px; justify-content:center; margin:20px 0; text-align:left;">
+                <dt class="muted" data-bn="অর্ডার" data-en="Order">অর্ডার</dt>
+                <dd class="mono" style="margin:0;">#@Model.OrderId</dd>
+                <dt class="muted" data-bn="উদ্দেশ্য" data-en="Purpose">উদ্দেশ্য</dt>
+                <dd style="margin:0;">@(Model.Purpose == PaymentPurpose.Honorarium ? "সম্মানী / Honorarium" : "টপ-আপ / Top-up")</dd>
+                <dt class="muted" data-bn="পরিমাণ" data-en="Amount">পরিমাণ</dt>
+                <dd style="margin:0;">৳@Model.Amount.ToString("0.00")</dd>
+                @if (outcome == "success" && Model.Purpose == PaymentPurpose.TopUp)
+                {
+                    <dt class="muted" data-bn="চ্যাট ক্রেডিট" data-en="Chat credits">চ্যাট ক্রেডিট</dt>
+                    <dd style="margin:0;" data-testid="chat-credits">+@Model.ChatCredits</dd>
+                }
+                @if (!string.IsNullOrEmpty(Model.GatewayRef))
+                {
+                    <dt class="muted" data-bn="লেনদেন নং" data-en="Transaction ID">লেনদেন নং</dt>
+                    <dd class="mono" style="margin:0;" data-testid="gateway-ref">@Model.GatewayRef</dd>
+                }
+            </dl>
+        }
+
+        <div class="row" style="justify-content:center; gap:8px; flex-wrap:wrap; margin-top:16px;">
+            @if (Model.CaseId.HasValue)
+            {
+                <a class="btn btn-gold" href="/Case/Result/@Model.CaseId" data-bn="মামলায় ফিরে যান" data-en="Back to Case">মামলায় ফিরে যান</a>
+            }
+            else if (Model.Found && Model.Purpose == PaymentPurpose.TopUp)
+            {
+                @* The chat lives on the home page (chat-first redesign). *@
+                <a class="btn btn-gold" href="/" data-bn="চ্যাটে ফিরে যান" data-en="Back to Chat">চ্যাটে ফিরে যান</a>
+            }
+            else
+            {
+                <a class="btn btn-outline" href="/" data-bn="হোমে ফিরে যান" data-en="Back to Home">হোমে ফিরে যান</a>
+            }
+        </div>
+    </div>
+</main>

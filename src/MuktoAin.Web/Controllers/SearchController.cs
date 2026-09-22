@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using MuktoAin.Application.DTOs;
 using MuktoAin.Application.Services;
+using MuktoAin.Domain.Interfaces.Repositories;
 using MuktoAin.Web.ViewModels;
 
 namespace MuktoAin.Web.Controllers;
@@ -27,22 +28,41 @@ public class SearchController : Controller
         { "a", "A", "1", "i", "I", "ক", "১" };
 
     private readonly SearchService _searchService;
+    private readonly IActRepository _actRepo;
 
-    public SearchController(SearchService searchService)
+    public SearchController(SearchService searchService, IActRepository actRepo)
     {
         _searchService = searchService;
+        _actRepo = actRepo;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? q, int page = 1)
+    public async Task<IActionResult> Index(string? q, int page = 1, int? actId = null)
     {
-        if (string.IsNullOrWhiteSpace(q))
+        // Act filter dropdown data (always, so the filter renders on empty state too).
+        // Some act titles run 100-190+ chars — a native <select> sizes its popup to
+        // the longest untruncated option, which pushes the flyout past the viewport
+        // edge. The view truncates the visible label and keeps the full title as the
+        // option's title="" tooltip, so ViewBag carries full titles, not SelectListItems.
+        var acts = await _actRepo.GetAllAsync();
+        ViewBag.Acts = acts.OrderBy(a => a.Title).ToList();
+
+        // No keyword and no Act filter -- nothing to search, show the initial prompt.
+        if (string.IsNullOrWhiteSpace(q) && actId is null)
         {
             return View(new SearchViewModel());
         }
 
-        var result = await _searchService.SearchActsAsync(q, page, PageSize);
-        return View(ToViewModel(result));
+        // Keyword blank but an Act is selected -- browse that Act's sections directly
+        // rather than treating the dropdown as inert until a keyword is also typed.
+        var result = string.IsNullOrWhiteSpace(q)
+            ? await _searchService.BrowseActAsync(actId!.Value, page, PageSize)
+            : await _searchService.SearchActsAsync(q, page, PageSize, actId);
+
+        var vm = ToViewModel(result);
+        vm.ActId = actId;
+        vm.HasSearched = true;
+        return View(vm);
     }
 
     private static SearchViewModel ToViewModel(SearchResultDto result)

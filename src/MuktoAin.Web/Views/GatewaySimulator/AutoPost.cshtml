@@ -1,0 +1,25 @@
+@model MuktoAin.Infrastructure.Payments.SimulatedCallback
+@{
+    Layout = "_GatewaySimLayout";
+    ViewData["Title"] = "Returning to merchant";
+}
+
+@* The gateway hands the browser back to the merchant with a form POST, the
+   same way SSLCommerz does. No antiforgery token: the merchant's callback
+   endpoints are cross-site targets and validate server-to-server instead. *@
+<div class="sim-card">
+    <div class="sim-body" style="text-align:center;">
+        <p>মার্চেন্টের সাইটে ফেরত নেওয়া হচ্ছে…<br />Returning to the merchant…</p>
+        <form method="post" action="@Model.Url" id="sim-return-form">
+            @foreach (var field in Model.Fields)
+            {
+                <input type="hidden" name="@field.Key" value="@field.Value" />
+            }
+            <noscript><button class="btn btn-pay" type="submit">চালিয়ে যান / Continue</button></noscript>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>document.getElementById("sim-return-form").submit();</script>
+}

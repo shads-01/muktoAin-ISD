@@ -7,6 +7,7 @@ using MuktoAin.Domain.Interfaces.Services;
 using MuktoAin.Domain.Models;
 using MuktoAin.Infrastructure.VectorStore;
 using IEmbeddingService = MuktoAin.Domain.Interfaces.IEmbeddingService;
+using IActRepository = MuktoAin.Domain.Interfaces.Repositories.IActRepository;
 
 namespace MuktoAin.IntegrationTests.AiPipeline;
 
@@ -16,6 +17,25 @@ public class RagRetrievalSmokeTests
     private readonly Mock<IVectorStore> _vectorStoreMock = new();
     private readonly Mock<IActSectionRepository> _sectionRepoMock = new();
     private readonly Mock<IKeywordSectionSearch> _keywordSearchMock = new();
+    private readonly Mock<IScenarioMappingRepository> _scenarioMappingRepoMock = new();
+    private readonly Mock<IActRepository> _actRepoMock = new();
+
+    public RagRetrievalSmokeTests()
+    {
+        // No curated scenario priors in these smoke tests -- the merge step is a no-op.
+        _scenarioMappingRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<ScenarioMapping>());
+        _actRepoMock.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Act>());
+    }
+
+    // RagContextBuilder gained scenario-prior merging (FR-18) after this test was
+    // written — empty mappings keep the pure vector/FTS assertions unchanged.
+    private RagContextBuilder CreateRagContextBuilder(SimilaritySearchService similaritySearch) =>
+        new(similaritySearch,
+            _keywordSearchMock.Object,
+            _scenarioMappingRepoMock.Object,
+            _sectionRepoMock.Object,
+            _actRepoMock.Object,
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<RagContextBuilder>>());
 
     [Fact]
     public async Task Labour_Query_Returns_Labour_Act_Sections_Via_Vector_Pipeline()
@@ -70,7 +90,7 @@ public class RagRetrievalSmokeTests
             _vectorStoreMock.Object,
             _sectionRepoMock.Object);
 
-        var ragContextBuilder = new RagContextBuilder(similaritySearch, _keywordSearchMock.Object);
+        var ragContextBuilder = CreateRagContextBuilder(similaritySearch);
 
         // 2. Act: Execute RAG retrieval
         var retrievedSections = (await ragContextBuilder.RetrieveContextAsync(query, topK: 5)).ToList();
@@ -123,7 +143,7 @@ public class RagRetrievalSmokeTests
             _vectorStoreMock.Object,
             _sectionRepoMock.Object);
 
-        var ragContextBuilder = new RagContextBuilder(similaritySearch, _keywordSearchMock.Object);
+        var ragContextBuilder = CreateRagContextBuilder(similaritySearch);
 
         var results = (await ragContextBuilder.RetrieveContextAsync(query, topK: 5)).ToList();
 

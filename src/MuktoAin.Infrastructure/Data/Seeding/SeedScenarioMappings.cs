@@ -20,7 +20,7 @@ public static class SeedScenarioMappings
 
     public static async Task SeedAsync(AppDbContext context, string contentRootPath, ILogger? logger = null)
     {
-        if (await context.ScenarioMappings.AnyAsync()) return; // idempotent
+        if (await context.ScenarioMappings.AsNoTracking().AnyAsync()) return; // idempotent
 
         var dtos = await SeedJsonLoader.LoadAsync<ScenarioMappingSeedDto>(contentRootPath, "scenario-mappings.json");
 

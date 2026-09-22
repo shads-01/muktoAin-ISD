@@ -1,0 +1,69 @@
+@model AdminCorpusViewModel
+@{
+    ViewData["Title"] = "Corpus — Admin — MuktoAin";
+    ViewData["IsAdminPage"] = true;
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+        <span class="sep">/</span>
+        <span>Corpus</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="library"></i> FR-17</span>
+        <h1 class="page-title">Legislative Corpus</h1>
+        <p class="page-sub">Acts, sections, and vector-index status. Re-embedding runs via the Embedding Batch Job on the Dashboard.</p>
+    </div>
+
+    <div class="grid grid-3" style="margin-bottom: 20px">
+        <div class="card"><span class="kicker">Sections</span><div style="font-size:32px;font-weight:700">@Model.TotalSections</div></div>
+        <div class="card"><span class="kicker">Chunks</span><div style="font-size:32px;font-weight:700">@Model.TotalChunks</div></div>
+        <div class="card"><span class="kicker">Embedded</span><div style="font-size:32px;font-weight:700">@Model.EmbeddedChunks / @Model.TotalChunks</div></div>
+    </div>
+
+    <div class="card">
+        <table>
+            <thead>
+                <tr><th>Act</th><th>Year</th><th>Lang</th><th>Sections</th><th>Chunks</th><th>Embedded</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var a in Model.Acts)
+                {
+                    <tr>
+                        <td>@a.Title<br /><small class="muted mono">@(string.IsNullOrEmpty(a.ActNumber) ? "" : a.ActNumber + " · ")@a.ActId</small></td>
+                        <td>@a.Year</td>
+                        <td>@a.Language</td>
+                        <td>@a.SectionCount</td>
+                        <td>@a.ChunkCount</td>
+                        <td>@a.EmbeddedCount</td>
+                        <td>
+                            @if (a.IsRepealed)
+                            {
+                                <span class="badge badge-rejected">Repealed</span>
+                            }
+                            else if (a.EmbeddedCount == 0 && a.ChunkCount > 0)
+                            {
+                                <span class="badge badge-review">Awaiting embed</span>
+                            }
+                            else if (a.EmbeddedCount < a.ChunkCount)
+                            {
+                                <span class="badge badge-draft">Partial</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-final">Synced</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="alert alert-warn tiny" style="margin-top: 12px">
+        <i data-lucide="info"></i>
+        <span>Import pipeline runs via the seeded ingestion job (CP1 ActImportService). This page reflects current corpus state — hash-deduplicated incremental sync lands with T-3.1.</span>
+    </div>
+</main>

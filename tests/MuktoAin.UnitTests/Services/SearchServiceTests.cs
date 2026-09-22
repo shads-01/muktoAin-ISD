@@ -84,4 +84,87 @@ public class SearchServiceTests
 
         Assert.Equal(expected, dto.Page);
     }
+
+    [Fact]
+    public async Task BrowseActAsync_ListsSections_OrderedByOrdinalPosition()
+    {
+        var act = new Act
+        {
+            ActId = 10,
+            Title = "Labour Act, 2006",
+            ActNumber = "42",
+            Year = 2006,
+            Sections = new List<ActSection>
+            {
+                new() { SectionId = 2, SectionNumber = "2", OrdinalPosition = 1, SectionText = "Second." },
+                new() { SectionId = 1, SectionNumber = "1", OrdinalPosition = 0, SectionText = "First." },
+            },
+        };
+        _actRepo.Setup(r => r.GetWithSectionsAsync(10)).ReturnsAsync(act);
+
+        var dto = await _service.BrowseActAsync(10);
+
+        Assert.Equal(string.Empty, dto.Query);
+        Assert.Equal(2, dto.TotalResults);
+        Assert.Equal(1, dto.Results[0].SectionId);
+        Assert.Equal(2, dto.Results[1].SectionId);
+        Assert.Equal("Labour Act, 2006", dto.Results[0].ActTitle);
+        Assert.Equal("42", dto.Results[0].ActNumber);
+        Assert.Equal(2006, dto.Results[0].ActYear);
+    }
+
+    [Fact]
+    public async Task BrowseActAsync_IncludesSections_WithNullStoredSectionNumber()
+    {
+        // ActImportService leaves ActSection.SectionNumber null for the entire corpus
+        // (see SectionNumberResolver) -- browsing must not filter those rows out, and
+        // should recover a display number from the section text's leading digit instead.
+        var act = new Act
+        {
+            ActId = 10,
+            Sections = new List<ActSection>
+            {
+                new() { SectionId = 1, SectionNumber = null, OrdinalPosition = 0, SectionText = "1. First section." },
+                new() { SectionId = 2, SectionNumber = null, OrdinalPosition = 1, SectionText = "2. Second section." },
+            },
+        };
+        _actRepo.Setup(r => r.GetWithSectionsAsync(10)).ReturnsAsync(act);
+
+        var dto = await _service.BrowseActAsync(10);
+
+        Assert.Equal(2, dto.TotalResults);
+        Assert.Equal("1", dto.Results[0].SectionNumber);
+        Assert.Equal("2", dto.Results[1].SectionNumber);
+    }
+
+    [Fact]
+    public async Task BrowseActAsync_UnknownActId_ReturnsEmpty()
+    {
+        _actRepo.Setup(r => r.GetWithSectionsAsync(999)).ReturnsAsync((Act?)null);
+
+        var dto = await _service.BrowseActAsync(999);
+
+        Assert.Equal(0, dto.TotalResults);
+        Assert.Empty(dto.Results);
+    }
+
+    [Fact]
+    public async Task BrowseActAsync_Paginates_Results()
+    {
+        var act = new Act
+        {
+            ActId = 10,
+            Sections = Enumerable.Range(1, 15)
+                .Select(i => new ActSection { SectionId = i, SectionNumber = i.ToString(), OrdinalPosition = i })
+                .ToList(),
+        };
+        _actRepo.Setup(r => r.GetWithSectionsAsync(10)).ReturnsAsync(act);
+
+        var dto = await _service.BrowseActAsync(10, page: 2, pageSize: 10);
+
+        Assert.Equal(15, dto.TotalResults);
+        Assert.Equal(2, dto.Page);
+        Assert.Equal(5, dto.Results.Count);
+        Assert.Equal(11, dto.Results[0].SectionId);
+    }
 }

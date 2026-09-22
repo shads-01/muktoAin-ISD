@@ -36,6 +36,18 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<int>, int>
     public DbSet<ScenarioMapping> ScenarioMappings => Set<ScenarioMapping>();
     public DbSet<AiLog> AiLogs => Set<AiLog>();
 
+    // Redesign 2026-09 (scripts/08_redesign_tables.sql)
+    public DbSet<ChatSession> ChatSessions => Set<ChatSession>();
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<AnswerCache> AnswerCaches => Set<AnswerCache>();
+    public DbSet<PaymentOrder> PaymentOrders => Set<PaymentOrder>();
+    public DbSet<PayoutRequest> PayoutRequests => Set<PayoutRequest>();
+    // AUD-7 (scripts/14_add_admin_audit_log.sql)
+    public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
+
+    // 2026-09-12 (scripts/11_notifications_table.sql)
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

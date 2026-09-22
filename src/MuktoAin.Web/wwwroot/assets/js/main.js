@@ -237,7 +237,7 @@
       "nav-profile": "Profile & Settings",
       "nav-logout": "Sign Out",
       "disclaimer-tag": "Disclaimer:",
-      "disclaimer-text": "MuktoAin provides general legal information and document drafting assistance. This is NOT formal legal advice. Every document must be reviewed by a verified lawyer before use.",
+      "disclaimer-text": "MuktoAin provides general legal information and document drafting assistance. This is NOT formal legal advice. Every document must be reviewed by a verified lawyer before use. For urgent legal matters, consult a qualified advocate.",
       "footer-tagline": "Free AI-augmented legal aid platform for citizens of Bangladesh — every document reviewed by verified advocates.",
       "footer-nav-h": "Navigation",
       "footer-legal-h": "Legal & Terms",
@@ -411,6 +411,10 @@
       });
     });
 
+    document.querySelectorAll("input[name='Language']").forEach(function (input) {
+      input.value = currentLang;
+    });
+
     var dict = translations[currentLang];
     if (!dict) return;
 
@@ -440,6 +444,21 @@
       }
     });
 
+    // 2c. Bilingual title tooltips (data-bn-title/data-en-title) -- elements
+    // like the locked-PDF button whose visible text may carry no data-bn/en
+    // pair but whose title attribute still needs to follow the language.
+    document.querySelectorAll("[data-bn-title][data-en-title]").forEach(function (el) {
+      el.setAttribute("title", currentLang === "en" ? el.getAttribute("data-en-title") : el.getAttribute("data-bn-title"));
+    });
+
+    // 2d. Bilingual input placeholders and read-only display values.
+    document.querySelectorAll("[data-bn-placeholder][data-en-placeholder]").forEach(function (el) {
+      el.setAttribute("placeholder", currentLang === "en" ? el.getAttribute("data-en-placeholder") : el.getAttribute("data-bn-placeholder"));
+    });
+    document.querySelectorAll("[data-bn-value][data-en-value]").forEach(function (el) {
+      el.value = currentLang === "en" ? el.getAttribute("data-en-value") : el.getAttribute("data-bn-value");
+    });
+
     // 3. Navbar navigation links (Preserving logo brand!)
     var navMap = [
       { sel: '.nav-links a[href="/"], .nav-links a[href=""]', text: dict["nav-legal-aid"], icon: "message-square" },
@@ -448,6 +467,9 @@
       { sel: '.nav-links a[href*="/Admin/Dashboard"], .nav-links a[href="/Admin"]', text: dict["nav-admindash"], icon: "shield" },
       { sel: '.nav-links a[href*="/Admin/Analytics"]', text: dict["nav-analytics"], icon: "bar-chart-3" },
       { sel: '.nav-links a[href*="/Lawyer/Queue"]', text: dict["nav-lawyerqueue"], icon: "file-check-2" },
+      { sel: '.nav-links a[href*="/Lawyer/History"]', text: currentLang === "en" ? "History" : "ইতিহাস", icon: "history" },
+      { sel: '.nav-links a[href*="/Lawyer/Payments"]', text: currentLang === "en" ? "Payments" : "পেমেন্ট", icon: "wallet" },
+      { sel: '.nav-links a[href*="/Lawyer/Status"]', text: currentLang === "en" ? "Verification" : "ভেরিফিকেশন", icon: "badge-check" },
       { sel: '.nav-links a[href*="/Search"]', text: dict["nav-corpus"] || dict["nav-search"], icon: "search" },
       { sel: '.nav-links a[href*="/Category"]', text: dict["nav-categories"], icon: "layout-grid" },
       { sel: '.nav-links a[href*="/Home/About"]', text: dict["nav-about"], icon: "info" },
@@ -483,6 +505,9 @@
       { sel: 'aside.drawer nav a[href*="/Admin/Dashboard"], aside.drawer nav a[href="/Admin"]', text: currentLang === "en" ? "Admin Dashboard" : "অ্যাডমিন ড্যাশবোর্ড", icon: "shield" },
       { sel: 'aside.drawer nav a[href*="/Admin/Analytics"]', text: currentLang === "en" ? "Analytics & Reports" : "অ্যানালিটিক্স ও রিপোর্ট", icon: "bar-chart-3" },
       { sel: 'aside.drawer nav a[href*="/Lawyer/Queue"]', text: currentLang === "en" ? "Lawyer Review Queue" : "আইনজীবী রিভিউ কিউ", icon: "file-check-2" },
+      { sel: 'aside.drawer nav a[href*="/Lawyer/History"]', text: currentLang === "en" ? "Review History" : "রিভিউ ইতিহাস", icon: "history" },
+      { sel: 'aside.drawer nav a[href*="/Lawyer/Payments"]', text: currentLang === "en" ? "Payments" : "আয় ও পেমেন্ট", icon: "wallet" },
+      { sel: 'aside.drawer nav a[href*="/Lawyer/Status"]', text: currentLang === "en" ? "Lawyer Verification" : "আইনজীবী ভেরিফিকেশন", icon: "badge-check" },
       { sel: 'aside.drawer nav a[href*="/Search"]', text: currentLang === "en" ? "Statutes & Corpus" : "আইন ও করপাস", icon: "search" },
       { sel: 'aside.drawer nav a[href*="/Category"]', text: currentLang === "en" ? "Legal Categories" : "আইনি বিভাগসমূহ", icon: "layout-grid" },
       { sel: 'aside.drawer nav a[href*="/Home/About"]', text: currentLang === "en" ? "About & Disclaimer" : "পরিচিতি ও দাবিত্যাগ", icon: "info" },
@@ -761,6 +786,15 @@
         ths[5].textContent = dict["track-th-action"];
       }
 
+      // Pagination page numbers render as real digits carried in data-page --
+      // reformat them into the active script (Bengali vs Latin) rather than
+      // leaving them permanently Bengali regardless of language (same
+      // convention as the Search page's pagination below).
+      document.querySelectorAll(".pagination [data-page]").forEach(function (el) {
+        var n = el.getAttribute("data-page");
+        el.textContent = currentLang === "en" ? n : toBengaliDigits(n);
+      });
+
     } else if (path.indexOf("/search") !== -1) {
       // Search Laws Page
       var kicker = document.querySelector(".search-hero .kicker");
@@ -773,7 +807,10 @@
       var searchInp = document.querySelector('.search-bar input[name="q"], .search-bar input[type="search"], .search-bar input[type="text"]');
       if (searchInp) searchInp.placeholder = dict["search-placeholder"];
 
-      var searchBtn = document.querySelector(".search-bar button");
+      // type="submit" -- .act-filter-btn (the Act picker) is also a <button> in
+      // .search-bar and comes first in the DOM, so a bare "button" selector here
+      // used to grab it by accident and stomp its label with the search icon/text.
+      var searchBtn = document.querySelector(".search-bar button[type=\"submit\"]");
       if (searchBtn) searchBtn.innerHTML = '<i data-lucide="search"></i> ' + dict["search-btn"];
 
       var popLabel = document.querySelector(".search-bar .row.wrap .tiny.muted");
@@ -931,56 +968,6 @@
         } else if (b.textContent.indexOf("খসড়া") !== -1 || b.textContent.indexOf("Templates") !== -1) {
           b.innerHTML = '<i data-lucide="file-text"></i> ' + dict["cat-badge-draft"];
         }
-      });
-
-    } else if (path.indexOf("/lawyer") !== -1) {
-      // Lawyer Portal
-      var kicker = document.querySelector(".page-head .kicker");
-      if (kicker) kicker.innerHTML = '<i data-lucide="award"></i> ' + (currentLang === "en" ? "Verified Advocate Portal · FR-13" : "সনদপ্রাপ্ত আইনজীবী পোর্টাল · FR-13");
-      var title = document.querySelector(".page-head .page-title");
-      if (title) title.textContent = currentLang === "en" ? "Document Review Queue" : "দলিল পর্যালোচনা কিউ (Review Queue)";
-      var sub = document.querySelector(".page-head .page-sub");
-      if (sub) sub.textContent = currentLang === "en" ? "Review and certify AI-generated drafts to approve final official documents for citizens." : "AI দ্বারা প্রস্তুতকৃত খসড়া দলিল পর্যালোচনা ও সত্যায়ন করে নাগরিকের জন্য চূড়ান্ত PDF অনুমোদন করুন।";
-
-      var badgeBar = document.querySelector(".page-head .badge-final");
-      if (badgeBar) badgeBar.innerHTML = '<i data-lucide="check-circle-2"></i> ' + (currentLang === "en" ? "Bar Verified: DHA-1187" : "বার সনদ যাচাইকৃত: DHA-1187");
-
-      var kpiCards = document.querySelectorAll(".stat-strip .kpi");
-      if (kpiCards.length >= 3) {
-        var k1_lbl = kpiCards[0].querySelector(".k-label");
-        var k1_num = kpiCards[0].querySelector(".k-num");
-        var k1_sub = kpiCards[0].querySelector(".k-sub");
-        if (k1_lbl) k1_lbl.innerHTML = '<i data-lucide="clock"></i> ' + (currentLang === "en" ? "Pending in Queue" : "অপেক্ষমাণ কিউ");
-        if (k1_num) k1_num.textContent = currentLang === "en" ? "3 items" : "৩টি";
-        if (k1_sub) k1_sub.textContent = currentLang === "en" ? "Avg Review Time: 2 hours" : "গড় পর্যালোচনা সময়: ২ ঘণ্টা";
-
-        var k2_lbl = kpiCards[1].querySelector(".k-label");
-        var k2_num = kpiCards[1].querySelector(".k-num");
-        var k2_sub = kpiCards[1].querySelector(".k-sub");
-        if (k2_lbl) k2_lbl.innerHTML = '<i data-lucide="check-check"></i> ' + (currentLang === "en" ? "Your Reviews" : "আপনার পর্যালোচনাসমূহ");
-        if (k2_num) k2_num.textContent = currentLang === "en" ? "28 items" : "২৮টি";
-        if (k2_sub) k2_sub.textContent = currentLang === "en" ? "Completed this month" : "এই মাসে সম্পন্ন";
-
-        var k3_lbl = kpiCards[2].querySelector(".k-label");
-        var k3_num = kpiCards[2].querySelector(".k-num");
-        var k3_sub = kpiCards[2].querySelector(".k-sub");
-        if (k3_lbl) k3_lbl.innerHTML = '<i data-lucide="star"></i> ' + (currentLang === "en" ? "Pro-Bono Hours" : "প্রো-বোনো ঘণ্টা");
-        if (k3_num) k3_num.textContent = currentLang === "en" ? "14.5" : "১৪.৫";
-        if (k3_sub) k3_sub.textContent = currentLang === "en" ? "Legal aid contribution" : "আইনি সহায়তা অবদান";
-      }
-
-      var lawyerThs = document.querySelectorAll("table thead th");
-      if (lawyerThs.length >= 6) {
-        lawyerThs[0].textContent = currentLang === "en" ? "Case Tracking" : "মামলা ট্র্যাকিং";
-        lawyerThs[1].textContent = currentLang === "en" ? "Title & Description" : "শিরোনাম ও বিবরণ";
-        lawyerThs[2].textContent = currentLang === "en" ? "Legal Category" : "আইনি বিভাগ";
-        lawyerThs[3].textContent = currentLang === "en" ? "Submitted At" : "দাখিলের সময়";
-        lawyerThs[4].textContent = currentLang === "en" ? "Status" : "বর্তমান অবস্থা";
-        lawyerThs[5].textContent = currentLang === "en" ? "Action" : "পদক্ষেপ";
-      }
-
-      document.querySelectorAll("table tbody a.btn-primary").forEach(function(btn) {
-        btn.textContent = currentLang === "en" ? "Review Draft →" : "পর্যালোচনা করুন →";
       });
 
     } else if (path.indexOf("/admin/dashboard") !== -1 || path === "/admin" || path === "/admin/") {
@@ -1163,16 +1150,7 @@
       // User Profile Page
       var crumbProfile = document.querySelector(".breadcrumbs span:last-child");
       if (crumbProfile) crumbProfile.textContent = currentLang === "en" ? "Account Profile" : "অ্যাকাউন্ট প্রোফাইল";
-
-      var formTitle = document.querySelector(".card h2 i[data-lucide='user-cog']");
-      if (formTitle && formTitle.parentElement) {
-        formTitle.parentElement.innerHTML = '<i data-lucide="user-cog" style="display:inline;vertical-align:middle;color:var(--gold);"></i> ' + (currentLang === "en" ? "Profile & Account Details" : "প্রোফাইল ও অ্যাকাউন্ট তথ্য");
-      }
-
-      var passTitle = document.querySelector(".card h2 i[data-lucide='key-round']");
-      if (passTitle && passTitle.parentElement) {
-        passTitle.parentElement.innerHTML = '<i data-lucide="key-round" style="display:inline;vertical-align:middle;color:var(--gold);"></i> ' + (currentLang === "en" ? "Security & Password" : "পাসওয়ার্ড ও নিরাপত্তা");
-      }
+      // Remaining profile copy is driven by data-bn/data-en attributes in the view.
 
     } else if (path.indexOf("/account/login") !== -1) {
       // Login Page
@@ -1224,6 +1202,8 @@
       if (demoLawyer) demoLawyer.textContent = currentLang === "en" ? "Lawyer" : "আইনজীবী";
       var demoAdmin = document.querySelector(".demo-role-admin");
       if (demoAdmin) demoAdmin.textContent = currentLang === "en" ? "Admin" : "অ্যাডমিন";
+      var demoSuperAdmin = document.querySelector(".demo-role-superadmin");
+      if (demoSuperAdmin) demoSuperAdmin.textContent = currentLang === "en" ? "SuperAdmin" : "সুপার অ্যাডমিন";
 
       var regPrompts = document.querySelectorAll('.auth-card .text-center, .auth-card p.muted.tiny, .auth-card p:last-of-type');
       regPrompts.forEach(function (el) {
@@ -1459,6 +1439,14 @@
     window.dispatchEvent(new CustomEvent("languagechange", { detail: { lang: currentLang } }));
   }
 
+  // Minimal public surface so a page-specific control (e.g. the Profile page's
+  // "Preferred Language" select) can read/drive the same toggle this file owns,
+  // without reaching into this closure's internals.
+  window.mktLang = {
+    get: function () { return currentLang; },
+    set: applyLanguage
+  };
+
   document.addEventListener("DOMContentLoaded", function () {
     /* theme toggle buttons */
     document.querySelectorAll(".theme-toggle").forEach(function (b) {
@@ -1501,17 +1489,64 @@
       });
     });
 
+    /* Grows a textarea to fit all of its content so the whole document is
+       visible with no inner scrollbar -- used by the Lawyer Review compare
+       card below, where a fixed rows="" height would clip long drafts. */
+    function autosizeTextarea(el) {
+      if (!el) return;
+      el.style.height = "auto";
+      // +2px: border-box rounding can leave scrollHeight a hair taller than
+      // the exact content, which would otherwise show a 1px inner scrollbar.
+      el.style.height = (el.scrollHeight + 2) + "px";
+    }
+    document.querySelectorAll(".compare-pane textarea, .tab-panel textarea").forEach(function (ta) {
+      autosizeTextarea(ta);
+      ta.addEventListener("input", function () { autosizeTextarea(ta); });
+    });
+    // Re-measure on resize too: crossing the 900px breakpoint swaps which
+    // pane is visible (mobile tab vs. desktop grid), and it was 0-height
+    // (hidden) the last time it was measured.
+    var resizeRaf = null;
+    window.addEventListener("resize", function () {
+      if (resizeRaf) return;
+      resizeRaf = requestAnimationFrame(function () {
+        resizeRaf = null;
+        document.querySelectorAll(".compare-pane textarea, .tab-panel textarea").forEach(autosizeTextarea);
+      });
+    });
+
     /* underline tabs */
     document.querySelectorAll("[data-tabs]").forEach(function (tabsEl) {
-      var buttons = tabsEl.querySelectorAll("button");
+      var buttons = tabsEl.querySelectorAll("[data-tab]");
+      var panels = tabsEl.querySelectorAll("[data-tab-panel]");
+      // Lawyer Review's compare card reuses this same button row to drive its
+      // desktop side-by-side grid: Original/Editable expand that pane to the
+      // full window width, and Split View (desktop-only -- hidden on
+      // mobile, where tabs already show one pane at a time) returns to the
+      // split view.
+      var grid = tabsEl.closest(".card") && tabsEl.closest(".card").querySelector(".compare-grid-desktop");
       buttons.forEach(function (btn) {
         btn.addEventListener("click", function () {
+          var name = btn.dataset.tab;
+
           buttons.forEach(function (b) { b.classList.remove("active"); });
           btn.classList.add("active");
-          var scope = document.querySelector(tabsEl.dataset.tabs) || document;
-          scope.querySelectorAll(":scope > .tab-panel, :scope .tab-panel").forEach(function (p) {
-            p.classList.toggle("active", p.id === btn.dataset.panel);
-          });
+
+          var panel = tabsEl.querySelector('[data-tab-panel="' + name + '"]');
+          if (panel) {
+            panels.forEach(function (p) { p.hidden = p !== panel; });
+          }
+
+          if (grid) {
+            grid.classList.remove("focus-original", "focus-editable");
+            if (name === "original" || name === "editable") grid.classList.add("focus-" + name);
+          }
+
+          // A pane hidden a moment ago measured 0 scrollHeight; now that it's
+          // visible again, size it for real.
+          tabsEl.querySelectorAll("textarea").forEach(autosizeTextarea);
+          if (grid) { var gta = grid.querySelector("textarea"); if (gta) autosizeTextarea(gta); }
+
           renderIcons();
         });
       });
@@ -1558,6 +1593,182 @@
     document.addEventListener("click", function (e) {
       if (!e.target.closest(".pop-wrap")) closePops();
     });
+
+    /* notifications: bell badge + poll dropdown (no-ops when logged out --
+       #notif-bell only renders in _Layout.cshtml's authenticated branch) */
+    (function () {
+      var bell = document.getElementById("notif-bell");
+      if (!bell) return;
+
+      var badge = document.getElementById("notif-badge");
+      var list = document.getElementById("notif-pop-list");
+
+      // AUD-1: same csrf-token <meta> that chat.js / Case/Result.cshtml
+      // already read for every other authenticated POST -- guaranteed on
+      // every page (unlike a hidden form input, which depends on markup
+      // elsewhere on the page).
+      function antiForgeryToken() {
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute("content") : "";
+      }
+
+      var headCount = document.getElementById("notif-pop-count");
+
+      function isEn() { return document.documentElement.lang === "en"; }
+
+      function num(n) { return isEn() ? String(n) : toBengaliDigits(n); }
+
+      // CreatedAt is stored as UTC but EF hands it back as Unspecified, so
+      // the JSON has no offset -- treat an offset-less stamp as UTC.
+      function timeAgo(stamp) {
+        if (!stamp) return "";
+        if (!/(Z|[+-]\d\d:?\d\d)$/.test(stamp)) stamp += "Z";
+        var secs = Math.max(0, (Date.now() - new Date(stamp).getTime()) / 1000);
+        var mins = Math.floor(secs / 60), hrs = Math.floor(mins / 60), days = Math.floor(hrs / 24);
+        if (mins < 1) return isEn() ? "Just now" : "এইমাত্র";
+        if (hrs < 1) return isEn() ? mins + " min ago" : num(mins) + " মিনিট আগে";
+        if (days < 1) return isEn() ? hrs + " hr ago" : num(hrs) + " ঘণ্টা আগে";
+        if (days < 7) return isEn() ? days + (days === 1 ? " day ago" : " days ago") : num(days) + " দিন আগে";
+        return new Date(stamp).toLocaleDateString(isEn() ? "en-GB" : "bn-BD", { day: "numeric", month: "short", year: "numeric" });
+      }
+
+      function post(url) {
+        return fetch(url, {
+          method: "POST",
+          headers: { "RequestVerificationToken": antiForgeryToken() }
+        });
+      }
+
+      function el(tag, cls, text) {
+        var node = document.createElement(tag);
+        if (cls) node.className = cls;
+        if (text != null) node.textContent = text;
+        return node;
+      }
+
+      function render(data) {
+        if (data.count > 0) {
+          badge.textContent = num(data.count > 99 ? "99+" : data.count);
+          badge.hidden = false;
+          headCount.textContent = isEn() ? data.count + " new" : num(data.count) + "টি নতুন";
+          headCount.hidden = false;
+        } else {
+          badge.hidden = true;
+          headCount.hidden = true;
+        }
+        list.innerHTML = "";
+        if (!data.items || !data.items.length) {
+          var empty = el("div", "notif-empty");
+          var icon = el("i");
+          icon.setAttribute("data-lucide", "bell-off");
+          empty.appendChild(icon);
+          empty.appendChild(el("span", null, isEn() ? "You're all caught up." : "কোনো বিজ্ঞপ্তি নেই।"));
+          list.appendChild(empty);
+          renderIcons(list);
+          return;
+        }
+        data.items.forEach(function (item) {
+          var row = el("div", "notif-item" + (item.isRead ? "" : " unread"));
+
+          var link = el("a", "notif-item-link");
+          link.href = item.url;
+          link.appendChild(el("span", "notif-dot"));
+          var body = el("span", "notif-item-body");
+          body.appendChild(el("span", "notif-item-text", isEn() ? item.textEn : item.textBn));
+          body.appendChild(el("span", "notif-item-time", timeAgo(item.createdAt)));
+          link.appendChild(body);
+          link.addEventListener("click", function (e) {
+            e.preventDefault();
+            post("/Notification/MarkRead?id=" + encodeURIComponent(item.id))
+              .finally(function () { window.location.href = item.url; });
+          });
+
+          var del = el("button", "notif-del");
+          del.type = "button";
+          del.setAttribute("aria-label", isEn() ? "Delete notification" : "বিজ্ঞপ্তি মুছুন");
+          del.title = del.getAttribute("aria-label");
+          var trash = el("i");
+          trash.setAttribute("data-lucide", "trash-2");
+          del.appendChild(trash);
+          del.addEventListener("click", function (e) {
+            // keep the dropdown open: the document-level click handler
+            // closes pops when the target is outside .pop-wrap, and this
+            // row is about to be detached from the DOM.
+            e.stopPropagation();
+            del.disabled = true;
+            function deleteFailed() {
+              del.disabled = false;
+              if (typeof window.showToast === "function") {
+                window.showToast(isEn()
+                  ? "Could not delete the notification. Please try again."
+                  : "বিজ্ঞপ্তি মুছে ফেলা যায়নি। আবার চেষ্টা করুন।", "error");
+              }
+            }
+            post("/Notification/Delete?id=" + encodeURIComponent(item.id))
+              .then(function (r) { if (r.ok) poll(); else deleteFailed(); })
+              .catch(deleteFailed);
+          });
+
+          row.appendChild(link);
+          row.appendChild(del);
+          list.appendChild(row);
+        });
+        renderIcons(list);
+      }
+
+      function poll() {
+        return fetch("/Notification/Unread")
+          .then(function (r) { return r.json(); })
+          .then(function (data) { render(data); return data; })
+          .catch(function () { return null; });
+      }
+
+      // On open: refresh (so times and language are current), then mark
+      // everything *seen* -- clears the badge only. Rows stay bold until
+      // each one is actually opened (IsRead), which also keeps My Cases'
+      // unread-activity dot intact.
+      var pop = document.getElementById("notif-pop");
+      bell.addEventListener("click", function () {
+        if (!pop.classList.contains("open")) return; // this click closed it
+        poll().then(function (data) {
+          if (!data || !data.count) return;
+          badge.hidden = true;
+          post("/Notification/MarkAllSeen").catch(function () {});
+        });
+      });
+      poll();
+
+      // Real-time: the server pushes a content-free "notificationsChanged"
+      // signal (Hubs/NotificationHub) whenever this user's notifications
+      // change, and we re-fetch. Polling only runs while the socket is down
+      // (or if the SignalR client script failed to load).
+      var pollTimer = null;
+      function startPolling() { if (!pollTimer) pollTimer = setInterval(poll, 30000); }
+      function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+
+      if (!window.signalR) { startPolling(); return; }
+
+      var connection = new window.signalR.HubConnectionBuilder()
+        .withUrl("/hubs/notifications")
+        .withAutomaticReconnect()
+        .build();
+      connection.on("notificationsChanged", poll);
+      // catch up on anything missed while disconnected
+      connection.onreconnecting(startPolling);
+      connection.onreconnected(function () { stopPolling(); poll(); });
+
+      function connect() {
+        connection.start()
+          .then(function () { stopPolling(); poll(); })
+          .catch(function () {
+            // automatic reconnect only covers drops after a successful start
+            startPolling();
+            setTimeout(connect, 15000);
+          });
+      }
+      connection.onclose(function () { startPolling(); setTimeout(connect, 15000); });
+      connect();
+    })();
 
     /* modals & bottom sheets */
     document.querySelectorAll("[data-open-modal]").forEach(function (t) {
@@ -1627,12 +1838,212 @@
       update();
     });
 
-    /* demo confirm dialogs [data-confirm] */
-    document.querySelectorAll("[data-confirm]").forEach(function (el) {
-      el.addEventListener("click", function (e) {
-        if (!window.confirm(el.dataset.confirm)) e.preventDefault();
+    /* Long content preview (Case/Result: generated document, rights
+       explanation): clamp + fade + the expand toggle only kick in when the
+       content actually overflows the box, so a short block renders plainly
+       with no dead space under a fake control. The button carries its own
+       expand/collapse wording via its data-more-en/data-more-bn and
+       data-less-en/data-less-bn attributes, so this one mechanism serves
+       callers with different labels (e.g. "Show full document" vs.
+       "Read more"). */
+    document.querySelectorAll("[data-clamp-preview]").forEach(function (box) {
+      var btn = document.querySelector('[data-clamp-expand-for="' + box.id + '"]');
+      if (!btn || box.scrollHeight <= box.clientHeight + 2) return;
+      box.classList.add("overflowing");
+      btn.hidden = false;
+      btn.addEventListener("click", function () {
+        var open = box.classList.toggle("expanded");
+        box.classList.toggle("overflowing", !open);
+        btn.querySelector("span").textContent = open
+          ? (currentLang === "en" ? btn.dataset.lessEn : btn.dataset.lessBn)
+          : (currentLang === "en" ? btn.dataset.moreEn : btn.dataset.moreBn);
       });
     });
+
+    /* ---------- Custom Themed Confirm Dialog ---------- */
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    window.showConfirmDialog = function (options) {
+      options = options || {};
+      var msg = options.message || "";
+      var title = options.title || (currentLang === "en" ? "Please Confirm" : "নিশ্চিতকরণ");
+      var okText = options.okText || (currentLang === "en" ? "Confirm" : "নিশ্চিত করুন");
+      var cancelText = options.cancelText || (currentLang === "en" ? "Cancel" : "বাতিল");
+      var isDanger = !!options.isDanger;
+      var iconName = options.icon || (isDanger ? "alert-triangle" : "shield-check");
+      var iconClass = isDanger ? "danger" : "primary";
+
+      // Remove any existing confirm modal
+      var old = document.getElementById("global-confirm-modal");
+      if (old) old.remove();
+
+      var bd = document.createElement("div");
+      bd.className = "modal-backdrop open";
+      bd.id = "global-confirm-modal";
+      bd.setAttribute("role", "dialog");
+      bd.setAttribute("aria-modal", "true");
+      bd.style.zIndex = "120";
+
+      bd.innerHTML =
+        '<div class="modal confirm-modal" style="box-shadow: var(--shadow-lg);">' +
+          '<div class="modal-handle"></div>' +
+          '<div class="modal-head" style="margin-bottom: 8px;">' +
+            '<div style="display: flex; align-items: center; gap: 10px;">' +
+              '<div class="confirm-modal-icon ' + iconClass + '">' +
+                icon(iconName) +
+              '</div>' +
+              '<div>' +
+                '<span class="kicker" style="font-size: 11px; margin-bottom: 2px; color: var(--' + (isDanger ? "danger" : "primary") + ');">' +
+                  (isDanger ? (currentLang === "en" ? "Action Warning" : "সতর্কতা") : (currentLang === "en" ? "Confirmation" : "নিশ্চিতকরণ")) +
+                '</span>' +
+                '<h3 style="font-size: 17px; margin: 0; font-weight: 700;">' + escapeHtml(title) + '</h3>' +
+              '</div>' +
+            '</div>' +
+            '<button class="icon-btn" type="button" aria-label="Close" data-confirm-action="cancel">' + icon("x") + '</button>' +
+          '</div>' +
+          '<div class="confirm-modal-body">' +
+            escapeHtml(msg) +
+          '</div>' +
+          '<div class="row" style="justify-content: flex-end; gap: 10px; margin-top: 4px;">' +
+            '<button class="btn btn-outline btn-sm" type="button" data-confirm-action="cancel">' + escapeHtml(cancelText) + '</button>' +
+            '<button class="btn ' + (isDanger ? "btn-danger" : "btn-primary") + ' btn-sm" type="button" data-confirm-action="ok">' + escapeHtml(okText) + '</button>' +
+          '</div>' +
+        '</div>';
+
+      document.body.appendChild(bd);
+      renderIcons(bd);
+
+      function closeDialog() {
+        document.removeEventListener("keydown", onKey);
+        bd.classList.remove("open");
+        setTimeout(function () { bd.remove(); }, 200);
+      }
+
+      function onKey(e) {
+        if (e.key === "Escape") {
+          closeDialog();
+          if (typeof options.onCancel === "function") options.onCancel();
+        }
+      }
+      document.addEventListener("keydown", onKey);
+
+      bd.addEventListener("click", function (e) {
+        if (e.target === bd) {
+          closeDialog();
+          if (typeof options.onCancel === "function") options.onCancel();
+        }
+      });
+
+      bd.querySelectorAll('[data-confirm-action="cancel"]').forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          closeDialog();
+          if (typeof options.onCancel === "function") options.onCancel();
+        });
+      });
+
+      var okBtn = bd.querySelector('[data-confirm-action="ok"]');
+      if (okBtn) {
+        okBtn.focus();
+        okBtn.addEventListener("click", function () {
+          closeDialog();
+          if (typeof options.onConfirm === "function") options.onConfirm();
+        });
+      }
+    };
+
+    /* Intercept [data-confirm] buttons and forms with website-themed confirm dialog */
+    document.addEventListener("click", function (e) {
+      var target = e.target.closest("[data-confirm]");
+      if (!target) return;
+
+      if (target._confirmed) {
+        target._confirmed = false;
+        return;
+      }
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      var rawMsg = currentLang === "en" 
+        ? (target.dataset.confirmEn || target.dataset.confirm || "") 
+        : (target.dataset.confirmBn || target.dataset.confirm || "");
+
+      if (rawMsg.indexOf(" / ") !== -1) {
+        var parts = rawMsg.split(" / ");
+        rawMsg = currentLang === "en" ? (parts[1] || parts[0]) : parts[0];
+      }
+
+      var rawTitle = currentLang === "en"
+        ? (target.dataset.confirmTitleEn || target.dataset.confirmTitle || "")
+        : (target.dataset.confirmTitleBn || target.dataset.confirmTitle || "");
+
+      if (rawTitle.indexOf(" / ") !== -1) {
+        var tparts = rawTitle.split(" / ");
+        rawTitle = currentLang === "en" ? (tparts[1] || tparts[0]) : tparts[0];
+      }
+
+      var rawOk = currentLang === "en"
+        ? (target.dataset.confirmOkEn || target.dataset.confirmOk || "")
+        : (target.dataset.confirmOkBn || target.dataset.confirmOk || "");
+
+      if (rawOk.indexOf(" / ") !== -1) {
+        var okParts = rawOk.split(" / ");
+        rawOk = currentLang === "en" ? (okParts[1] || okParts[0]) : okParts[0];
+      }
+
+      var rawCancel = currentLang === "en"
+        ? (target.dataset.confirmCancelEn || target.dataset.confirmCancel || "")
+        : (target.dataset.confirmCancelBn || target.dataset.confirmCancel || "");
+
+      if (rawCancel.indexOf(" / ") !== -1) {
+        var cParts = rawCancel.split(" / ");
+        rawCancel = currentLang === "en" ? (cParts[1] || cParts[0]) : cParts[0];
+      }
+
+      var isDanger = target.classList.contains("btn-danger") || 
+                     target.classList.contains("btn-danger-outline") || 
+                     (target.querySelector && target.querySelector(".btn-danger, .btn-danger-outline") !== null) ||
+                     target.dataset.confirmDanger === "true" ||
+                     (target.getAttribute("aria-label") === "Delete") ||
+                     (rawMsg.toLowerCase().indexOf("delete") !== -1 || rawMsg.toLowerCase().indexOf("suspend") !== -1 || rawMsg.toLowerCase().indexOf("refund") !== -1 || rawMsg.toLowerCase().indexOf("withdraw") !== -1);
+
+      window.showConfirmDialog({
+        message: rawMsg,
+        title: rawTitle || (isDanger ? (currentLang === "en" ? "Warning" : "সতর্কতা") : (currentLang === "en" ? "Confirmation" : "নিশ্চিতকরণ")),
+        okText: rawOk || (currentLang === "en" ? "Confirm" : "নিশ্চিত করুন"),
+        cancelText: rawCancel || (currentLang === "en" ? "Cancel" : "বাতিল"),
+        isDanger: isDanger,
+        onConfirm: function () {
+          target._confirmed = true;
+          if (target.tagName === "FORM") {
+            if (typeof target.requestSubmit === "function") {
+              target.requestSubmit(e.target);
+            } else {
+              target.submit();
+            }
+          } else if (target.type === "submit" && target.closest("form")) {
+            var f = target.closest("form");
+            if (typeof f.requestSubmit === "function") {
+              f.requestSubmit(target);
+            } else {
+              f.submit();
+            }
+          } else if (target.tagName === "A" && target.href) {
+            window.location.href = target.href;
+          } else {
+            target.click();
+          }
+        }
+      });
+    }, true);
 
     /* composer autogrow */
     document.querySelectorAll(".composer textarea, textarea.autogrow").forEach(function (ta) {

@@ -1,0 +1,50 @@
+@model string
+@* Payment method choice for the Honorarium / Top-Up modals (FR-24). Model is
+   the radio group name; the modal's script reads the checked value and sends
+   it as `method` ("bkash" or "card"). In Sandbox mode the citizen leaves for
+   bKash's and SSLCommerz's own pages, so their test values are shown here instead (Simulator mode
+   shows its test values on the /GatewaySim checkout page). *@
+@using Microsoft.Extensions.Options
+@using MuktoAin.Infrastructure.Payments
+@inject IOptions<PaymentGatewayOptions> PaymentOptions
+@{
+    var sandbox = string.Equals(PaymentOptions.Value.Mode, PaymentGatewayOptions.Sandbox, StringComparison.OrdinalIgnoreCase);
+}
+<fieldset class="pay-methods">
+    <legend class="form-label" data-bn="পেমেন্ট পদ্ধতি:" data-en="Payment method:">পেমেন্ট পদ্ধতি:</legend>
+    <div class="chip-row">
+        <label class="chip pay-method">
+            <input type="radio" name="@Model" value="bkash" checked />
+            <i data-lucide="smartphone"></i> <span>bKash</span>
+        </label>
+        <label class="chip pay-method">
+            <input type="radio" name="@Model" value="card" />
+            <i data-lucide="credit-card"></i>
+            <span data-bn="কার্ড / অন্যান্য" data-en="Card / other">কার্ড / অন্যান্য</span>
+        </label>
+    </div>
+    @if (sandbox)
+    {
+        <div class="alert alert-info sandbox-values" data-testid="sandbox-test-values" role="note">
+            <i data-lucide="flask-conical"></i>
+            <div>
+                <strong data-bn="স্যান্ডবক্স — এই পরীক্ষার তথ্য ব্যবহার করুন" data-en="Sandbox — use these test values">স্যান্ডবক্স — এই পরীক্ষার তথ্য ব্যবহার করুন</strong>
+                <dl>
+                    <dt>bKash</dt>
+                    <dd>
+                        <span data-bn="ওয়ালেট" data-en="Wallet">ওয়ালেট</span> <code>@BkashGatewayClient.SandboxWallet</code>
+                        OTP <code>@BkashGatewayClient.SandboxOtp</code>
+                        PIN <code>@BkashGatewayClient.SandboxPin</code>
+                    </dd>
+                    <dt data-bn="কার্ড" data-en="Card">কার্ড</dt>
+                    <dd>
+                        <code>@SslCommerzGatewayClient.SandboxCard</code>
+                        CVV <code>@SslCommerzGatewayClient.SandboxCardCvv</code>
+                        OTP <code>@SslCommerzGatewayClient.SandboxOtp</code>
+                        <span class="sandbox-note" data-bn="যেকোনো ভবিষ্যৎ মেয়াদ" data-en="any future expiry">যেকোনো ভবিষ্যৎ মেয়াদ</span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    }
+</fieldset>

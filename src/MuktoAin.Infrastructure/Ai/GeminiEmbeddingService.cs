@@ -18,4 +18,7 @@ public class GeminiEmbeddingService : IEmbeddingService
 
     public Task<float[]> GetEmbeddingAsync(string text, CancellationToken ct = default) =>
         _client.EmbedContentAsync(text, ct);
+
+    public Task<IReadOnlyList<float[]>> GetBatchEmbeddingsAsync(IReadOnlyList<string> texts, CancellationToken ct = default) =>
+        _client.BatchEmbedContentAsync(texts, ct);
 }

@@ -23,17 +23,17 @@
                 <a asp-controller="Admin" asp-action="Analytics" class="btn btn-outline btn-sm">
                     <i data-lucide="bar-chart-3"></i> <span data-bn="বিস্তারিত অ্যানালিটিক্স ও রিপোর্ট" data-en="Analytics & Reports">বিস্তারিত অ্যানালিটিক্স ও রিপোর্ট</span>
                 </a>
-                <a asp-controller="Lawyer" asp-action="Queue" class="btn btn-outline btn-sm">
-                    <i data-lucide="file-check-2"></i> <span data-bn="আইনজীবী রিভিউ কিউ" data-en="Review Queue">আইনজীবী রিভিউ কিউ</span>
+                <a asp-controller="Admin" asp-action="Lawyers" class="btn btn-outline btn-sm">
+                    <i data-lucide="badge-check"></i> <span data-bn="আইনজীবী যাচাইকরণ" data-en="Lawyer Verification">আইনজীবী যাচাইকরণ / Lawyer Verification</span>
                 </a>
             </div>
         </div>
     </div>
 
     <!-- 1. Infrastructure Pulse Bar (Live System Health) -->
-    <div class="card" style="margin-bottom: 24px; padding: 18px 22px; background: linear-gradient(135deg, rgba(255,253,247,0.98), rgba(248,242,228,0.95)); border: 1.5px solid #92743a;">
+    <div class="card" style="margin-bottom: 24px; padding: 18px 22px; border: 1.5px solid var(--border-strong);">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
-            <strong style="font-size: 14px; display: flex; align-items: center; gap: 8px; color: #4a3812;">
+            <strong style="font-size: 14px; display: flex; align-items: center; gap: 8px; color: var(--ink-heading);">
                 <i data-lucide="server" style="width: 16px; height: 16px; color: var(--gold);"></i> <span data-bn="লাইভ ইনফ্রাস্ট্রাকচার ও সার্ভিস পালস (System Health)" data-en="Live Infrastructure & Service Pulse (System Health)">লাইভ ইনফ্রাস্ট্রাকচার ও সার্ভিস পালস (System Health)</span>
             </strong>
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -69,11 +69,61 @@
         </div>
     </div>
 
+    <!-- Real-time Qdrant Embedding Progress Bar Card -->
+    <div class="card" style="padding: 20px 24px; margin-bottom: 24px; background: var(--surface-2); border: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i data-lucide="database" style="color: var(--primary); width: 22px; height: 22px;"></i>
+                <div>
+                    <h3 style="margin: 0; font-size: 16px;">
+                        <span data-bn="Qdrant ভেক্টর ইনডেক্সিং অগ্রগতি" data-en="Qdrant Vector Indexing Progress">Qdrant ভেক্টর ইনডেক্সিং অগ্রগতি</span>
+                    </h3>
+                    <span id="embed-status-msg" class="muted tiny" style="display: block;">লোড হচ্ছে...</span>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <span id="embed-count-badge" class="badge badge-primary" style="font-size: 13px; font-weight: 700;">0 / 42,858 (0%)</span>
+                <span id="embed-state-badge" class="badge badge-gold" style="margin-left: 6px; font-size: 12px;">Idle</span>
+            </div>
+        </div>
+
+        <div style="width: 100%; height: 16px; background: var(--surface-3, #e2d9cb); border-radius: 8px; overflow: hidden; position: relative; margin: 8px 0;">
+            <div id="embed-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #16a34a, #22c55e); transition: width 0.4s ease; border-radius: 8px;"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12px; color: var(--ink-2); flex-wrap: wrap; gap: 8px;">
+            <span><span data-bn="মোট সেকশন চাঙ্ক:" data-en="Total Chunks:">মোট সেকশন চাঙ্ক:</span> <b id="embed-total-txt">42,858</b></span>
+            <span><span data-bn="ইনডেক্স সম্পন্ন:" data-en="Embedded:">ইনডেক্স সম্পন্ন:</span> <b id="embed-done-txt" style="color: #16a34a;">0</b></span>
+            <span><span data-bn="অবশিষ্ট:" data-en="Remaining:">অবশিষ্ট:</span> <b id="embed-rem-txt" style="color: #b45309;">42,858</b></span>
+            <span><span data-bn="লাইভ রেট:" data-en="Live Polling:">লাইভ রেট:</span> <b id="embed-live-rate">প্রতি ৩ সেকেন্ডে আপডেট</b></span>
+        </div>
+    </div>
+
+    <!-- Real-time Gemini API Key Usage Tracker Card -->
+    <div class="card" style="padding: 20px 24px; margin-bottom: 24px; background: var(--surface-2); border: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i data-lucide="key" style="color: var(--primary); width: 22px; height: 22px;"></i>
+                <div>
+                    <h3 style="margin: 0; font-size: 16px;">
+                        <span data-bn="Gemini API কী ব্যবহার ট্র্যাকার" data-en="Gemini API Key Usage Tracker">Gemini API কী ব্যবহার ট্র্যাকার</span>
+                    </h3>
+                    <span class="muted tiny" data-bn="প্রতিটি কী-এর জেনারেশন টোকেন ব্যবহার, গত ৬০ সেকেন্ডে (এমবেডিং কল গণনায় ধরা হয় না)" data-en="Per-key generation tokens used in the trailing 60 seconds (embedding calls not counted)">প্রতিটি কী-এর জেনারেশন টোকেন ব্যবহার, গত ৬০ সেকেন্ডে (এমবেডিং কল গণনায় ধরা হয় না)</span>
+                </div>
+            </div>
+            <span id="gemini-keys-summary-badge" class="badge badge-success" style="font-size: 13px; font-weight: 700;">— / — keys available</span>
+        </div>
+
+        <div id="gemini-keys-list" style="display: flex; flex-direction: column; gap: 10px; margin-top: 6px;">
+            <span class="muted tiny" data-bn="লোড হচ্ছে..." data-en="Loading...">লোড হচ্ছে...</span>
+        </div>
+    </div>
+
     <!-- 2. Operational KPI Cards -->
     <div class="grid grid-4" style="margin-bottom: 24px;">
         <div class="card kpi">
             <span class="k-label" data-bn="সনদ যাচাই অপেক্ষমান" data-en="Verifications Waiting"><i data-lucide="user-check" aria-hidden="true"></i>সনদ যাচাই অপেক্ষমান</span>
-            <span class="k-num" style="color: #92743a;" data-bn="২" data-en="2">২</span>
+            <span class="k-num" style="color: var(--gold);" data-bn="২" data-en="2">২</span>
             <span class="k-sub" data-bn="বাংলাদেশ বার কাউন্সিল আইনজীবী আবেদন" data-en="Bar Council Advocate Applications">বাংলাদেশ বার কাউন্সিল আইনজীবী আবেদন</span>
         </div>
         <div class="card kpi">
@@ -121,7 +171,7 @@
                         {
                             <tr style="border-bottom: 1px solid var(--border-soft);">
                                 <td style="padding: 10px 10px; font-weight: 600;">@app.ApplicantName</td>
-                                <td style="padding: 10px 10px; font-family: monospace; font-weight: 700; color: #4a3812;">@app.BarRegNo</td>
+                                <td style="padding: 10px 10px; font-family: monospace; font-weight: 700; color: var(--ink-heading);">@app.BarRegNo</td>
                                 <td style="padding: 10px 10px; font-size: 13px; color: var(--ink-2);">@app.AppliedDate</td>
                                 <td style="padding: 10px 10px; text-align: right;">
                                     <div style="display: inline-flex; gap: 6px;">
@@ -199,7 +249,7 @@
             <div class="card" style="padding: 18px 22px; background: rgba(146, 116, 56, 0.06); border: 1px dashed var(--gold);">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <strong style="font-size: 14px; color: #4a3812; display: block;"><i data-lucide="alert-triangle" style="width: 15px; height: 15px; display: inline;"></i> <span data-bn="রেট লিমিট ও ব্যাকলগ মনিটর" data-en="Rate Limits & Quota Monitor">রেট লিমিট ও ব্যাকলগ মনিটর</span></strong>
+                        <strong style="font-size: 14px; color: var(--ink-heading); display: block;"><i data-lucide="alert-triangle" style="width: 15px; height: 15px; display: inline;"></i> <span data-bn="রেট লিমিট ও ব্যাকলগ মনিটর" data-en="Rate Limits & Quota Monitor">রেট লিমিট ও ব্যাকলগ মনিটর</span></strong>
                         <span class="muted tiny" data-bn="গুগল এআই স্টুডিও ফ্রি-টিয়ার কোটা স্বাস্থ্য স্বাভাবিক (১৫ আরপিএম নিরাপদ)" data-en="Google AI Studio quota healthy (15 RPM safe limit)">গুগল এআই স্টুডিও ফ্রি-টিয়ার কোটা স্বাস্থ্য স্বাভাবিক (১৫ আরপিএম নিরাপদ)</span>
                     </div>
                     <span class="badge badge-success" data-bn="কোটা নিরাপদ" data-en="Quota Safe">কোটা নিরাপদ</span>
@@ -248,3 +298,108 @@
         </div>
     </div>
 </main>
+
+@section Scripts {
+<script>
+    (function () {
+        async function updateEmbeddingProgress() {
+            try {
+                const res = await fetch('/Admin/EmbeddingProgress');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                const bar = document.getElementById('embed-progress-bar');
+                const countBadge = document.getElementById('embed-count-badge');
+                const stateBadge = document.getElementById('embed-state-badge');
+                const msg = document.getElementById('embed-status-msg');
+                const totalTxt = document.getElementById('embed-total-txt');
+                const doneTxt = document.getElementById('embed-done-txt');
+                const remTxt = document.getElementById('embed-rem-txt');
+
+                if (bar) bar.style.width = data.percentage + '%';
+                if (countBadge) countBadge.textContent = `${data.embeddedChunks.toLocaleString()} / ${data.totalChunks.toLocaleString()} (${data.percentage}%)`;
+                if (totalTxt) totalTxt.textContent = data.totalChunks.toLocaleString();
+                if (doneTxt) doneTxt.textContent = data.embeddedChunks.toLocaleString();
+                if (remTxt) remTxt.textContent = data.remainingChunks.toLocaleString();
+
+                if (stateBadge) {
+                    var lang = (localStorage.getItem('mkt-lang') || 'bn');
+                    if (data.isRunning) {
+                        stateBadge.className = 'badge badge-success';
+                        stateBadge.textContent = lang === 'en' ? 'Running (Syncing)' : 'চলছে (সিঙ্কিং)';
+                    } else if (data.embeddedChunks === data.totalChunks && data.totalChunks > 0) {
+                        stateBadge.className = 'badge badge-success';
+                        stateBadge.textContent = lang === 'en' ? 'Completed (100%)' : 'সম্পন্ন (১০০%)';
+                    } else {
+                        stateBadge.className = 'badge badge-gold';
+                        stateBadge.textContent = lang === 'en' ? 'Idle' : 'স্থগিত';
+                    }
+                }
+
+                if (msg) {
+                    var lang2 = (localStorage.getItem('mkt-lang') || 'bn');
+                    var bn = data.lastStatus || (data.isRunning ? 'Embedding in progress...' : 'Ready');
+                    var en = data.lastStatusEn || data.lastStatus || (data.isRunning ? 'Embedding in progress...' : 'Ready');
+                    msg.textContent = lang2 === 'en' ? en : bn;
+                }
+            } catch (e) {
+                console.error('Failed to update embedding progress:', e);
+            }
+        }
+
+        updateEmbeddingProgress();
+        setInterval(updateEmbeddingProgress, 2500);
+    })();
+
+    (function () {
+        function fmtParkedUntil(iso, lang) {
+            if (!iso) return '';
+            var d = new Date(iso);
+            var time = d.toLocaleTimeString(lang === 'en' ? 'en-US' : 'bn-BD', { hour: '2-digit', minute: '2-digit' });
+            return lang === 'en' ? ('cooling down until ' + time) : ('পুনরায় সক্রিয় হবে ' + time + ' এ');
+        }
+
+        async function updateGeminiKeyStatus() {
+            try {
+                const res = await fetch('/Admin/GeminiKeyStatus');
+                if (!res.ok) return;
+                const data = await res.json();
+                var lang = (localStorage.getItem('mkt-lang') || 'bn');
+
+                const summaryBadge = document.getElementById('gemini-keys-summary-badge');
+                if (summaryBadge) {
+                    summaryBadge.textContent = lang === 'en'
+                        ? `${data.availableKeys} / ${data.totalKeys} keys available`
+                        : `${data.totalKeys}টির মধ্যে ${data.availableKeys}টি কী সচল`;
+                    summaryBadge.className = 'badge ' + (data.exhaustedKeys === 0 ? 'badge-success' : (data.availableKeys > 0 ? 'badge-gold' : 'badge-danger'));
+                }
+
+                const list = document.getElementById('gemini-keys-list');
+                if (list && Array.isArray(data.keys)) {
+                    list.innerHTML = data.keys.map(function (k) {
+                        var barColor = k.isParked ? '#dc2626' : (k.percentage >= 80 ? '#d97706' : '#16a34a');
+                        var statusBadge = k.isParked
+                            ? `<span class="badge badge-danger" style="font-size: 11px;">${lang === 'en' ? 'Cooling down' : 'বিরতিতে'}</span>`
+                            : '';
+                        var parkedNote = k.isParked ? `<span class="muted tiny" style="margin-left: 6px;">${fmtParkedUntil(k.parkedUntilUtc, lang)}</span>` : '';
+                        return `
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span style="width: 56px; font-size: 12.5px; font-weight: 600; flex-shrink: 0;">${k.label}</span>
+                                <div style="flex: 1; height: 10px; background: var(--surface-3, #e2d9cb); border-radius: 6px; overflow: hidden;">
+                                    <div style="width: ${k.percentage}%; height: 100%; background: ${barColor}; transition: width 0.4s ease;"></div>
+                                </div>
+                                <span style="font-size: 12px; color: var(--ink-2); width: 170px; text-align: right; flex-shrink: 0;">${k.tokensUsedLastMinute.toLocaleString()} / ${k.tokenLimitPerMinute.toLocaleString()} tok/min (${k.percentage}%)</span>
+                                ${statusBadge}${parkedNote}
+                            </div>`;
+                    }).join('');
+                }
+            } catch (e) {
+                console.error('Failed to update Gemini key status:', e);
+            }
+        }
+
+        updateGeminiKeyStatus();
+        setInterval(updateGeminiKeyStatus, 5000);
+    })();
+</script>
+}

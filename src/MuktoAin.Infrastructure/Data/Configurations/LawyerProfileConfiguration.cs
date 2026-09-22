@@ -13,5 +13,8 @@ public class LawyerProfileConfiguration : IEntityTypeConfiguration<LawyerProfile
     {
         builder.ToTable("LAWYER_PROFILE", "dbo");
         builder.HasKey(p => p.LawyerProfileId);
+
+        // Redesign 2026-09 (scripts/09_part_b_tables.sql)
+        builder.Property(p => p.RejectionReason).HasMaxLength(500);
     }
 }

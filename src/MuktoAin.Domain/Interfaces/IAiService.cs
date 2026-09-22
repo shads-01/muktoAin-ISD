@@ -9,4 +9,6 @@ public interface IAiService
     Task<string> GenerateContentAsync(string prompt, CancellationToken ct = default);
 
     Task<float[]> EmbedContentAsync(string text, CancellationToken ct = default);
+
+    Task<IReadOnlyList<float[]>> BatchEmbedContentAsync(IReadOnlyList<string> texts, CancellationToken ct = default);
 }

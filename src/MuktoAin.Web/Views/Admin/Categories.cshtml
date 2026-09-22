@@ -1,0 +1,39 @@
+@model AdminCategoriesViewModel
+@{
+    ViewData["Title"] = "Categories — Admin — MuktoAin";
+    ViewData["IsAdminPage"] = true;
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+        <span class="sep">/</span>
+        <span>Categories</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="layout-grid"></i> FR-18</span>
+        <h1 class="page-title">Case Categories</h1>
+        <p class="page-sub">Each category drives intake chips, retrieval priors, and the document template.</p>
+    </div>
+
+    <div class="grid grid-2">
+        @foreach (var c in Model.Categories)
+        {
+            <div class="card">
+                <div class="row spread" style="align-items: flex-start">
+                    <div>
+                        <b>@c.NameBn</b> <small class="muted">/ @c.Name</small><br />
+                        <span class="badge badge-neutral mono">@c.TemplateBadge</span>
+                    </div>
+                </div>
+                <p class="muted tiny" style="margin: 10px 0 0">@c.Description</p>
+            </div>
+        }
+    </div>
+
+    <div class="alert alert-warn tiny" style="margin-top: 12px">
+        <i data-lucide="info"></i>
+        <span>Category names/descriptions are seeded via SSMS (04–06 scripts) — full CRUD lands with CP3 admin tooling. Template badges are convention-mapped from CategoryId.</span>
+    </div>
+</main>

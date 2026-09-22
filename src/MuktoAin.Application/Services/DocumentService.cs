@@ -3,6 +3,7 @@ using MuktoAin.Application.DTOs;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
+using MuktoAin.Domain.Interfaces.Services;
 
 namespace MuktoAin.Application.Services;
 
@@ -18,19 +19,22 @@ public class DocumentService
     private readonly ICaseRepository _caseRepo;
     private readonly IRepository<District> _districtRepo;
     private readonly IRepository<CaseCategory> _categoryRepo;
+    private readonly IPdfExporter _pdfExporter;
 
     public DocumentService(
         DocumentGenerator generator,
         IRepository<GeneratedDocument> docRepo,
         ICaseRepository caseRepo,
         IRepository<District> districtRepo,
-        IRepository<CaseCategory> categoryRepo)
+        IRepository<CaseCategory> categoryRepo,
+        IPdfExporter pdfExporter)
     {
         _generator = generator;
         _docRepo = docRepo;
         _caseRepo = caseRepo;
         _districtRepo = districtRepo;
         _categoryRepo = categoryRepo;
+        _pdfExporter = pdfExporter;
     }
 
     /// <summary>
@@ -57,7 +61,12 @@ public class DocumentService
             if (category != null) caseEntity.Category = category;
         }
 
-        var content = await _generator.GenerateAsync(caseEntity, explanation);
+        // A-3.9: Bangla-first rendering — a case whose language is "bn" (the
+        // default for every chat commit and demo seed) gets the Bangla-only
+        // template variant. English/unknown languages keep the legacy template.
+        var content = string.Equals(caseEntity.Language, "bn", StringComparison.OrdinalIgnoreCase)
+            ? await _generator.GenerateBanglaOnlyAsync(caseEntity, explanation)
+            : await _generator.GenerateAsync(caseEntity, explanation);
 
         var doc = new GeneratedDocument
         {
@@ -110,6 +119,25 @@ public class DocumentService
         }
 
         await _docRepo.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// PDF download gate (FR-14 / review gate): returns PDF bytes ONLY for
+    /// lawyer-approved documents; null otherwise. Citizens can never download
+    /// a draft or rejected document. This is the non-negotiable human-in-the-loop
+    /// safeguard — controllers must use this instead of calling IPdfExporter raw.
+    /// </summary>
+    public async Task<byte[]?> GetPdfIfApprovedAsync(int documentId)
+    {
+        var doc = await _docRepo.GetByIdAsync(documentId);
+        if (doc?.Status != DocumentStatus.Approved) return null;
+
+        // The generic repo does no Includes and there is no lazy loading —
+        // resolve the parent Case explicitly (GeneratePdf needs jurisdiction data).
+        var caseEntity = await _caseRepo.GetByIdAsync(doc.CaseId);
+        if (caseEntity == null) return null;
+
+        return _pdfExporter.GeneratePdf(doc, caseEntity);
     }
 
     private static DraftDocumentDto MapToDto(GeneratedDocument doc)

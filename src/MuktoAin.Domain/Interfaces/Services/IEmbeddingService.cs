@@ -1,6 +1,6 @@
 namespace MuktoAin.Domain.Interfaces.Services;
 
-// Implemented in Infrastructure (Gemini text-embedding-004 client).
+// Implemented in Infrastructure (Gemini embedding client).
 public interface IEmbeddingService
 {
     Task<float[]> GetEmbeddingAsync(string text);

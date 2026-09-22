@@ -23,7 +23,20 @@ public class GeneratedDocument
     public int? AssignedLawyerProfileId { get; set; }
     public LawyerProfile? AssignedLawyerProfile { get; set; }
 
+    // Redesign 2026-09 (FR-21): draft version chain. 1 = immutable AI original;
+    // citizen saves increment. Latest citizen edit lives in ContentFinal.
+    public int VersionNo { get; set; } = 1;
+
+    // Redesign 2026-09 (FR-23): when this document was claimed from the pool
+    public DateTime? ClaimedAt { get; set; }
+
+    // Redesign 2026-09 (FR-21): current citizen edit differs from the AI original
+    public bool CitizenEdited { get; set; }
+
     public DateTime CreatedAt { get; set; }
+
+    // AUD-4: SQL Server rowversion for optimistic concurrency (claim race)
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 
     public ICollection<LawyerReview> Reviews { get; set; } = new List<LawyerReview>();
 }

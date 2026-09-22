@@ -11,15 +11,17 @@
     ],
     "EmbeddingModel": "gemini-embedding-001",
     "GenerationModel": "gemini-3.6-flash",
-    "GenerationModel_Comment": "gemini-3.6-flash is the current free-tier generation model (gemini-2.0-flash was retired by Google). Switch models for benchmark evaluation as needed."
+    "GenerationModel_Comment": "gemini-3.6-flash is the current free-tier generation model (gemini-2.0-flash was retired by Google). Switch models for benchmark evaluation as needed.",
+    "GenerationTokenLimitPerMinute": 250000,
+    "GenerationTokenLimitPerMinute_Comment": "Display-only budget for the admin dashboard's per-key Gemini token tracker (GeminiClient.Snapshot()) — generation calls only, checked against the free-tier TPM cap (verified 2026-09-09 in AI Studio for gemini-3.6-flash). Does not affect key rotation/parking behavior."
   },
   "Qdrant": {
     "Endpoint": "https://your-cluster-id.cloud.qdrant.io:6333",
     "ApiKey": "REPLACE_WITH_QDRANT_API_KEY",
-    "Collection": "act_section_chunks_dev",
-    "Collection_Comment": "Per-developer namespace, avoids clashing local IDs. Canonical (no suffix) is EmbeddingBatchJob-only.",
-    "VectorSize": 768,
-    "VectorSize_Comment": "Must match the embedding model's output dimension."
+    "Collection": "act_section_chunks_yourname",
+    "Collection_Comment": "Per-developer namespace (act_section_chunks_<your-name>), avoids clashing local IDs. Never use the bare 'act_section_chunks' — that canonical collection is written only by the single merged-database EmbeddingBatchJob run. NOTE: any local collection is auto-recreated at the configured VectorSize on first run, so starting fresh is normal.",
+    "VectorSize": 3072,
+    "VectorSize_Comment": "Must match the embedding model's output dimension (3072 for gemini-embedding-001 default; set Gemini:EmbeddingOutputDimensionality to 768/1536 if you use MRL truncation)."
   },
   "SeedAdmin": {
     "Email": "admin@muktoain.bd",
@@ -29,11 +31,29 @@
     "RunOnStartup": false,
     "RunOnStartup_Comment": "Set to true to run the embedding batch job on app startup. Set back to false after the initial run."
   },
+  "DevFeatures": {
+    "EnableConversationMarkdownExport": true,
+    "EnableConversationMarkdownExport_Comment": "Set to true to enable conversation transcript export as Markdown (Alt+M shortcut and window.copyChatAsMarkdown()). Can also be toggled via environment variable DevFeatures__EnableConversationMarkdownExport."
+  },
   "Logging": {
     "LogLevel": {
       "Default": "Information",
       "Microsoft.AspNetCore": "Warning",
       "Microsoft.EntityFrameworkCore.Database.Command": "Information"
     }
+  },
+  "Payments": {
+    "Mode": "Simulator",
+    "Mode_Comment": "Set to Sandbox to pay through the real bKash and SSLCommerz sandboxes (needs internet). The credentials below are the vendors' public sandbox merchants, not secrets. bKash test wallet 01619777282, OTP 123456, PIN 12121."
+  },
+  "SslCommerz": {
+    "StoreId": "testbox",
+    "StorePassword": "qwerty"
+  },
+  "Bkash": {
+    "Username": "sandboxTokenizedUser02",
+    "Password": "sandboxTokenizedUser02@12345",
+    "AppKey": "4f6o0cjiki2rfm34kfdadl1eqq",
+    "AppSecret": "2is7hdktrekvrbljjh44ll3d9l1dtjo4pasmjvs5vl5qr3fug4b"
   }
 }

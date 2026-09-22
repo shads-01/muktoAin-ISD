@@ -1,4 +1,6 @@
 using MuktoAin.Application.DTOs;
+using MuktoAin.Domain.Common;
+using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Interfaces.Repositories;
 using MuktoAin.Domain.Interfaces.Services;
 
@@ -46,5 +48,32 @@ public class SearchService
             Results: paged.Select(r => new CitedSectionDto(
                 r.SectionId, r.ActTitle, r.SectionNumber, r.SectionText,
                 r.RelevanceScore, r.Method.ToString(), r.ActNumber, r.ActYear)).ToList());
+    }
+
+    // FR-7 extension: browsing an Act with no keyword (e.g. the Search page's Act
+    // dropdown used on its own). No FTS involved -- just the Act's own sections, in
+    // their real statutory order (OrdinalPosition; ActSection.SectionNumber is left
+    // null for the entire corpus by ActImportService -- see SectionNumberResolver --
+    // so it can't be used to tell real sections from anything else, and isn't a
+    // reliable filter key at all: filtering on it excludes every row).
+    public async Task<SearchResultDto> BrowseActAsync(int actId, int page = 1, int pageSize = 20)
+    {
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize < 1 ? 20 : pageSize;
+
+        var act = await _actRepo.GetWithSectionsAsync(actId);
+        var sections = (act?.Sections ?? new List<ActSection>())
+            .OrderBy(s => s.OrdinalPosition)
+            .ToList();
+
+        var paged = sections.Skip((page - 1) * pageSize).Take(pageSize);
+
+        return new SearchResultDto(
+            Query: string.Empty,
+            TotalResults: sections.Count,
+            Page: page,
+            Results: paged.Select(s => new CitedSectionDto(
+                s.SectionId, act!.Title, SectionNumberResolver.Resolve(s.SectionNumber, s.SectionText), s.SectionText,
+                RelevanceScore: 0f, RetrievalMethod: "Browse", act.ActNumber, act.Year)).ToList());
     }
 }

@@ -34,13 +34,31 @@ public class QdrantVectorStore : IVectorStore
         var exists = await _client.CollectionExistsAsync(CollectionName, cancellationToken);
         if (exists)
         {
-            return;
+            // Verify dimensions match; if the collection was created with 768 but we
+            // now need 3072, we must delete and recreate.
+            try
+            {
+                var info = await _client.GetCollectionInfoAsync(CollectionName, cancellationToken);
+                var currentSize = info.Config.Params.VectorsConfig.Params.Size;
+                if (currentSize != _options.VectorSize)
+                {
+                    await _client.DeleteCollectionAsync(CollectionName, cancellationToken: cancellationToken);
+                    exists = false; // fall through to create
+                }
+            }
+            catch
+            {
+                // If we can't check, assume it's fine
+            }
         }
 
-        await _client.CreateCollectionAsync(
-            CollectionName,
-            new VectorParams { Size = _options.VectorSize, Distance = Distance.Cosine },
-            cancellationToken: cancellationToken);
+        if (!exists)
+        {
+            await _client.CreateCollectionAsync(
+                CollectionName,
+                new VectorParams { Size = _options.VectorSize, Distance = Distance.Cosine },
+                cancellationToken: cancellationToken);
+        }
     }
 
     public async Task UpsertAsync(string vectorId, float[] embedding, Dictionary<string, string> payload)
@@ -56,6 +74,28 @@ public class QdrantVectorStore : IVectorStore
         }
 
         await _client.UpsertAsync(CollectionName, new[] { point });
+    }
+
+    public async Task UpsertBatchAsync(IReadOnlyList<(string vectorId, float[] embedding, Dictionary<string, string> payload)> points)
+    {
+        if (points.Count == 0) return;
+
+        var pointStructs = new List<PointStruct>(points.Count);
+        foreach (var (vectorId, embedding, payload) in points)
+        {
+            var point = new PointStruct
+            {
+                Id = new PointId { Uuid = vectorId },
+                Vectors = embedding,
+            };
+            foreach (var (key, value) in payload)
+            {
+                point.Payload[key] = value;
+            }
+            pointStructs.Add(point);
+        }
+
+        await _client.UpsertAsync(CollectionName, pointStructs);
     }
 
     public async Task<IEnumerable<VectorSearchResult>> SearchAsync(float[] queryVector, int topK)

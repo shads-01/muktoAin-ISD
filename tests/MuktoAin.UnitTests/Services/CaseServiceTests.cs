@@ -14,6 +14,7 @@ public class CaseServiceTests
     private readonly Mock<IRepository<CaseCategory>> _categoryRepo = new();
     private readonly Mock<IRepository<District>> _districtRepo = new();
     private readonly Mock<IEncryptionService> _encryptionService = new();
+    private readonly Mock<IRepository<Notification>> _notificationRepo = new();
     private readonly CaseService _service;
 
     public CaseServiceTests()
@@ -23,7 +24,7 @@ public class CaseServiceTests
         _encryptionService.Setup(e => e.Decrypt(It.IsAny<string>()))
             .Returns<string>(s => s.StartsWith("ENC_") ? s.Substring(4) : s);
 
-        _service = new CaseService(_caseRepo.Object, _categoryRepo.Object, _districtRepo.Object, _encryptionService.Object);
+        _service = new CaseService(_caseRepo.Object, _categoryRepo.Object, _districtRepo.Object, _encryptionService.Object, _notificationRepo.Object);
     }
 
     [Fact]
@@ -60,6 +61,63 @@ public class CaseServiceTests
         Assert.NotNull(detail);
         Assert.Equal("Encrypted Title", detail!.Title);
         Assert.Equal("Encrypted Description", detail.Description);
+    }
+
+    // AUD-2 fallout: a title encrypted under a since-rotated/lost Data
+    // Protection key throws on Decrypt just like legacy plaintext does, but
+    // must NOT show the raw ciphertext blob to the user.
+    [Fact]
+    public async Task GetCaseDetailAsync_UndecryptableCiphertext_ShowsPlaceholderNotRawBlob()
+    {
+        var opaqueCiphertext = "CfDJ8" + new string('A', 80); // opaque base64url blob shape
+        _encryptionService.Setup(e => e.Decrypt(opaqueCiphertext))
+            .Throws(new System.Security.Cryptography.CryptographicException("key not found in the key ring"));
+        var caseEntity = new Case
+        {
+            CaseId = 1,
+            Title = opaqueCiphertext,
+            Description = "ENC_Encrypted Description",
+            CategoryId = 1,
+            DistrictId = 1,
+            Status = CaseStatus.Submitted,
+            UserId = 42,
+            IsAnonymous = false
+        };
+        SetupLookups(caseEntity);
+        _caseRepo.Setup(r => r.GetWithDocumentsAsync(1)).ReturnsAsync(caseEntity);
+
+        var detail = await _service.GetCaseDetailAsync(1, 42, UserRole.Citizen);
+
+        Assert.NotNull(detail);
+        Assert.DoesNotContain(opaqueCiphertext, detail!.Title);
+        Assert.Contains("Title unavailable", detail.Title);
+    }
+
+    // A genuinely unencrypted legacy row still throws on Decrypt (not valid
+    // base64url) but must keep showing its real, human-readable title.
+    [Fact]
+    public async Task GetCaseDetailAsync_LegacyPlaintextTitle_ShowsRawTitleAsIs()
+    {
+        _encryptionService.Setup(e => e.Decrypt("বেতন পরিশোধে অস্বীকৃতি"))
+            .Throws(new FormatException("not valid base64url"));
+        var caseEntity = new Case
+        {
+            CaseId = 1,
+            Title = "বেতন পরিশোধে অস্বীকৃতি",
+            Description = "ENC_Encrypted Description",
+            CategoryId = 1,
+            DistrictId = 1,
+            Status = CaseStatus.Submitted,
+            UserId = 42,
+            IsAnonymous = false
+        };
+        SetupLookups(caseEntity);
+        _caseRepo.Setup(r => r.GetWithDocumentsAsync(1)).ReturnsAsync(caseEntity);
+
+        var detail = await _service.GetCaseDetailAsync(1, 42, UserRole.Citizen);
+
+        Assert.NotNull(detail);
+        Assert.Equal("বেতন পরিশোধে অস্বীকৃতি", detail!.Title);
     }
 
     [Fact]
@@ -195,6 +253,28 @@ public class CaseServiceTests
     }
 
     [Fact]
+    public async Task GetCaseDetailAsync_CitizenWithValidTrackingCode_CanReadAnonymousCase()
+    {
+        var anonymous = new Case
+        {
+            CaseId = 11,
+            IsAnonymous = true,
+            UserId = null,
+            AnonymousTrackingCode = "secret",
+            Status = CaseStatus.Submitted,
+            CategoryId = 1,
+            DistrictId = 1
+        };
+        SetupLookups(anonymous);
+        _caseRepo.Setup(r => r.GetWithDocumentsAsync(11)).ReturnsAsync(anonymous);
+
+        var result = await _service.GetCaseDetailAsync(11, 42, UserRole.Citizen, "secret");
+
+        Assert.NotNull(result);
+        Assert.Equal("Labour", result!.CategoryName);
+    }
+
+    [Fact]
     public async Task GetCaseDetailAsync_LawyerCanReadAnyCase()
     {
         var anonymous = new Case
@@ -269,6 +349,51 @@ public class CaseServiceTests
 
         Assert.NotNull(result);
         Assert.Null(await _service.GetCaseDetailAsync(14, null, UserRole.Citizen, "wrong"));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task SubmitCaseAsync_NullOrEmptyDescription_IsAcceptedWithNoValidationGuard(string? description)
+    {
+        // FINDING (Lab 6 exceptional-input pass): CaseSubmitViewModel.Description carries
+        // no [Required], and CaseService.SubmitCaseAsync performs no null/empty check
+        // either -- an empty description is silently persisted and would reach the RAG
+        // pipeline downstream. This test documents the actual current behavior rather
+        // than an assumed one; see Testing_Plan.md CASE-04 and the Bugs & Issues section
+        // of the Lab 6 report for the fix recommendation (add a server-side guard).
+        var dto = new CaseSubmissionDto(1, 5, "Title", description!, "bn", IsAnonymous: false);
+
+        await _service.SubmitCaseAsync(dto, userId: 42);
+
+        _caseRepo.Verify(r => r.AddAsync(It.Is<Case>(c => c.Status == CaseStatus.Submitted)), Times.Once);
+        _caseRepo.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task SubmitCaseAsync_NotifiesTheSubmittingUser()
+    {
+        Notification? captured = null;
+        _notificationRepo.Setup(n => n.AddAsync(It.IsAny<Notification>()))
+            .Callback<Notification>(n => captured = n)
+            .Returns(Task.CompletedTask);
+
+        var dto = new CaseSubmissionDto(1, 5, "Title", "Desc", "bn", IsAnonymous: false);
+        await _service.SubmitCaseAsync(dto, userId: 7);
+
+        Assert.NotNull(captured);
+        Assert.Equal(7, captured!.UserId);
+        Assert.Equal(NotificationType.CaseSubmitted, captured.Type);
+    }
+
+    [Fact]
+    public async Task SubmitCaseAsync_SkipsNotification_WhenAnonymous()
+    {
+        var dto = new CaseSubmissionDto(1, 5, "Title", "Desc", "bn", IsAnonymous: true);
+        await _service.SubmitCaseAsync(dto, userId: null);
+
+        _notificationRepo.Verify(n => n.AddAsync(It.IsAny<Notification>()), Times.Never);
     }
 
     private void SetupLookups(Case c)

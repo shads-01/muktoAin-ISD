@@ -15,7 +15,7 @@ public class AiOrchestrationService : IAiOrchestrationService
 
     private readonly IRagContextBuilder _ragContextBuilder;
     private readonly IPromptAssembler _promptAssembler;
-    private readonly MuktoAin.Domain.Interfaces.IAiService _aiService;
+    private readonly IAiService _aiService;
     private readonly DisclaimerInjector _disclaimerInjector;
     private readonly IAiLogService _aiLogService;
     private readonly IRepository<AiLog> _logRepo;
@@ -25,7 +25,7 @@ public class AiOrchestrationService : IAiOrchestrationService
     public AiOrchestrationService(
         IRagContextBuilder ragContextBuilder,
         IPromptAssembler promptAssembler,
-        MuktoAin.Domain.Interfaces.IAiService aiService,
+        IAiService aiService,
         DisclaimerInjector disclaimerInjector,
         IAiLogService aiLogService,
         IRepository<AiLog> logRepo,

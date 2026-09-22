@@ -31,7 +31,7 @@ public static class LegalChunkingService
     public static async Task ChunkAsync(AppDbContext context, ILogger? logger = null)
     {
         // Fast-path: chunking is idempotent and pre-seeded; if chunks already exist, skip immediately.
-        if (await context.ActSectionChunks.AnyAsync())
+        if (await context.ActSectionChunks.AsNoTracking().AnyAsync())
         {
             logger?.LogInformation("LegalChunkingService: chunks already present, skipping.");
             return;

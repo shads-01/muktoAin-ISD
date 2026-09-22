@@ -1,8 +1,8 @@
+using MuktoAin.Domain.Common;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
 using MuktoAin.Domain.Interfaces.Services;
 using MuktoAin.Domain.Models;
-using MuktoAin.Infrastructure.Common;
 
 namespace MuktoAin.Infrastructure.Search;
 

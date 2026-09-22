@@ -1,0 +1,40 @@
+@using MuktoAin.Application.Services
+@* Chat credit top-up (FR-24, paid through the payment gateway). Shared by the
+   chat home page and the profile page; payment.js wires the submit button.
+   Price: PaymentService.ChatCreditPrice BDT per chat turn. *@
+@{
+    var price = PaymentService.ChatCreditPrice.ToString("0");
+    var min = PaymentService.MinTopUpAmount.ToString("0");
+}
+<div class="modal-backdrop" id="topup-modal" role="dialog" aria-modal="true" aria-labelledby="topup-modal-title">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <div>
+                <span class="kicker"><i data-lucide="zap"></i> FR-24</span>
+                <h3 id="topup-modal-title" data-bn="চ্যাট ক্রেডিট টপ-আপ" data-en="Top Up Chat Credits">চ্যাট ক্রেডিট টপ-আপ</h3>
+            </div>
+            <button class="icon-btn" type="button" data-close-modal aria-label="বন্ধ করুন"><i data-lucide="x"></i></button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:14px; padding: 10px 0;">
+            <p class="muted tiny" data-bn="৳@price = ১টি চ্যাট। দৈনিক বিনামূল্যের চ্যাট শেষ হলে ক্রেডিট খরচ হয়, মেয়াদ শেষ হয় না (স্যান্ডবক্স পেমেন্ট — কোনো আসল টাকা নয়)।"
+               data-en="৳@price = 1 chat. Credits are used after your free daily chats run out and never expire (sandbox payment — no real money).">
+                ৳@price = ১টি চ্যাট। দৈনিক বিনামূল্যের চ্যাট শেষ হলে ক্রেডিট খরচ হয়, মেয়াদ শেষ হয় না (স্যান্ডবক্স পেমেন্ট — কোনো আসল টাকা নয়)।
+            </p>
+            <div>
+                <label for="topup-amount" class="form-label" data-bn="টাকার পরিমাণ (৳):" data-en="Amount (BDT):">টাকার পরিমাণ (৳):</label>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-weight:700; font-size:16px;">৳</span>
+                    <input type="number" id="topup-amount" class="input" style="flex:1;" value="100" min="@min" step="@price" placeholder="100"
+                           data-credit-price="@price" data-min-amount="@min" />
+                </div>
+                <p class="form-text" id="topup-credits" aria-live="polite"></p>
+            </div>
+            <partial name="_PaymentMethodPicker" model="@("topup-method")" />
+            <div id="topup-feedback" style="display:none;"></div>
+            <button id="btn-submit-topup" class="btn btn-gold btn-block" type="button">
+                <i data-lucide="credit-card"></i> <span data-bn="টপ-আপ করুন" data-en="Top Up">টপ-আপ করুন</span>
+            </button>
+        </div>
+    </div>
+</div>

@@ -171,7 +171,12 @@ BEGIN
         UserId                INT                NULL,
         CategoryId            INT                NOT NULL,
         DistrictId            TINYINT            NOT NULL,
-        Title                 NVARCHAR(250)      NOT NULL,
+        -- NVARCHAR(MAX), not (250): Title is stored encrypted (see CaseService/
+        -- ChatService's _encryptionService.Encrypt(dto.Title)) — ASP.NET Data
+        -- Protection ciphertext runs well past the 250-char plaintext limit the
+        -- UI advertises (fixed key/IV/HMAC overhead + ~4/3 base64 expansion), so
+        -- a fixed-width column truncates on save for any non-trivial title.
+        Title                 NVARCHAR(MAX)      NOT NULL,
         Description           NVARCHAR(MAX)      NOT NULL,
         Language              NVARCHAR(10)       NOT NULL,
         Status                INT                NOT NULL DEFAULT (0),
@@ -265,7 +270,13 @@ GO
 -- Speeds up the embedding batch job scanning for unembedded chunks.
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ACT_SECTION_CHUNK_VectorId_Null' AND object_id = OBJECT_ID(N'[dbo].[ACT_SECTION_CHUNK]'))
 BEGIN
-    CREATE INDEX IX_ACT_SECTION_CHUNK_VectorId_Null ON [dbo].[ACT_SECTION_CHUNK] (VectorId) WHERE VectorId IS NULL;
+    CREATE NONCLUSTERED INDEX IX_ACT_SECTION_CHUNK_VectorId_Null ON [dbo].[ACT_SECTION_CHUNK] (ChunkId) INCLUDE (SectionId, ChunkOrder, TokenCount, ContentHash, LastEmbeddedAt) WHERE VectorId IS NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_ACT_SECTION_CHUNK_VectorId' AND object_id = OBJECT_ID(N'[dbo].[ACT_SECTION_CHUNK]'))
+BEGIN
+    CREATE NONCLUSTERED INDEX IX_ACT_SECTION_CHUNK_VectorId ON [dbo].[ACT_SECTION_CHUNK] (VectorId, ChunkId) INCLUDE (SectionId, ChunkOrder);
 END
 GO
 

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -5,9 +6,11 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using MuktoAin.Application.Services;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
+using MuktoAin.UnitTests.Localization;
 using MuktoAin.Web.Controllers;
 using MuktoAin.Web.ViewModels;
 
@@ -22,22 +25,34 @@ public class AccountControllerTests
     private readonly Mock<UserManager<User>> _userManager;
     private readonly Mock<SignInManager<User>> _signInManager;
     private readonly Mock<IRepository<LawyerProfile>> _lawyerProfileRepo;
+    private readonly Mock<IChatHistoryRepository> _chatHistory = new();
+    private readonly Mock<IRepository<Notification>> _notificationRepo;
     private readonly AccountController _controller;
 
     public AccountControllerTests()
     {
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en");
+
         _lawyerProfileRepo = new Mock<IRepository<LawyerProfile>>();
         _lawyerProfileRepo.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
 
         _userManager = NewUserManager();
         _signInManager = NewSignInManager(_userManager.Object);
 
-        var httpContext = new DefaultHttpContext();
+        _notificationRepo = new Mock<IRepository<Notification>>();
+        _notificationRepo.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+        var notificationService = new NotificationService(
+            _notificationRepo.Object, _userManager.Object, Mock.Of<ILogger<NotificationService>>());
+
+        var httpContext = new DefaultHttpContext { Session = new TestSession() };
         _controller = new AccountController(
             _signInManager.Object,
             _userManager.Object,
             _lawyerProfileRepo.Object,
-            Mock.Of<ILogger<AccountController>>())
+            Mock.Of<ILogger<AccountController>>(),
+            TestStringLocalizer.Create(),
+            _chatHistory.Object,
+            notificationService)
         {
             ControllerContext = new ControllerContext { HttpContext = httpContext },
             TempData = new TempDataDictionary(httpContext, Mock.Of<ITempDataProvider>())
@@ -190,6 +205,26 @@ public class AccountControllerTests
     }
 
     [Fact]
+    public async Task Register_LawyerRole_NotifiesAllAdmins()
+    {
+        var admin = new User { Id = 1, Role = UserRole.Admin, Email = "admin@example.com" };
+        _userManager.Setup(m => m.Users).Returns(new List<User> { admin }.AsQueryable());
+        _userManager.Setup(m => m.CreateAsync(It.IsAny<User>(), It.IsAny<string>()))
+            .ReturnsAsync(IdentityResult.Success);
+
+        var model = new RegisterViewModel
+        {
+            FullName = "New Lawyer", Email = "lawyer@example.com", Password = "Passw0rd!",
+            Role = "Lawyer", BarRegistrationNumber = "BAR-123"
+        };
+
+        await _controller.Register(model);
+
+        _notificationRepo.Verify(n => n.AddAsync(It.Is<Notification>(x =>
+            x.UserId == 1 && x.Type == NotificationType.NewLawyerApplication)), Times.Once);
+    }
+
+    [Fact]
     public async Task Register_Citizen_DoesNotCreateLawyerProfile()
     {
         var model = new RegisterViewModel
@@ -210,6 +245,57 @@ public class AccountControllerTests
         Assert.IsType<RedirectToActionResult>(result);
         _lawyerProfileRepo.Verify(r => r.AddAsync(It.IsAny<LawyerProfile>()), Times.Never);
         _lawyerProfileRepo.Verify(r => r.SaveChangesAsync(), Times.Never);
+    }
+
+    [Fact]
+    public async Task Register_DuplicateEmail_AddsFieldErrorAndDoesNotCreateDuplicateUser()
+    {
+        // Mirrors Identity's real DuplicateUserName/DuplicateEmail IdentityError -- the
+        // store's UserValidator rejects a second CreateAsync for an email already on
+        // file, and AccountController's existing error-mapping loop is the only guard
+        // against a duplicate account. This exercises that path directly.
+        var model = new RegisterViewModel
+        {
+            FullName = "Second Citizen",
+            Email = "citizen@muktoain.bd",
+            Password = "Citizen@123",
+            ConfirmPassword = "Citizen@123",
+            Role = "Citizen"
+        };
+
+        _userManager.Setup(m => m.CreateAsync(It.IsAny<User>(), It.IsAny<string>()))
+            .ReturnsAsync(IdentityResult.Failed(
+                new IdentityError { Code = "DuplicateUserName", Description = "Username 'citizen@muktoain.bd' is already taken." }));
+
+        var result = await _controller.Register(model);
+
+        Assert.IsType<ViewResult>(result);
+        Assert.True(_controller.ModelState.ErrorCount > 0);
+        _userManager.Verify(m => m.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Once);
+        _lawyerProfileRepo.Verify(r => r.AddAsync(It.IsAny<LawyerProfile>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Register_MismatchedConfirmPassword_ReturnsViewWithoutCallingCreateAsync()
+    {
+        // [Compare] on ConfirmPassword only runs through MVC's model-binding pipeline,
+        // not by calling the action directly, so this simulates what that validation
+        // produces: an invalid ModelState the action must respect before touching
+        // Identity at all.
+        var model = new RegisterViewModel
+        {
+            FullName = "Test Citizen",
+            Email = "citizen4@muktoain.bd",
+            Password = "Citizen@123",
+            ConfirmPassword = "DoesNotMatch@123",
+            Role = "Citizen"
+        };
+        _controller.ModelState.AddModelError(nameof(RegisterViewModel.ConfirmPassword), "Passwords do not match.");
+
+        var result = await _controller.Register(model);
+
+        Assert.IsType<ViewResult>(result);
+        _userManager.Verify(m => m.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
@@ -264,6 +350,38 @@ public class AccountControllerTests
     }
 
     [Fact]
+    public async Task Profile_Post_WhenInvalid_RedisplaysCurrentSavedPhoneNumber_NotTheRejectedSubmission()
+    {
+        // Bug found via live testing: on a rejected save, the hero-card summary
+        // and the form field both read Model.PhoneNumber -- the same rebound,
+        // never-persisted value the user just typed -- so an invalid, unsaved
+        // attempt looked identical to a successful update. CurrentPhoneNumber
+        // must always reflect what's actually in the DB, regardless of what
+        // was submitted.
+        var user = new User
+        {
+            Id = 12,
+            Email = "citizen@muktoain.bd",
+            FullName = "Sanjida Erin",
+            PhoneNumber = "01700000000",
+            Role = UserRole.Citizen
+        };
+        _userManager.Setup(m => m.GetUserAsync(It.IsAny<System.Security.Claims.ClaimsPrincipal>())).ReturnsAsync(user);
+
+        var model = new ProfileViewModel { FullName = "Sanjida Erin", PhoneNumber = "ZMARKERZ98765xyz" };
+        _controller.ModelState.AddModelError(nameof(ProfileViewModel.PhoneNumber), "invalid format");
+
+        var result = await _controller.Profile(model);
+
+        var view = Assert.IsType<ViewResult>(result);
+        var returnedModel = Assert.IsType<ProfileViewModel>(view.Model);
+        Assert.Equal("01700000000", returnedModel.CurrentPhoneNumber);
+        // The editable field still echoes the rejected attempt so the user can fix their typo.
+        Assert.Equal("ZMARKERZ98765xyz", returnedModel.PhoneNumber);
+        _userManager.Verify(m => m.UpdateAsync(It.IsAny<User>()), Times.Never);
+    }
+
+    [Fact]
     public async Task ChangePassword_Post_WhenValid_ChangesPasswordAndSetsSuccess()
     {
         var user = new User { Id = 20, Email = "user@muktoain.bd" };
@@ -282,6 +400,23 @@ public class AccountControllerTests
         var redirect = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal(nameof(AccountController.Profile), redirect.ActionName);
         Assert.True(_controller.TempData.ContainsKey("Success"));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Login_AdoptsOnlyAfterSuccessfulAuthentication(bool success)
+    {
+        _controller.HttpContext.Session.SetString("mkt-chatkey", "synthetic-key");
+        var user = new User { Id = 42, Role = UserRole.Citizen, AccountStatus = AccountStatus.Active };
+        _userManager.Setup(m => m.FindByEmailAsync("synthetic@example.test")).ReturnsAsync(user);
+        _signInManager.Setup(m => m.PasswordSignInAsync(user, "Synthetic1!", false, true))
+            .ReturnsAsync(success ? Microsoft.AspNetCore.Identity.SignInResult.Success
+                : Microsoft.AspNetCore.Identity.SignInResult.Failed);
+        await _controller.Login(new LoginViewModel
+            { Email = "synthetic@example.test", Password = "Synthetic1!" });
+        _chatHistory.Verify(r => r.AdoptGuestSessionsAsync(42, "synthetic-key",
+            It.IsAny<CancellationToken>()), success ? Times.Once() : Times.Never());
     }
 
     private static Mock<UserManager<User>> NewUserManager()

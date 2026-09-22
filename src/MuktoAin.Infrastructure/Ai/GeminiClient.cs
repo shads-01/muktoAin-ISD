@@ -8,21 +8,61 @@ using Polly.CircuitBreaker;
 namespace MuktoAin.Infrastructure.Ai;
 
 /// <summary>
-/// Thin HTTP wrapper around the Gemini REST API with multi-key rotation.
-/// 429 (RESOURCE_EXHAUSTED) is handled by rotating to the next API key;
-/// transient network errors, 408/5xx, timeout and circuit breaking are handled
+/// Thin HTTP wrapper around the Gemini REST API with round-robin multi-key striping.
+///
+/// Key strategy (FIX-EMB-3): each API key lives in its OWN Google Cloud project
+/// (default AI Studio project per Google account = one independent free-tier
+/// quota pool per key). To turn 7 pools into ~7x aggregate throughput, requests
+/// are STRIPED round-robin across keys — key index advances on every request,
+/// not on failure — so all pools spend at the same rate. On 429, only the
+/// throttled key is parked for Google's RetryInfo.retryDelay (or a fallback
+/// backoff); the very next key in the ring serves immediately. The job-level
+/// EmbeddingQuotaState AIMD pacing still bounds the TOTAL rate, so striping
+/// never exceeds the aggregate budget.
+///
+/// Transient network errors, 408/5xx, timeout and circuit breaking are handled
 /// by the shared Polly pipeline (S-2.6, see GeminiResiliencePolicies).
 /// </summary>
 public class GeminiClient : IAiService
 {
     private const string BaseUrl = "https://generativelanguage.googleapis.com/v1beta/models/";
 
+    // Hard API limit: batchEmbedContents rejects more than 100 requests per
+    // batch with 400 INVALID_ARGUMENT ("at most 100 requests can be in one
+    // batch" — verified against the live API).
+    internal const int MaxTextsPerBatchRequest = 100;
+
     private readonly HttpClient _httpClient;
     private readonly string[] _apiKeys;
     private readonly string _generationModel;
     private readonly string _embeddingModel;
+    private readonly int? _outputDimensionality;
+    private readonly int _generationTokenLimitPerMinute;
     private readonly ResiliencePipeline<HttpResponseMessage> _pipeline;
-    private int _currentKeyIndex;
+
+    // Round-robin ring position — advances on EVERY request so quota spend is
+    // striped evenly across independent key pools.
+    private int _keyIndex;
+
+    // Per-key cooldown: parkedUntil[i] > UtcNow means key i is throttled and is
+    // skipped during key selection. A 429 parks ONE key, never the whole ring.
+    private readonly DateTime[] _parkedUntil;
+
+    // Admin dashboard key-usage tracker (display only — does not gate striping):
+    // one rolling 60s window per key of tokens spent by GENERATION calls
+    // (generateContent's usageMetadata.totalTokenCount). Embedding calls aren't
+    // recorded — see GeminiOptions.GenerationTokenLimitPerMinute. Events older
+    // than the window are pruned lazily on read/write rather than via a
+    // background timer, since GeminiClient is a singleton with no ExecuteAsync
+    // loop of its own.
+    private static readonly TimeSpan TokenWindow = TimeSpan.FromMinutes(1);
+    private readonly Queue<(DateTime OccurredUtc, int Tokens)>[] _tokenEvents;
+
+    // Test seam: overridable "now" so the 60s token window can be exercised
+    // without a real 60-second sleep in unit tests. Production callers never
+    // set this — it defaults to the real clock.
+    internal Func<DateTime> UtcNowProvider = () => DateTime.UtcNow;
+
     private readonly object _lock = new();
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -42,8 +82,41 @@ public class GeminiClient : IAiService
 
         _generationModel = opts.GenerationModel;
         _embeddingModel = opts.EmbeddingModel;
+        _outputDimensionality = opts.EmbeddingOutputDimensionality;
+        _generationTokenLimitPerMinute = opts.GenerationTokenLimitPerMinute;
         _pipeline = resiliencePipeline;
+        _parkedUntil = new DateTime[_apiKeys.Length];
+        _tokenEvents = new Queue<(DateTime, int)>[_apiKeys.Length];
+        for (var i = 0; i < _apiKeys.Length; i++)
+        {
+            _tokenEvents[i] = new Queue<(DateTime, int)>();
+        }
         _httpClient = httpClientFactory.CreateClient(nameof(GeminiClient));
+    }
+
+    /// <summary>
+    /// Snapshot of today's per-key request usage for the admin dashboard tracker.
+    /// Never exposes the actual key values — only a 1-based positional label.
+    /// </summary>
+    public IReadOnlyList<GeminiKeyStatus> Snapshot()
+    {
+        lock (_lock)
+        {
+            var now = DateTime.UtcNow;
+            var result = new List<GeminiKeyStatus>(_apiKeys.Length);
+            for (var i = 0; i < _apiKeys.Length; i++)
+            {
+                var isParked = _parkedUntil[i] > now;
+                result.Add(new GeminiKeyStatus(
+                    Label: $"Key {i + 1}",
+                    TokensUsedLastMinute: SumTokensLastMinuteLocked(i),
+                    TokenLimitPerMinute: _generationTokenLimitPerMinute,
+                    IsParked: isParked,
+                    ParkedUntilUtc: isParked ? _parkedUntil[i] : null));
+            }
+
+            return result;
+        }
     }
 
     public async Task<string> GenerateContentAsync(string prompt, CancellationToken ct = default)
@@ -56,9 +129,19 @@ public class GeminiClient : IAiService
             },
         };
 
-        var json = await SendAsync(_generationModel, ":generateContent", body, ct);
+        var (json, keyIndex) = await SendAsync(_generationModel, ":generateContent", body, ct);
 
         using var doc = JsonDocument.Parse(json);
+
+        // Admin dashboard token tracker: record actual usage if Google sent it.
+        // usageMetadata is normally present, but this stays defensive since it's
+        // display-only and must never fail a real generation call.
+        if (doc.RootElement.TryGetProperty("usageMetadata", out var usage) &&
+            usage.TryGetProperty("totalTokenCount", out var totalTokenCount))
+        {
+            RecordTokensUsed(keyIndex, totalTokenCount.GetInt32());
+        }
+
         return doc.RootElement
             .GetProperty("candidates")[0]
             .GetProperty("content")
@@ -69,12 +152,21 @@ public class GeminiClient : IAiService
 
     public async Task<float[]> EmbedContentAsync(string text, CancellationToken ct = default)
     {
-        var body = new
+        // taskType matters: documents are indexed with RETRIEVAL_DOCUMENT and
+        // user queries MUST use RETRIEVAL_QUERY, or retrieval quality measurably
+        // drops (the model optimizes each task type differently).
+        var body = new Dictionary<string, object?>
         {
-            content = new { parts = new[] { new { text } } },
+            ["content"] = new { parts = new[] { new { text } } },
+            ["taskType"] = "RETRIEVAL_QUERY"
         };
+        if (_outputDimensionality is { } dims)
+        {
+            // MRL truncation: gemini-embedding-001 natively supports 768/1536/3072.
+            body["outputDimensionality"] = dims;
+        }
 
-        var json = await SendAsync(_embeddingModel, ":embedContent", body, ct);
+        var (json, _) = await SendAsync(_embeddingModel, ":embedContent", body, ct);
 
         using var doc = JsonDocument.Parse(json);
         var values = doc.RootElement.GetProperty("embedding").GetProperty("values");
@@ -87,36 +179,95 @@ public class GeminiClient : IAiService
         return embedding;
     }
 
-    /// <summary>
-    /// Rotates through every configured key on 429 before giving up.
-    /// Polly handles transient network/5xx retries; a fresh HttpRequestMessage is built per attempt.
-    /// Non-429 client errors (4xx other than 408) fail fast without burning the remaining keys.
-    /// </summary>
-    private async Task<string> SendAsync(string model, string methodSuffix, object body, CancellationToken ct)
+    public async Task<IReadOnlyList<float[]>> BatchEmbedContentAsync(IReadOnlyList<string> texts, CancellationToken ct = default)
     {
-        using var response = await SendWithRotationAsync(model, methodSuffix, body, ct);
-        var content = await response.Content.ReadAsStringAsync(ct);
-
-        if (!response.IsSuccessStatusCode)
+        if (texts.Count == 0)
         {
-            throw new GeminiApiException(
-                $"Gemini API call failed ({(int)response.StatusCode} {response.StatusCode}).",
-                (int)response.StatusCode,
-                content);
+            return Array.Empty<float[]>();
         }
 
-        return content;
+        if (texts.Count > MaxTextsPerBatchRequest)
+        {
+            // API hard cap: "at most 100 requests can be in one batch" (verified
+            // against the live API — a larger request fails 400 INVALID_ARGUMENT,
+            // and this class can't see the caller's packing config).
+            throw new ArgumentOutOfRangeException(
+                nameof(texts),
+                $"batchEmbedContents accepts at most {MaxTextsPerBatchRequest} texts per request; got {texts.Count}. " +
+                "Lower Embedding:BatchMaxTexts accordingly.");
+        }
+
+        var modelResourceName = _embeddingModel.StartsWith("models/") ? _embeddingModel : $"models/{_embeddingModel}";
+        var body = new Dictionary<string, object?>
+        {
+            ["requests"] = texts.Select(t =>
+            {
+                var request = new Dictionary<string, object?>
+                {
+                    ["model"] = modelResourceName,
+                    ["content"] = new { parts = new[] { new { text = t } } },
+                    ["taskType"] = "RETRIEVAL_DOCUMENT"
+                };
+                if (_outputDimensionality is { } dims)
+                {
+                    request["outputDimensionality"] = dims;
+                }
+                return (object)request;
+            }).ToArray()
+        };
+
+        var (json, _) = await SendAsync(_embeddingModel, ":batchEmbedContents", body, ct);
+
+        using var doc = JsonDocument.Parse(json);
+        var embeddingsElement = doc.RootElement.GetProperty("embeddings");
+        var result = new List<float[]>(embeddingsElement.GetArrayLength());
+
+        foreach (var item in embeddingsElement.EnumerateArray())
+        {
+            var values = item.GetProperty("values");
+            var embedding = new float[values.GetArrayLength()];
+            for (var i = 0; i < embedding.Length; i++)
+            {
+                embedding[i] = values[i].GetSingle();
+            }
+            result.Add(embedding);
+        }
+
+        return result;
     }
 
-    private async Task<HttpResponseMessage> SendWithRotationAsync(
-        string model, string methodSuffix, object body, CancellationToken ct)
+    /// <summary>
+    /// Sends with round-robin key striping. Key selection advances per REQUEST;
+    /// a 429 parks only the throttled key and the next key in the ring is tried
+    /// immediately. Fails with GeminiQuotaExhaustedException only when EVERY key
+    /// is parked/throttled. Polly handles transient network/5xx retries; a fresh
+    /// HttpRequestMessage is built per attempt. Non-429 client errors (4xx other
+    /// than 408) fail fast — the request body is at fault, not the key.
+    /// </summary>
+    private async Task<(string Json, int KeyIndex)> SendAsync(string model, string methodSuffix, object body, CancellationToken ct)
     {
+        var jsonBody = JsonSerializer.Serialize(body, JsonOptions);
         Exception? lastError = null;
+
+        // At most one pass per key: every key gets exactly one try (the ring
+        // advances per attempt), then the loop stops when it comes back around.
+        var firstKey = NextKeyOrNull();
+        if (firstKey == null)
+        {
+            throw BuildQuotaException(lastError);
+        }
+
+        var firstKeyIndex = firstKey.Value;
 
         for (var attempt = 0; attempt < _apiKeys.Length; attempt++)
         {
-            var uri = BuildUri(model + methodSuffix, GetCurrentKey());
-            var jsonBody = JsonSerializer.Serialize(body, JsonOptions);
+            var keyIndex = (firstKeyIndex + attempt) % _apiKeys.Length;
+            if (IsParked(keyIndex))
+            {
+                continue;
+            }
+
+            var uri = BuildUri(model + methodSuffix, _apiKeys[keyIndex]);
 
             HttpResponseMessage result;
             try
@@ -139,56 +290,322 @@ public class GeminiClient : IAiService
                     503, null, ex);
             }
 
-            if ((int)result.StatusCode == 429)
-            {
-                result.Dispose();
-                lastError = new GeminiApiException("Gemini quota exhausted (429).", 429, null);
-                RotateKey();
-                await Task.Delay(200, ct);
-                continue;
-            }
-
             if (result.IsSuccessStatusCode)
             {
-                return result;
-            }
+                // Ring hygiene: the next request must start at the key AFTER the
+                // one that just served, even when this request rotated keys
+                // mid-flight (429/5xx) — otherwise the last successful key gets
+                // re-selected and serves twice in a row.
+                AdvancePast(keyIndex);
 
-            if ((int)result.StatusCode < 500 && (int)result.StatusCode != 408)
-            {
-                // Permanent client error — rotation won't help. Dispose and throw.
                 using (result)
                 {
-                    var errorBody = await result.Content.ReadAsStringAsync(ct);
-                    throw new GeminiApiException(
-                        $"Gemini API returned {(int)result.StatusCode}.", (int)result.StatusCode, errorBody);
+                    return (await result.Content.ReadAsStringAsync(ct), keyIndex);
                 }
             }
 
+            var status = (int)result.StatusCode;
+            string? errorBody = null;
+
+            if (status == 429 || status == 401 || status == 403)
+            {
+                if (status == 429)
+                {
+                    // The 429 body carries Google's RetryInfo (mandatory backoff)
+                    // and the quotaId (minute vs daily scope) — keep it for the
+                    // exhaustion exception AND park this key for the retryDelay.
+                    errorBody = await result.Content.ReadAsStringAsync(ct);
+                    var (retryAfter, _) = ParseQuotaRetryInfo(
+                        new GeminiApiException($"Gemini key error (429).", 429, errorBody));
+                    ParkKey(keyIndex, retryAfter);
+                }
+                else
+                {
+                    // 401/403: bad or revoked key — park it LONG so one dead key
+                    // doesn't waste a retry slot on every request.
+                    ParkKey(keyIndex, TimeSpan.FromMinutes(10));
+                }
+
+                result.Dispose();
+                lastError = new GeminiApiException($"Gemini key error ({status}).", status, errorBody);
+                continue;
+            }
+
+            if (status < 500 && status != 408)
+            {
+                // Permanent client error — a different key won't help and retrying
+                // the same body never will. Include Google's message (e.g. the
+                // batch-size cap) in the exception text so it's visible in logs.
+                using (result)
+                {
+                    var body4xx = await result.Content.ReadAsStringAsync(ct);
+                    throw new GeminiApiException(
+                        $"Gemini API returned {status}: {TruncateForMessage(body4xx)}", status, body4xx);
+                }
+            }
+
+            // 5xx / 408: try the next key in the ring.
             lastError = new GeminiApiException(
-                $"Gemini API returned {(int)result.StatusCode}.", (int)result.StatusCode, null);
+                $"Gemini API returned {status}.", status, null);
             result.Dispose();
         }
 
-        throw new GeminiApiException(
-            "All Gemini API keys are exhausted. Wait for quota reset.", 429, null, lastError);
+        // Every key was either parked or failed this round.
+        throw BuildQuotaException(lastError);
+    }
+
+    private GeminiQuotaExhaustedException BuildQuotaException(Exception? lastError)
+    {
+        var (retryAfter, isPerMinute) = ParseQuotaRetryInfo(lastError);
+
+        // When every key is parked, the soonest any pool frees up is the
+        // earliest parkedUntil — that's a better backoff than the last 429's
+        // retryDelay (which describes only ONE pool).
+        lock (_lock)
+        {
+            var now = DateTime.UtcNow;
+            var earliest = _parkedUntil.Where(t => t > now).DefaultIfEmpty(DateTime.MaxValue).Min();
+            if (earliest != DateTime.MaxValue)
+            {
+                var wait = earliest - now;
+                if (retryAfter == null || wait > retryAfter)
+                {
+                    retryAfter = wait;
+                }
+            }
+        }
+
+        return new GeminiQuotaExhaustedException(
+            "All Gemini API keys are throttled. Wait for quota reset.",
+            retryAfter,
+            isPerMinute,
+            lastError);
+    }
+
+    /// <summary>
+    /// Advances the ring and returns the next un-parked key's index, or null
+    /// when every key is currently parked (nothing sendable).
+    /// </summary>
+    private int? NextKeyOrNull()
+    {
+        lock (_lock)
+        {
+            var now = DateTime.UtcNow;
+            for (var step = 0; step < _apiKeys.Length; step++)
+            {
+                var candidate = (_keyIndex + step) % _apiKeys.Length;
+                if (_parkedUntil[candidate] <= now)
+                {
+                    // Consume this ring slot: the index itself moves to the
+                    // NEXT key so consecutive calls stripe across the ring.
+                    _keyIndex = (candidate + 1) % _apiKeys.Length;
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Moves the ring start to the key AFTER <paramref name="keyIndex"/> without
+    /// consuming a slot — used after a successful send (possibly mid-rotation)
+    /// so the next request never re-selects the key that just served.
+    // ponytail: two concurrent sends can both call this and the later-finishing
+    // one rewinds _keyIndex — a benign race (worst case one key serves twice in
+    // a row); fix with a ring generation counter only if striping fairness
+    /// measurably degrades.
+    /// </summary>
+    private void AdvancePast(int keyIndex)
+    {
+        lock (_lock)
+        {
+            _keyIndex = (keyIndex + 1) % _apiKeys.Length;
+        }
+    }
+
+    private bool IsParked(int keyIndex)
+    {
+        lock (_lock)
+        {
+            return _parkedUntil[keyIndex] > DateTime.UtcNow;
+        }
+    }
+
+    /// <summary>
+    /// Counts <paramref name="tokens"/> against <paramref name="keyIndex"/>'s
+    /// rolling 60s usage window (display purposes only, see Snapshot()).
+    /// GENERATION calls only — see GeminiOptions.GenerationTokenLimitPerMinute.
+    /// </summary>
+    private void RecordTokensUsed(int keyIndex, int tokens)
+    {
+        if (tokens <= 0)
+        {
+            return;
+        }
+
+        lock (_lock)
+        {
+            _tokenEvents[keyIndex].Enqueue((UtcNowProvider(), tokens));
+            PruneTokenEventsLocked(keyIndex);
+        }
+    }
+
+    /// <summary>
+    /// Sums <paramref name="keyIndex"/>'s token events still inside the trailing
+    /// 60s window, pruning anything older first.
+    /// Must be called with <see cref="_lock"/> already held.
+    /// </summary>
+    private int SumTokensLastMinuteLocked(int keyIndex)
+    {
+        PruneTokenEventsLocked(keyIndex);
+        return _tokenEvents[keyIndex].Sum(e => e.Tokens);
+    }
+
+    /// <summary>Must be called with <see cref="_lock"/> already held.</summary>
+    private void PruneTokenEventsLocked(int keyIndex)
+    {
+        var cutoff = UtcNowProvider() - TokenWindow;
+        var queue = _tokenEvents[keyIndex];
+        while (queue.Count > 0 && queue.Peek().OccurredUtc < cutoff)
+        {
+            queue.Dequeue();
+        }
+    }
+
+    /// <summary>
+    /// Parks a throttled key until <paramref name="retryAfter"/> elapses (from
+    /// Google's RetryInfo when present, else an escalating fallback: repeated
+    /// 429s on the same key wait progressively longer).
+    /// </summary>
+    private void ParkKey(int keyIndex, TimeSpan? retryAfter)
+    {
+        lock (_lock)
+        {
+            var wait = retryAfter ?? TimeSpan.FromSeconds(30);
+            var until = DateTime.UtcNow + wait;
+
+            // Escalate if this key was parked recently (back-to-back 429s).
+            if (_parkedUntil[keyIndex] > DateTime.UtcNow)
+            {
+                until = _parkedUntil[keyIndex] + wait;
+            }
+
+            _parkedUntil[keyIndex] = until;
+        }
+    }
+
+    /// <summary>
+    /// Extracts RetryInfo.retryDelay and the quota scope from the last 429 error body.
+    /// Shape (Google REST error details):
+    ///   error.details[] = [
+    ///     { "@type": "type.googleapis.com/google.rpc.RetryInfo",
+    ///       "retryDelay": "37s" },
+    ///     { "@type": "...QuotaFailure",
+    ///       "violations[]": { "quotaId": "...PerDay..." | "...PerMinute..." } }
+    ///   ]
+    /// Daily vs minute scope decides whether the batch job should pause briefly or
+    /// stop entirely until the midnight-Pacific reset.
+    /// </summary>
+    internal static (TimeSpan? RetryAfter, bool IsPerMinuteQuota) ParseQuotaRetryInfo(Exception? lastError)
+    {
+        if (lastError is not GeminiApiException { ResponseBody: { } body })
+        {
+            return (null, IsPerMinuteQuota: true);
+        }
+
+        TimeSpan? retryAfter = null;
+        var isPerMinute = true;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object ||
+                !doc.RootElement.TryGetProperty("error", out var error) ||
+                error.ValueKind != JsonValueKind.Object ||
+                !error.TryGetProperty("details", out var details) ||
+                details.ValueKind != JsonValueKind.Array)
+            {
+                return (null, isPerMinute);
+            }
+
+            foreach (var detail in details.EnumerateArray())
+            {
+                if (!detail.TryGetProperty("@type", out var type))
+                {
+                    continue;
+                }
+
+                var typeName = type.GetString() ?? string.Empty;
+                if (typeName.EndsWith("RetryInfo", StringComparison.Ordinal) &&
+                    detail.TryGetProperty("retryDelay", out var delay) &&
+                    delay.GetString() is { } delayText)
+                {
+                    // Format: "37s" / "2.5s" — Google always sends seconds here.
+                    if (delayText.EndsWith('s') &&
+                        double.TryParse(delayText[..^1], System.Globalization.CultureInfo.InvariantCulture, out var seconds))
+                    {
+                        retryAfter = TimeSpan.FromSeconds(Math.Max(1, seconds));
+                    }
+                }
+                else if (typeName.EndsWith("QuotaFailure", StringComparison.Ordinal) &&
+                         detail.TryGetProperty("violations", out var violations))
+                {
+                    foreach (var violation in violations.EnumerateArray())
+                    {
+                        if (violation.TryGetProperty("quotaId", out var quotaId))
+                        {
+                            var id = quotaId.GetString() ?? string.Empty;
+                            if (id.Contains("PerDay", StringComparison.OrdinalIgnoreCase) ||
+                                id.Contains("Daily", StringComparison.OrdinalIgnoreCase))
+                            {
+                                isPerMinute = false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Malformed body — keep defaults, caller paces itself.
+        }
+
+        return (retryAfter, isPerMinute);
     }
 
     private Uri BuildUri(string modelPath, string apiKey) =>
         new UriBuilder(BaseUrl + modelPath) { Query = $"key={Uri.EscapeDataString(apiKey)}" }.Uri;
 
-    private string GetCurrentKey()
+    /// <summary>
+    /// Extracts the human-readable error.message from a Google error body (or
+    /// returns a generic fallback) so 4xx messages are actionable in logs.
+    /// </summary>
+    private static string TruncateForMessage(string? body)
     {
-        lock (_lock)
+        if (string.IsNullOrWhiteSpace(body))
         {
-            return _apiKeys[_currentKeyIndex % _apiKeys.Length];
+            return "no response body";
         }
-    }
 
-    private void RotateKey()
-    {
-        lock (_lock)
+        try
         {
-            _currentKeyIndex = (_currentKeyIndex + 1) % _apiKeys.Length;
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind == JsonValueKind.Object &&
+                doc.RootElement.TryGetProperty("error", out var error) &&
+                error.ValueKind == JsonValueKind.Object &&
+                error.TryGetProperty("message", out var message) &&
+                message.ValueKind == JsonValueKind.String &&
+                message.GetString() is { } text)
+            {
+                return text.Length > 300 ? text[..300] : text;
+            }
         }
+        catch (JsonException)
+        {
+            // fall through to raw truncation
+        }
+
+        return body.Length > 300 ? body[..300] : body;
     }
 }

@@ -26,7 +26,54 @@ public class PromptAssembler : IPromptAssembler
     {
         var targetLanguage = string.Equals(language, "bn", StringComparison.OrdinalIgnoreCase) ? "Bengali" : "English";
         var disclaimer = Disclaimers.ForLanguage(language);
+        var context = await BuildContextAsync(problemDescription, sections);
 
+        var template = requestType switch
+        {
+            AiRequestType.Drafting => PromptTemplates.DocumentDrafting,
+            _ => PromptTemplates.RightsExplanation,
+        };
+
+        var prompt = template
+            .Replace("{problem}", problemDescription?.Trim() ?? string.Empty)
+            .Replace("{language}", targetLanguage)
+            .Replace("{context}", context)
+            .Replace("{disclaimer}", disclaimer)
+            .Replace("{documentType}", documentType ?? "Legal Document");
+
+        return prompt;
+    }
+
+    public async Task<string> AssembleFewShotIracPromptAsync(
+        string problemDescription,
+        IEnumerable<RetrievedSection> sections,
+        string language,
+        CancellationToken ct = default)
+    {
+        var targetLanguage = string.Equals(language, "bn", StringComparison.OrdinalIgnoreCase) ? "Bengali" : "English";
+        var disclaimer = Disclaimers.ForLanguage(language);
+        var context = await BuildContextAsync(problemDescription, sections);
+
+        var examples = new StringBuilder();
+        examples.AppendLine(PromptTemplates.FewShotIracExampleEnglish.TrimEnd());
+        examples.AppendLine();
+        examples.Append(PromptTemplates.FewShotIracExampleBangla.TrimEnd());
+
+        return PromptTemplates.RightsExplanationFewShotIrac
+            .Replace("{problem}", problemDescription?.Trim() ?? string.Empty)
+            .Replace("{language}", targetLanguage)
+            .Replace("{examples}", examples.ToString())
+            .Replace("{context}", context)
+            .Replace("{disclaimer}", disclaimer);
+    }
+
+    // Shared by both variants: statutory context lines + curated scenario-mapping
+    // hints (FR-18), identical to the block that previously lived inline in
+    // AssemblePromptAsync.
+    private async Task<string> BuildContextAsync(
+        string problemDescription,
+        IEnumerable<RetrievedSection> sections)
+    {
         var contextBuilder = new StringBuilder();
         var sectionList = sections?.ToList() ?? new List<RetrievedSection>();
 
@@ -67,21 +114,6 @@ public class PromptAssembler : IPromptAssembler
             }
         }
 
-        var context = contextBuilder.ToString().TrimEnd();
-
-        var template = requestType switch
-        {
-            AiRequestType.Drafting => PromptTemplates.DocumentDrafting,
-            _ => PromptTemplates.RightsExplanation,
-        };
-
-        var prompt = template
-            .Replace("{problem}", problemDescription?.Trim() ?? string.Empty)
-            .Replace("{language}", targetLanguage)
-            .Replace("{context}", context)
-            .Replace("{disclaimer}", disclaimer)
-            .Replace("{documentType}", documentType ?? "Legal Document");
-
-        return prompt;
+        return contextBuilder.ToString().TrimEnd();
     }
 }

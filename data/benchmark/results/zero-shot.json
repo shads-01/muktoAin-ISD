@@ -1,0 +1,67 @@
+{
+  "Variant": "zero-shot",
+  "DatasetPath": "dataset.json",
+  "OutputPath": "",
+  "TotalQuestions": 2,
+  "ScoredQuestions": 2,
+  "SkippedQuestions": 0,
+  "MeanPrecision": 0.5,
+  "MeanRecall": 1,
+  "MeanF1": 0.6666666666666666,
+  "Categories": [
+    {
+      "Category": "A",
+      "QuestionCount": 1,
+      "MeanPrecision": 0.5,
+      "MeanRecall": 1,
+      "MeanF1": 0.6666666666666666
+    },
+    {
+      "Category": "B",
+      "QuestionCount": 1,
+      "MeanPrecision": 0.5,
+      "MeanRecall": 1,
+      "MeanF1": 0.6666666666666666
+    }
+  ],
+  "Questions": [
+    {
+      "DatasetId": 1,
+      "Question": "Question 1 about unpaid wages?",
+      "Language": "en",
+      "Category": "A",
+      "Response": "Grounded answer text.\r\n\r\n\u26A0\uFE0F MuktoAin provides general legal information and document drafting assistance. This is NOT formal legal advice. Every document must be reviewed by a verified lawyer before use. For urgent legal matters, consult a qualified advocate.",
+      "Error": null,
+      "CitedReferences": [
+        "Bangladesh Labour Act, 2006, Section 123",
+        "Bangladesh Labour Act, 2006, Section 150"
+      ],
+      "ExpectedReferences": [
+        "Bangladesh Labour Act, 2006, Section 123"
+      ],
+      "Precision": 0.5,
+      "Recall": 1,
+      "F1": 0.6666666666666666
+    },
+    {
+      "DatasetId": 2,
+      "Question": "Question 2 about unpaid wages?",
+      "Language": "en",
+      "Category": "B",
+      "Response": "Grounded answer text.\r\n\r\n\u26A0\uFE0F MuktoAin provides general legal information and document drafting assistance. This is NOT formal legal advice. Every document must be reviewed by a verified lawyer before use. For urgent legal matters, consult a qualified advocate.",
+      "Error": null,
+      "CitedReferences": [
+        "Bangladesh Labour Act, 2006, Section 123",
+        "Bangladesh Labour Act, 2006, Section 150"
+      ],
+      "ExpectedReferences": [
+        "Bangladesh Labour Act, 2006, Section 123"
+      ],
+      "Precision": 0.5,
+      "Recall": 1,
+      "F1": 0.6666666666666666
+    }
+  ],
+  "StartedAt": "2026-09-21T12:47:27.4001776+00:00",
+  "CompletedAt": "2026-09-21T12:47:27.4018189+00:00"
+}

@@ -1,0 +1,67 @@
+@model LawyerPaymentsViewModel
+@using MuktoAin.Web.Controllers
+@{
+    ViewData["Title"] = "আয় ও পেমেন্ট — মুক্ত আইন";
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index" data-bn="হোম" data-en="Home">হোম</a>
+        <span class="sep">/</span>
+        <span data-bn="আয় ও পেমেন্ট" data-en="Payments">আয় ও পেমেন্ট</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker"><i data-lucide="wallet"></i> FR-24</span>
+        <h1 class="page-title" data-bn="আয় ও পেমেন্ট" data-en="Earnings & Payments">আয় ও পেমেন্ট</h1>
+        <p class="page-sub">@Model.LawyerName · Bar #@Model.BarRegistrationNumber</p>
+    </div>
+
+    <div class="card">
+        <div class="row spread wrap" style="align-items: center; gap: 10px">
+            <div>
+                <h2 class="section-h" style="margin:0"><i data-lucide="wallet"></i> <span data-bn="ব্যালেন্স (স্যান্ডবক্স)" data-en="Balance (sandbox)">ব্যালেন্স (স্যান্ডবক্স)</span></h2>
+                <span class="badge badge-warn sandbox-badge tiny" style="display: inline-block; margin-top: 8px;" data-bn="ডেমো মোড — স্যান্ডবক্স পেমেন্ট" data-en="Demo mode — sandbox payments">ডেমো মোড — স্যান্ডবক্স পেমেন্ট</span>
+            </div>
+            <div style="font-size: 32px; font-weight: 700">৳@Model.Balance</div>
+        </div>
+
+        @if (Model.History.Any())
+        {
+            <table style="margin-top: 16px">
+                <thead>
+                    <tr>
+                        <th data-bn="মামলা" data-en="Case">মামলা</th>
+                        <th data-bn="মোট" data-en="Gross">মোট</th>
+                        <th data-bn="কমিশন" data-en="Commission">কমিশন</th>
+                        <th data-bn="নিট" data-en="Net">নিট</th>
+                        <th data-bn="পরিশোধিত" data-en="Paid">পরিশোধিত</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in Model.History)
+                    {
+                        <tr>
+                            <td class="mono">CASE-@e.CaseId</td>
+                            <td>৳@e.Gross</td>
+                            <td>৳@e.Commission</td>
+                            <td><b>৳@e.Net</b></td>
+                            <td class="tiny muted">@e.PaidAt.ToString("d MMM yyyy")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p class="muted tiny" style="margin-top: 12px" data-bn="এখনো কোনো সম্মানী নেই।" data-en="No honoraria yet.">এখনো কোনো সম্মানী নেই।</p>
+        }
+
+        <form asp-action="RequestPayout" method="post" style="margin-top: 16px">
+            @Html.AntiForgeryToken()
+            <button class="btn btn-outline btn-sm" type="submit" @(Model.Balance <= 0 ? "disabled" : "")>
+                <i data-lucide="banknote"></i> <span data-bn="পরিশোধ চান" data-en="Request payout">পরিশোধ চান</span>
+            </button>
+        </form>
+    </div>
+</main>

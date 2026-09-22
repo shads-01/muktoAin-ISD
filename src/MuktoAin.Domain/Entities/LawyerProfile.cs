@@ -22,5 +22,8 @@ public class LawyerProfile
     public string? Specialization { get; set; }
     public DateTime? VerifiedAt { get; set; }
 
+    // Redesign 2026-09 (FR-15): rejection reason shown to the lawyer on resubmit
+    public string? RejectionReason { get; set; }
+
     public ICollection<LawyerReview> Reviews { get; set; } = new List<LawyerReview>();
 }

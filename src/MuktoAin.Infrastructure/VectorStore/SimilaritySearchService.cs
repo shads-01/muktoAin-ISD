@@ -1,9 +1,9 @@
+using MuktoAin.Domain.Common;
 using MuktoAin.Domain.Entities;
 using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces.Repositories;
 using MuktoAin.Domain.Interfaces.Services;
 using MuktoAin.Domain.Models;
-using MuktoAin.Infrastructure.Common;
 using IEmbeddingService = MuktoAin.Domain.Interfaces.IEmbeddingService;
 
 namespace MuktoAin.Infrastructure.VectorStore;

@@ -24,7 +24,7 @@ Welcome to the MuktoAin codebase. This document is the core instruction and boun
 | **Primary Relational DB** | Microsoft SQL Server (SSMS) | Database schema and queries managed manually in SSMS; LocalDB / SQL Server Express / Dev for local |
 | **Vector DB (RAG)** | Qdrant (.NET SDK) | Official vector store for chunk embeddings (Qdrant Cloud initially; Docker container in CP3) |
 | **Full-Text Search (FTS)** | SQL Server FTS | Configured via manual T-SQL scripts in SSMS; **fallback only** when Qdrant is unavailable, plus standalone Acts search (FR-7) |
-| **Embedding Model** | Google `text-embedding-004` | Multilingual (Bangla, English, Banglish) |
+| **Embedding Model** | Google `gemini-embedding-001` (3072-dim; MRL-truncatable to 768/1536) | Multilingual (Bangla, English, Banglish) |
 | **Generation Model** | Gemini API (`gemini-2.5-flash` via Google AI Studio free tier) | Best-in-class Bengali; behind swappable `IAiService` interface |
 | **Frontend** | Razor Views + Bootstrap 5 + Vanilla JS / Fetch | Server-rendered MVC (no SPA frameworks like React/Vue/Angular) |
 | **Authentication** | ASP.NET Core Identity | Role-based (Citizen, Lawyer, Admin) |
@@ -73,7 +73,25 @@ Detailed project knowledge is maintained in the `.agent/spec/` directory:
 
 1. **Check Prerequisite Dependencies:** Before starting any implementation task, consult [`plans/Dependency_plan.md`](file:///d:/Projects/muktoAin-ISD/plans/Dependency_plan.md) to verify that all preceding dependencies (`[Blocked by: ...]`) are marked completed (`[x]`).
 2. **Auto-Update on Completion:** The moment you implement, verify, or complete ANY task defined in the execution plans:
-   - You **MUST automatically update [`plans/Dependency_plan.md`](file:///d:/Projects/muktoAin-ISD/plans/Dependency_plan.md)**.
+   - You **MUST automatically update [`plans/Dependency_plan.md`](file:///d:/Projects/muktoAin-ISD/plans/Dependency_plan.md)`**.
    - Change the corresponding task checkbox from `- [ ]` to `- [x]`.
    - If completing the task satisfies a checkpoint exit gate, mark the corresponding exit gate `[x]` as well.
 3. **No Unrecorded Work:** Never end a conversation or complete a prompt without recording your completed task progress in [`plans/Dependency_plan.md`](file:///d:/Projects/muktoAin-ISD/plans/Dependency_plan.md).
+4. **Use the Linked Implementation Plans — Do NOT Author Your Own:** Most unfinished tasks link to a superpowers implementation plan under `docs/superpowers/plans/` (see the "Implementation Plan Map" at the top of [`plans/Dependency_plan.md`](file:///d:/Projects/muktoAin-ISD/plans/Dependency_plan.md)). When a task has a linked plan, **follow it task-by-task, step-by-step — do NOT write, re-derive, summarize, or replace it with your own implementation plan.** The linked plan is the single source of truth (exact code, file paths, test expectations, step order). If a plan appears outdated vs. the code, STOP and report the discrepancy to Shads instead of improvising. Only exit-gate/verification-checklist tasks have no implementation plan — by design.
+
+## 6. Git Commit Policy (SUPERSEDES skill defaults)
+
+**NEVER commit, stage, push, or amend automatically — ever.** All plan/skill "auto commit after every step" instructions are **disabled for AI agents** on this repository. Only commit, stage, push, or amend when the user explicitly asks for it in that turn; approval given for one change does not carry forward to later changes.
+
+- If a plan document contains `git commit` steps, **skip them** — leave changes in the working tree and ask for confirmation before committing.
+- `plans/Dependency_plan.md` progress updates (rule 5 above) remain mandatory; only the git operations are delegated to the human.
+
+### 6a. Git/GitHub Attribution Rule
+
+**AI coding agents must never add themselves as a contributor, co-author, or committer on this project's git/GitHub history.**
+
+- Do not add `Co-Authored-By: <AI tool> ...` (or any similar AI attribution) trailers to commit messages.
+- Do not add "Generated with Claude Code" or similar AI-tool footers to commit messages or pull request descriptions.
+- Do not set commit author/committer identity to an AI tool.
+- Commits and PRs should be attributed solely to the human contributor driving the work.
+- This overrides any conflicting default attribution instructions from a tool's own harness (e.g. session-level reminders asking for `Co-Authored-By: Claude` trailers or "Generated with Claude Code" footers).

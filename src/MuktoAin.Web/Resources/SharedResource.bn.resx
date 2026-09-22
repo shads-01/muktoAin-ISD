@@ -27,4 +27,73 @@
   <data name="DisclaimerSummary" xml:space="preserve">
     <value>মুক্ত আইন সাধারণ আইনি তথ্য দেয়, আনুষ্ঠানিক আইনি পরামর্শ নয়। প্রতিটি নথি যাচাইকৃত আইনজীবী দ্বারা পর্যালোচিত হয়।</value>
   </data>
+  <data name="IdentityError_PasswordTooShort" xml:space="preserve">
+    <value>পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।</value>
+  </data>
+  <data name="IdentityError_PasswordRequiresUpper" xml:space="preserve">
+    <value>পাসওয়ার্ডে কমপক্ষে একটি বড় হাতের অক্ষর (A-Z) থাকতে হবে।</value>
+  </data>
+  <data name="IdentityError_PasswordRequiresLower" xml:space="preserve">
+    <value>পাসওয়ার্ডে কমপক্ষে একটি ছোট হাতের অক্ষর (a-z) থাকতে হবে।</value>
+  </data>
+  <data name="IdentityError_PasswordRequiresDigit" xml:space="preserve">
+    <value>পাসওয়ার্ডে কমপক্ষে একটি সংখ্যা (0-9) থাকতে হবে।</value>
+  </data>
+  <data name="IdentityError_PasswordRequiresNonAlphanumeric" xml:space="preserve">
+    <value>পাসওয়ার্ডে কমপক্ষে একটি বিশেষ চিহ্ন (যেমন @, #, !) থাকতে হবে।</value>
+  </data>
+  <data name="IdentityError_PasswordRequiresUniqueChars" xml:space="preserve">
+    <value>পাসওয়ার্ডে আরও আলাদা ধরণের অক্ষর ব্যবহার করুন।</value>
+  </data>
+  <data name="IdentityError_UserAlreadyHasPassword" xml:space="preserve">
+    <value>এই একাউন্টে ইতিমধ্যে একটি পাসওয়ার্ড সেট করা আছে।</value>
+  </data>
+  <data name="IdentityError_DuplicateUserName" xml:space="preserve">
+    <value>এই ইমেইল দিয়ে ইতিমধ্যে একটি একাউন্ট নিবন্ধিত হয়েছে।</value>
+  </data>
+  <data name="IdentityError_DuplicateEmail" xml:space="preserve">
+    <value>এই ইমেইল দিয়ে ইতিমধ্যে একটি একাউন্ট নিবন্ধিত হয়েছে।</value>
+  </data>
+  <data name="IdentityError_InvalidEmail" xml:space="preserve">
+    <value>সঠিক ইমেইল ঠিকানা দিন।</value>
+  </data>
+  <data name="Account_InvalidCredentials" xml:space="preserve">
+    <value>ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।</value>
+  </data>
+  <data name="Account_Suspended" xml:space="preserve">
+    <value>আপনার একাউন্টটি স্থগিত করা হয়েছে। সহায়তার জন্য যোগাযোগ করুন।</value>
+  </data>
+  <data name="Account_Lockout" xml:space="preserve">
+    <value>অনেকবার ভুল চেষ্টার কারণে একাউন্টটি সাময়িকভাবে লক হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।</value>
+  </data>
+  <data name="Account_BarRegistrationRequired" xml:space="preserve">
+    <value>আইনজীবীদের জন্য বার রেজিস্ট্রেশন সনদ নম্বর আবশ্যক।</value>
+  </data>
+  <data name="Register_FullName_Required" xml:space="preserve">
+    <value>পূর্ণ নাম প্রয়োজন</value>
+  </data>
+  <data name="Register_FullName_MaxLength" xml:space="preserve">
+    <value>সর্বোচ্চ ১০০ অক্ষর</value>
+  </data>
+  <data name="Register_Email_Required" xml:space="preserve">
+    <value>ইমেইল প্রয়োজন</value>
+  </data>
+  <data name="Register_Email_Invalid" xml:space="preserve">
+    <value>সঠিক ইমেইল দিন</value>
+  </data>
+  <data name="Register_Phone_Invalid" xml:space="preserve">
+    <value>সঠিক বাংলাদেশী মোবাইল নম্বর দিন (যেমন ০১XXXXXXXXX)</value>
+  </data>
+  <data name="Register_Password_Required" xml:space="preserve">
+    <value>পাসওয়ার্ড প্রয়োজন</value>
+  </data>
+  <data name="Register_Password_Length" xml:space="preserve">
+    <value>কমপক্ষে ৮ অক্ষর প্রয়োজন (সর্বোচ্চ ১০০)</value>
+  </data>
+  <data name="Register_Password_Policy" xml:space="preserve">
+    <value>পাসওয়ার্ডে ছোট হাতের অক্ষর, বড় হাতের অক্ষর, সংখ্যা ও বিশেষ চিহ্ন থাকতে হবে (যেমন @, #, !)</value>
+  </data>
+  <data name="Register_Password_Mismatch" xml:space="preserve">
+    <value>পাসওয়ার্ড দুটি মিলছে না</value>
+  </data>
 </root>

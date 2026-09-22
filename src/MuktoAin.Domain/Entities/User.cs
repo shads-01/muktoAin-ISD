@@ -21,5 +21,9 @@ public class User : IdentityUser<int>
     public int? CreatedByAdminId { get; set; }
     public User? CreatedByAdmin { get; set; }
 
+    // SuperAdmin can create/suspend/promote other Admin accounts; a regular
+    // Admin cannot. Meaningful only when Role == UserRole.Admin.
+    public bool IsSuperAdmin { get; set; }
+
     public DateTime CreatedAt { get; set; }
 }

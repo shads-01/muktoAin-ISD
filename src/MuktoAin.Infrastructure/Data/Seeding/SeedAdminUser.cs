@@ -16,13 +16,21 @@ namespace MuktoAin.Infrastructure.Data.Seeding;
 // shape; CHANGE THE PASSWORD before any real deployment.
 public static class SeedAdminUser
 {
+    // Bootstrap defaults used only when SeedAdmin:Email / SeedAdmin:Password
+    // aren't configured. Views/Account/Login.cshtml's "Quick Demo Fill" admin
+    // button references these same constants (mirroring SeedDemoUsers'
+    // CitizenEmail/CitizenPassword pattern) so the demo button can never drift
+    // out of sync with the actual bootstrap password again.
+    public const string DefaultEmail = "admin@muktoain.bd";
+    public const string DefaultPassword = "Admin@123!";
+
     public static async Task SeedAsync(
         UserManager<User> userManager,
         IConfiguration configuration,
         ILogger logger)
     {
-        var email = configuration["SeedAdmin:Email"] ?? "admin@muktoain.bd";
-        var password = configuration["SeedAdmin:Password"] ?? "ChangeMe!2026";
+        var email = configuration["SeedAdmin:Email"] ?? DefaultEmail;
+        var password = configuration["SeedAdmin:Password"] ?? DefaultPassword;
 
         if (string.IsNullOrWhiteSpace(configuration["SeedAdmin:Password"]))
         {
@@ -34,6 +42,38 @@ public static class SeedAdminUser
         var existing = await userManager.FindByEmailAsync(email);
         if (existing is not null)
         {
+            if (!await userManager.CheckPasswordAsync(existing, password))
+            {
+                var token = await userManager.GeneratePasswordResetTokenAsync(existing);
+                var resetResult = await userManager.ResetPasswordAsync(existing, token, password);
+                if (resetResult.Succeeded)
+                {
+                    logger.LogInformation("Synchronized password for admin user {Email}.", email);
+                }
+                else
+                {
+                    var errors = string.Join("; ", resetResult.Errors.Select(e => $"{e.Code}: {e.Description}"));
+                    logger.LogWarning("Failed to synchronize password for admin user {Email}: {Errors}", email, errors);
+                }
+            }
+
+            // Admins seeded before scripts/12_add_user_issuperadmin.sql got the
+            // column default (0), leaving no SuperAdmin to refund, approve payouts,
+            // or promote anyone. The bootstrap admin is always the SuperAdmin.
+            if (existing.Role == UserRole.Admin && !existing.IsSuperAdmin)
+            {
+                existing.IsSuperAdmin = true;
+                var promoteResult = await userManager.UpdateAsync(existing);
+                if (promoteResult.Succeeded)
+                {
+                    logger.LogInformation("Promoted bootstrap admin {Email} to SuperAdmin.", email);
+                }
+                else
+                {
+                    var errors = string.Join("; ", promoteResult.Errors.Select(e => $"{e.Code}: {e.Description}"));
+                    logger.LogWarning("Failed to promote bootstrap admin {Email} to SuperAdmin: {Errors}", email, errors);
+                }
+            }
             return;
         }
 
@@ -43,6 +83,7 @@ public static class SeedAdminUser
             UserName = email,
             Email = email,
             Role = UserRole.Admin,
+            IsSuperAdmin = true,
             AccountStatus = AccountStatus.Active,
             PreferredLanguage = "bn",
             EmailConfirmed = true,
