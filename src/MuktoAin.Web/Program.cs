@@ -447,6 +447,10 @@ using (var scope = app.Services.CreateScope())
 
         // Finalized, unpaid cases for citizen@muktoain.bd to try the honorarium payment on.
         await SeedDemoPaymentCases.SeedAsync(context, userManager, encryptionService, logger);
+
+        // One approved lawyer per specialization + one queued case per category,
+        // for the queue's "My field" filter.
+        await SeedSpecializationDemo.SeedAsync(context, userManager, encryptionService, logger);
     }
 
     var vectorStore = scope.ServiceProvider.GetRequiredService<QdrantVectorStore>();

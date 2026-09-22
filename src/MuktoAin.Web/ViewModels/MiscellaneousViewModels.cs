@@ -176,6 +176,7 @@ public class LawyerQueueViewModel
     public string Specialization { get; set; } = string.Empty;
     public int PendingCount { get; set; }
     public string ActiveFilter { get; set; } = "All";
+    public bool FieldFallback { get; set; } // "My field" had no usable specialization
 
     // AUD-8: pagination (mirrors LawyerHistoryViewModel)
     public int Page { get; set; } = 1;

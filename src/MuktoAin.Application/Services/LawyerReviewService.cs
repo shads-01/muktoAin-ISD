@@ -8,7 +8,8 @@ using MuktoAin.Domain.Interfaces.Repositories;
 
 namespace MuktoAin.Application.Services;
 
-// FR-13/14/23: specialization-pool queue with claim-based optimistic lock
+// FR-13/14/23: shared review pool (with an optional "My field" filter by
+// specialization) and a claim-based optimistic lock
 // (one active review per lawyer; opening a doc claims it), decisions with
 // mandatory comments. Rejection reason flows to the citizen's case page and
 // (via the chat return link) into the salvage conversation.
@@ -56,8 +57,12 @@ public class LawyerReviewService
     }
 
     // Queue = documents in UnderReview, oldest-first (SLA age shown by the view).
-    // filter: "All" (default) | "Unclaimed" | "Mine". CanOpen allows re-entry
-    // into the lawyer's OWN claimed doc (ClaimAsync auto-allows same lawyer).
+    // filter: "All" (default) | "Unclaimed" | "Mine" | "MyField". CanOpen
+    // allows re-entry into the lawyer's OWN claimed doc (ClaimAsync
+    // auto-allows same lawyer).
+    // MyField: documents the lawyer can open whose case category matches their
+    // Specialization (same keyword rule as LawyerQueueNotifier). A blank or
+    // unmatched specialization falls back to the full pool with FieldFallback set.
     // AUD-8: paged — the page slice is taken BEFORE the expensive per-document
     // enrichment loop so a large backlog enriches only the visible page.
     public async Task<QueuePageDto> GetQueueAsync(
@@ -66,11 +71,30 @@ public class LawyerReviewService
         var docs = (await _docRepo.GetAllAsync())
             .Where(d => d.Status == DocumentStatus.UnderReview)
             .AsEnumerable();
+        var fieldFallback = false;
 
         if (filter == "Unclaimed")
             docs = docs.Where(d => !d.AssignedLawyerProfileId.HasValue);
         else if (filter == "Mine" && lawyerProfileId.HasValue)
             docs = docs.Where(d => d.AssignedLawyerProfileId == lawyerProfileId.Value);
+        else if (filter == "MyField" && lawyerProfileId.HasValue)
+        {
+            var profile = await _profileRepo.GetByIdAsync(lawyerProfileId.Value);
+            var specialization = profile?.Specialization;
+            if (LawyerQueueNotifier.MatchesAnyCategory(specialization))
+            {
+                var categoryByCase = (await _caseRepo.GetAllAsync())
+                    .ToDictionary(c => c.CaseId, c => c.CategoryId);
+                docs = docs.Where(d =>
+                    (!d.AssignedLawyerProfileId.HasValue || d.AssignedLawyerProfileId == lawyerProfileId.Value)
+                    && categoryByCase.TryGetValue(d.CaseId, out var categoryId)
+                    && LawyerQueueNotifier.MatchesCategory(specialization, categoryId));
+            }
+            else
+            {
+                fieldFallback = true;
+            }
+        }
 
         var ordered = docs.OrderBy(d => d.CreatedAt).ToList();
         var totalCount = ordered.Count;
@@ -103,7 +127,7 @@ public class LawyerReviewService
                 CanOpen: !d.AssignedLawyerProfileId.HasValue
                       || d.AssignedLawyerProfileId == lawyerProfileId));
         }
-        return new QueuePageDto(totalCount, result);
+        return new QueuePageDto(totalCount, result, fieldFallback);
     }
 
     // Claim = optimistic lock. Returns false if another lawyer already holds it.
