@@ -70,12 +70,16 @@ This document specifies the implicit and explicit service contracts for the `Muk
 | Route | Method | Authorization | Parameters / ViewModel | Injected Services & Dependencies | Description |
 |---|---|---|---|---|---|
 | `/Admin/Dashboard` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IAdminAnalyticsService`, `AppDbContext` | System metrics, category breakdowns, district distribution, AI failure rates |
-| `/Admin/Users` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IUserManagementService`, `UserManager<User>` | User account administration, role assignment, and suspension toggle |
-| `/Admin/Users/{id}/Suspend`| `POST` | `[Authorize(Roles = "Admin")]` | `int id` | `IUserManagementService` | Toggles user account status between `Active` and `Suspended` |
-| `/Admin/Lawyers` | `GET` | `[Authorize(Roles = "Admin")]` | — | `ILawyerVerificationService` | Admin verification queue for lawyer bar credentials |
-| `/Admin/Lawyers/{id}/Verify`| `POST`| `[Authorize(Roles = "Admin")]` | `int id, bool approve` | `ILawyerVerificationService` | Approves or rejects lawyer verification applications |
-| `/Admin/Acts` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IActRepository`, `IEmbeddingBatchJob` | Bangladesh Acts corpus management and embedding status |
-| `/Admin/ScenarioMappings` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IScenarioMappingRepository`, `IScenarioMappingService` | Keyword-to-statute grounding boosts management (FR-18) |
+| `/Admin/Users` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IUserManagementService`, `UserManager<User>` | User account administration, role assignment, and suspension toggle. Currently returns `MockData.SampleUsers` |
+| `/Admin/Users/Suspend/{id}` | `POST` | `[Authorize(Roles = "Admin")]` | `int id` | `IUserManagementService` | Sets account status to `Suspended` (`AccountStatus.Suspended`) |
+| `/Admin/Users/Activate/{id}` | `POST` | `[Authorize(Roles = "Admin")]` | `int id` | `IUserManagementService` | Sets account status back to `Active` (`AccountStatus.Active`) |
+| `/Admin/Lawyers` | `GET` | `[Authorize(Roles = "Admin")]` | — | `ILawyerVerificationService` | Admin verification queue for lawyer bar credentials. Currently returns `MockData.SampleLawyers` |
+| `/Admin/Lawyers/Verify/{id}` | `POST` | `[Authorize(Roles = "Admin")]` | `int id, bool approve` | `ILawyerVerificationService` | Approves (`approve=true`) or rejects (`approve=false`) lawyer verification applications |
+| `/Admin/Acts` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IActRepository`, `IEmbeddingBatchJob` | Bangladesh Acts corpus management and embedding status. Currently returns `MockData.SampleActs` |
+| `/Admin/Acts/Reindex/{id}` | `POST` | `[Authorize(Roles = "Admin")]` | `int id` | `IActsManagementService`, `IEmbeddingBatchJob` | Triggers vector re-indexing for a single Act (SHA256 checksum diff) |
+| `/Admin/ScenarioMappings` | `GET` | `[Authorize(Roles = "Admin")]` | — | `IScenarioMappingRepository`, `IScenarioMappingService` | Keyword-to-statute grounding boosts management (FR-18). Currently returns `MockData.SampleMappings` + `MockData.SampleScenarioSections` |
+| `/Admin/ScenarioMappings/AddMapping` | `POST` | `[Authorize(Roles = "Admin")]` | `ScenarioMappingAddViewModel model` | `IScenarioMappingService` | Creates a keyword→`SectionId` boost mapping |
+| `/Admin/ScenarioMappings/DeleteMapping/{id}` | `POST` | `[Authorize(Roles = "Admin")]` | `int id` | `IScenarioMappingService` | Deletes a boost mapping by `MappingId` |
 
 ---
 
