@@ -25,8 +25,8 @@ public class ChatControllerTests
     private static Mock<IAiTurnReservationStore> DefaultReservationStore()
     {
         var store = new Mock<IAiTurnReservationStore>();
-        store.Setup(s => s.TryReserveAsync(It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync(true);
+        store.Setup(s => s.TryReserveAsync(It.IsAny<int?>(), It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+             .ReturnsAsync(new TurnReservation(1, PaidWithCredit: false));
         return store;
     }
 
@@ -49,8 +49,7 @@ public class ChatControllerTests
             Mock.Of<IChatHistoryRepository>(),
             Mock.Of<IRepository<Notification>>());
 
-        var budgetService = new AiBudgetService(
-            Mock.Of<IRepository<AiLog>>(), _store.Object);
+        var budgetService = new AiBudgetService(_store.Object);
 
         var httpContext = new DefaultHttpContext
         {
@@ -96,7 +95,7 @@ public class ChatControllerTests
             Mock.Of<IChatHistoryRepository>(),
             Mock.Of<IRepository<Notification>>());
         var controller = new ChatController(service,
-            new AiBudgetService(Mock.Of<IRepository<AiLog>>(), DefaultReservationStore().Object),
+            new AiBudgetService(DefaultReservationStore().Object),
             Mock.Of<IActSectionRepository>()) { ControllerContext = _controller.ControllerContext };
         if (!adopted) controller.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
         controller.HttpContext.Session.SetString("mkt-chatkey", "synthetic-key");
@@ -127,7 +126,7 @@ public class ChatControllerTests
         var result = await _controller.Ask(new ChatAskRequest
             { ChatSessionId = 15, Question = "Synthetic question", Mode = mode });
         Assert.IsType<ConflictObjectResult>(result);
-        _store.Verify(s => s.TryReserveAsync(It.IsAny<DateTime>(), It.IsAny<int>(),
+        _store.Verify(s => s.TryReserveAsync(It.IsAny<int?>(), It.IsAny<DateTime>(), It.IsAny<int>(),
             It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -294,8 +293,8 @@ public class ChatControllerTests
         _sessionRepo.Setup(r => r.GetByIdAsync(15)).ReturnsAsync(session);
 
         var store = new Mock<IAiTurnReservationStore>();
-        store.Setup(s => s.TryReserveAsync(It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync(false);
+        store.Setup(s => s.TryReserveAsync(It.IsAny<int?>(), It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+             .ReturnsAsync((TurnReservation?)null);
         var chatService = new ChatService(
             _sessionRepo.Object,
             Mock.Of<IRepository<ChatMessage>>(),
@@ -312,7 +311,7 @@ public class ChatControllerTests
             Mock.Of<IAiLogService>(),
             Mock.Of<IChatHistoryRepository>(),
             Mock.Of<IRepository<Notification>>());
-        var controller = new ChatController(chatService, new AiBudgetService(Mock.Of<IRepository<AiLog>>(), store.Object), Mock.Of<IActSectionRepository>())
+        var controller = new ChatController(chatService, new AiBudgetService(store.Object), Mock.Of<IActSectionRepository>())
         {
             ControllerContext = _controller.ControllerContext
         };
@@ -333,13 +332,15 @@ public class ChatControllerTests
         {
             ChatSessionId = 15,
             UserId = 42,
-            Title = "My Chat"
+            Title = "My Chat",
+            // The turn cache is keyed by the case file; without one it never hits.
+            CaseFileJson = "{\"district\":\"Dhaka\",\"facts\":\"wage theft\"}"
         };
         _sessionRepo.Setup(r => r.GetByIdAsync(15)).ReturnsAsync(session);
 
         var store = new Mock<IAiTurnReservationStore>();
-        store.Setup(s => s.TryReserveAsync(It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync(true);
+        store.Setup(s => s.TryReserveAsync(It.IsAny<int?>(), It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+             .ReturnsAsync(new TurnReservation(1, PaidWithCredit: false));
 
         var cacheRepo = new Mock<IRepository<AnswerCache>>();
         var description = ChatService.CaseFileToDescription("{\"district\":\"Dhaka\",\"facts\":\"wage theft\"}");
@@ -375,7 +376,7 @@ public class ChatControllerTests
             Mock.Of<IAiLogService>(),
             Mock.Of<IChatHistoryRepository>(),
             Mock.Of<IRepository<Notification>>());
-        var controller = new ChatController(chatService, new AiBudgetService(Mock.Of<IRepository<AiLog>>(), store.Object), Mock.Of<IActSectionRepository>())
+        var controller = new ChatController(chatService, new AiBudgetService(store.Object), Mock.Of<IActSectionRepository>())
         {
             ControllerContext = _controller.ControllerContext
         };
@@ -383,7 +384,7 @@ public class ChatControllerTests
         var result = await controller.Ask(new ChatAskRequest { ChatSessionId = 15, Question = "repeat?" });
 
         Assert.IsType<JsonResult>(result);
-        store.Verify(s => s.ReleaseOneAsync(It.IsAny<CancellationToken>()), Times.Once);
+        store.Verify(s => s.ReleaseAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // A6: the citation endpoint returns the authoritative statutory text for
@@ -419,8 +420,7 @@ public class ChatControllerTests
             Mock.Of<IAiLogService>(),
             Mock.Of<IChatHistoryRepository>(),
             Mock.Of<IRepository<Notification>>());
-        var controller = new ChatController(chatService, new AiBudgetService(
-            Mock.Of<IRepository<AiLog>>(), DefaultReservationStore().Object), sectionRepo.Object)
+        var controller = new ChatController(chatService, new AiBudgetService(DefaultReservationStore().Object), sectionRepo.Object)
         {
             ControllerContext = _controller.ControllerContext
         };
@@ -470,8 +470,7 @@ public class ChatControllerTests
             Mock.Of<IAiLogService>(),
             Mock.Of<IChatHistoryRepository>(),
             Mock.Of<IRepository<Notification>>());
-        var controller = new ChatController(chatService, new AiBudgetService(
-            Mock.Of<IRepository<AiLog>>(), DefaultReservationStore().Object), Mock.Of<IActSectionRepository>())
+        var controller = new ChatController(chatService, new AiBudgetService(DefaultReservationStore().Object), Mock.Of<IActSectionRepository>())
         {
             ControllerContext = _controller.ControllerContext
         };
@@ -500,8 +499,8 @@ public class ChatControllerTests
         _sessionRepo.Setup(r => r.GetByIdAsync(15)).ReturnsAsync(session);
 
         var store = new Mock<IAiTurnReservationStore>();
-        store.Setup(s => s.TryReserveAsync(It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync(true);
+        store.Setup(s => s.TryReserveAsync(It.IsAny<int?>(), It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+             .ReturnsAsync(new TurnReservation(1, PaidWithCredit: false));
 
         var scenarioRepo = new Mock<IScenarioMappingRepository>();
         scenarioRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<ScenarioMapping>());
@@ -524,23 +523,22 @@ public class ChatControllerTests
             Mock.Of<IAiLogService>(),
             Mock.Of<IChatHistoryRepository>(),
             Mock.Of<IRepository<Notification>>());
-        var controller = new ChatController(chatService, new AiBudgetService(Mock.Of<IRepository<AiLog>>(), store.Object), Mock.Of<IActSectionRepository>())
+        var controller = new ChatController(chatService, new AiBudgetService(store.Object), Mock.Of<IActSectionRepository>())
         {
             ControllerContext = _controller.ControllerContext
         };
 
         await controller.Ask(new ChatAskRequest { ChatSessionId = 15, Question = "wages", Mode = "search" });
 
-        store.Verify(s => s.TryReserveAsync(It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
-        store.Verify(s => s.ReleaseOneAsync(It.IsAny<CancellationToken>()), Times.Never);
+        store.Verify(s => s.TryReserveAsync(It.IsAny<int?>(), It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        store.Verify(s => s.ReleaseAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    // AUD-3 (double-count guard): the orchestration pipeline logs its own
-    // AI_LOG row for a real model turn, so the controller must RELEASE the
-    // reservation row on the success path too — otherwise every real turn
-    // counts twice against the daily quota (guests 10 -> 5 effective).
+    // The CHAT_TURN reservation IS the charge (AI_LOG rows are no longer
+    // counted), so a real model turn must KEEP it — releasing it would make
+    // every real turn free and hand back a spent credit.
     [Fact]
-    public async Task Ask_WhenRealTurnSucceeds_ReleasesReservation()
+    public async Task Ask_WhenRealTurnSucceeds_KeepsReservation()
     {
         var session = new ChatSession
         {
@@ -555,8 +553,8 @@ public class ChatControllerTests
               .ReturnsAsync(new RightsExplanationDto("Answer", new List<CitedSectionDto>(), "disc"));
 
         var store = new Mock<IAiTurnReservationStore>();
-        store.Setup(s => s.TryReserveAsync(It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync(true);
+        store.Setup(s => s.TryReserveAsync(It.IsAny<int?>(), It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+             .ReturnsAsync(new TurnReservation(1, PaidWithCredit: false));
 
         var chatService = new ChatService(
             _sessionRepo.Object,
@@ -574,7 +572,7 @@ public class ChatControllerTests
             Mock.Of<IAiLogService>(),
             Mock.Of<IChatHistoryRepository>(),
             Mock.Of<IRepository<Notification>>());
-        var controller = new ChatController(chatService, new AiBudgetService(Mock.Of<IRepository<AiLog>>(), store.Object), Mock.Of<IActSectionRepository>())
+        var controller = new ChatController(chatService, new AiBudgetService(store.Object), Mock.Of<IActSectionRepository>())
         {
             ControllerContext = _controller.ControllerContext
         };
@@ -582,7 +580,49 @@ public class ChatControllerTests
         var result = await controller.Ask(new ChatAskRequest { ChatSessionId = 15, Question = "Unpaid wages?" });
 
         Assert.IsType<JsonResult>(result);
-        store.Verify(s => s.ReleaseOneAsync(It.IsAny<CancellationToken>()), Times.Once);
+        store.Verify(s => s.ReleaseAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // A turn that throws gave the citizen no answer: its reservation (and a
+    // spent credit) goes back.
+    [Fact]
+    public async Task Ask_WhenTurnThrows_ReleasesReservation()
+    {
+        var session = new ChatSession { ChatSessionId = 15, UserId = 42, Title = "My Chat",
+            CaseFileJson = "{\"facts\":\"wage theft\"}" }; // reaches the (throwing) cache lookup
+        _sessionRepo.Setup(r => r.GetByIdAsync(15)).ReturnsAsync(session);
+
+        var store = new Mock<IAiTurnReservationStore>();
+        store.Setup(s => s.TryReserveAsync(It.IsAny<int?>(), It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+             .ReturnsAsync(new TurnReservation(5, PaidWithCredit: true));
+        var cacheRepo = new Mock<IRepository<AnswerCache>>();
+        cacheRepo.Setup(r => r.GetAllAsync()).ThrowsAsync(new InvalidOperationException("synthetic failure"));
+
+        var chatService = new ChatService(
+            _sessionRepo.Object,
+            Mock.Of<IRepository<ChatMessage>>(),
+            Mock.Of<IRepository<Case>>(),
+            Mock.Of<ICaseRepository>(),
+            cacheRepo.Object,
+            Mock.Of<IRightsExplanationService>(),
+            null!,
+            Mock.Of<IEncryptionService>(),
+            Mock.Of<IScenarioMappingRepository>(),
+            Mock.Of<MuktoAin.Domain.Interfaces.Services.IKeywordSectionSearch>(),
+            Mock.Of<IRepository<District>>(),
+            Mock.Of<MuktoAin.Domain.Interfaces.IAiService>(),
+            Mock.Of<IAiLogService>(),
+            Mock.Of<IChatHistoryRepository>(),
+            Mock.Of<IRepository<Notification>>());
+        var controller = new ChatController(chatService, new AiBudgetService(store.Object), Mock.Of<IActSectionRepository>())
+        {
+            ControllerContext = _controller.ControllerContext
+        };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            controller.Ask(new ChatAskRequest { ChatSessionId = 15, Question = "Unpaid wages?" }));
+
+        store.Verify(s => s.ReleaseAsync(5, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

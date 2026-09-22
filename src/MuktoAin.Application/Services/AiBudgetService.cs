@@ -1,26 +1,22 @@
 using MuktoAin.Application.DTOs;
-using MuktoAin.Domain.Entities;
-using MuktoAin.Domain.Enums;
 using MuktoAin.Domain.Interfaces;
-using MuktoAin.Domain.Interfaces.Repositories;
 
 namespace MuktoAin.Application.Services;
 
-// FR-20 quota meter. A chat turn = a RightsExplanation run logged with
-// CaseId = null (unsaved chat cases); committed cases always carry their
-// CaseId, so case-critical generation is never charged to a citizen's chat
-// quota. Guests ~10/day per browser session, signed-in ~30/day. Resets at
+// FR-20 quota meter, per user. A chat turn = a CHAT_TURN reservation row
+// (AiTurnReservationStore). Signed-in users get SignedInDailyLimit free turns
+// a day each, then spend chat credits bought by TopUp. Guests share one pool
+// of GuestDailyLimit free turns a day and cannot buy credits. Resets at
 // midnight Pacific (matches Gemini RPD reset).
 public class AiBudgetService
 {
     private const int GuestDailyLimit = 10;
     private const int SignedInDailyLimit = 30;
 
-    private readonly IRepository<AiLog> _logRepo;
     private readonly IAiTurnReservationStore _reservationStore;
 
-    public AiBudgetService(IRepository<AiLog> logRepo, IAiTurnReservationStore reservationStore)    {
-        _logRepo = logRepo;
+    public AiBudgetService(IAiTurnReservationStore reservationStore)
+    {
         _reservationStore = reservationStore;
     }
 
@@ -41,38 +37,26 @@ public class AiBudgetService
 
     public async Task<QuotaSnapshotDto> GetRemainingToday(int? userId, string? sessionKey)
     {
-        var since = PacificMidnightUtc();
-        var logs = await _logRepo.GetAllAsync();
-        // A chat turn = a RightsExplanation run with NO case attached
-        // (unsaved chat cases log CaseId = null; committed cases always
-        // carry their CaseId). Case-critical generation is never counted.
-        var used = logs.Count(l =>
-            l.CreatedAt >= since
-            && l.RequestType == AiRequestType.RightsExplanation
-            && l.CaseId == null);
+        var used = await _reservationStore.CountFreeTurnsAsync(userId, PacificMidnightUtc());
         var limit = DailyLimitFor(userId.HasValue);
-        return new QuotaSnapshotDto(Math.Max(0, limit - used), limit, userId.HasValue);
+        var credits = userId.HasValue
+            ? Math.Max(0, await _reservationStore.GetCreditBalanceAsync(userId.Value))
+            : 0;
+        return new QuotaSnapshotDto(Math.Max(0, limit - used), limit, userId.HasValue, credits);
     }
 
-    // AUD-3: atomic reserve-before-call. The reservation row (written by the
-    // store in one T-SQL statement) is an AI_LOG row, so GetRemainingToday
-    // counts it immediately — a second concurrent request hits the wall here
-    // instead of after both Gemini calls have already fired.
-    public async Task<bool> TryReserveTurnAsync(int? userId, string? sessionKey)
-    {
-        var since = PacificMidnightUtc();
-        var limit = DailyLimitFor(userId.HasValue);
-        return await _reservationStore.TryReserveAsync(since, limit);
-    }
+    // AUD-3: atomic reserve-before-call — a second concurrent request hits the
+    // wall here instead of after both Gemini calls have already fired. Uses a
+    // free turn first, then a credit. Null = daily limit reached and no credits.
+    public Task<TurnReservation?> TryReserveTurnAsync(int? userId, string? sessionKey) =>
+        _reservationStore.TryReserveAsync(userId, PacificMidnightUtc(), DailyLimitFor(userId.HasValue));
 
-    // Gives a reserved turn back when the turn turned out to be free
-    // (cache hit / retrieval-only — no model call was made).
-    public Task ReleaseReservationAsync() => _reservationStore.ReleaseOneAsync();
+    // Gives a reserved turn back (and its credit, if it spent one) when the
+    // turn turned out to be free: cache hit, retrieval-only, blocked, or failed.
+    public Task ReleaseReservationAsync(TurnReservation reservation) =>
+        _reservationStore.ReleaseAsync(reservation.TurnId);
 
-    public Task<QuotaSnapshotDto> RecordTurnUsed(int? userId, string? sessionKey)
-    {
-        // The turn was already logged to AI_LOG by the orchestration pipeline;
-        // metering reads the log, so this is a read-back only.
-        return GetRemainingToday(userId, sessionKey);
-    }
+    // The kept reservation row is the charge; this is a read-back only.
+    public Task<QuotaSnapshotDto> RecordTurnUsed(int? userId, string? sessionKey) =>
+        GetRemainingToday(userId, sessionKey);
 }
