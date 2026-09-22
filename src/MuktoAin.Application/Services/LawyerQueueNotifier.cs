@@ -47,6 +47,11 @@ public class LawyerQueueNotifier
         return CategoryKeywords.TryGetValue(categoryId, out var keywords) && keywords.Any(s.Contains);
     }
 
+    // True when the specialization matches at least one case category, i.e.
+    // it is usable for narrowing the review queue to the lawyer's field.
+    public static bool MatchesAnyCategory(string? specialization) =>
+        CategoryKeywords.Keys.Any(id => MatchesCategory(specialization, id));
+
     public async Task NotifyDocumentQueuedAsync(
         int caseId, int documentId, int categoryId, int? assignedLawyerProfileId)
     {

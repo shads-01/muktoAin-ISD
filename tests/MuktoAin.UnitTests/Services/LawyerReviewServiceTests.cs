@@ -760,4 +760,84 @@ public class LawyerReviewServiceTests
         Assert.Equal(13, result.TotalCount); // 13 odd-numbered docs (1..25) are unclaimed
         Assert.Equal(13, result.Items.Count);
     }
+
+    // ── "My field" filter: specialization-wise queue ─────────────────────
+
+    // Three queued docs: case 10 = Labour (cat 1), case 20 = Criminal (cat 2),
+    // case 30 = Consumer (cat 4). Lawyer 5 is the caller.
+    private void SetUpMixedCategoryQueue(string? specialization)
+    {
+        var docs = new List<GeneratedDocument>
+        {
+            new() { DocumentId = 1, CaseId = 10, Status = DocumentStatus.UnderReview, CreatedAt = new DateTime(2026, 9, 1) },
+            new() { DocumentId = 2, CaseId = 20, Status = DocumentStatus.UnderReview, CreatedAt = new DateTime(2026, 9, 2) },
+            new() { DocumentId = 3, CaseId = 30, Status = DocumentStatus.UnderReview, CreatedAt = new DateTime(2026, 9, 3) },
+        };
+        _docRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(docs);
+        SetUpCase(10, "Case A", 1, "Labour", 1, "Dhaka");
+        SetUpCase(20, "Case B", 2, "General Diary", 1, "Dhaka");
+        SetUpCase(30, "Case C", 4, "Consumer", 1, "Dhaka");
+        _caseRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Case>
+        {
+            new() { CaseId = 10, CategoryId = 1 },
+            new() { CaseId = 20, CategoryId = 2 },
+            new() { CaseId = 30, CategoryId = 4 },
+        });
+        _profileRepo.Setup(r => r.GetByIdAsync(5))
+            .ReturnsAsync(new LawyerProfile { LawyerProfileId = 5, BarRegistrationNumber = "BAR-5", Specialization = specialization });
+    }
+
+    [Fact]
+    public async Task GetQueueAsync_FilterMyField_ReturnsOnlyCasesMatchingSpecialization()
+    {
+        SetUpMixedCategoryQueue("Labour and employment law");
+
+        var queue = await _service.GetQueueAsync(lawyerProfileId: 5, filter: "MyField");
+
+        var item = Assert.Single(queue.Items);
+        Assert.Equal(1, item.DocumentId);
+        Assert.Equal(1, queue.TotalCount); // pager counts the filtered pool only
+        Assert.False(queue.FieldFallback);
+    }
+
+    [Fact]
+    public async Task GetQueueAsync_FilterMyField_GeneralPractitionerSeesEveryCategory()
+    {
+        SetUpMixedCategoryQueue("General practice");
+
+        var queue = await _service.GetQueueAsync(lawyerProfileId: 5, filter: "MyField");
+
+        Assert.Equal(3, queue.TotalCount);
+        Assert.False(queue.FieldFallback);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("Maritime law")] // matches none of the four categories
+    public async Task GetQueueAsync_FilterMyField_UnusableSpecialization_FallsBackToAll(string? specialization)
+    {
+        SetUpMixedCategoryQueue(specialization);
+
+        var queue = await _service.GetQueueAsync(lawyerProfileId: 5, filter: "MyField");
+
+        Assert.Equal(3, queue.TotalCount);
+        Assert.True(queue.FieldFallback);
+    }
+
+    [Fact]
+    public async Task GetQueueAsync_FilterMyField_HidesOtherLawyersClaims_KeepsOwnClaim()
+    {
+        SetUpMixedCategoryQueue("Labour");
+        _docRepo.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<GeneratedDocument>
+        {
+            new() { DocumentId = 1, CaseId = 10, Status = DocumentStatus.UnderReview, AssignedLawyerProfileId = 99, CreatedAt = new DateTime(2026, 9, 1) },
+            new() { DocumentId = 4, CaseId = 10, Status = DocumentStatus.UnderReview, AssignedLawyerProfileId = 5, CreatedAt = new DateTime(2026, 9, 2) },
+        });
+
+        var queue = await _service.GetQueueAsync(lawyerProfileId: 5, filter: "MyField");
+
+        var item = Assert.Single(queue.Items);
+        Assert.Equal(4, item.DocumentId);
+    }
 }

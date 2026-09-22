@@ -19,9 +19,12 @@ public record QueueItemDto(
 
 // AUD-8: queue paging envelope — TotalCount is the FULL filtered pool size
 // (for the pager), Items is the current page slice only.
+// FieldFallback: "MyField" was asked for but the lawyer's Specialization is
+// blank or matches no category, so the full pool was returned instead.
 public record QueuePageDto(
     int TotalCount,
-    IReadOnlyList<QueueItemDto> Items
+    IReadOnlyList<QueueItemDto> Items,
+    bool FieldFallback = false
 );
 
 public record ReviewWorkspaceDto(

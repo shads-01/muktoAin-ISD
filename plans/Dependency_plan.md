@@ -307,6 +307,7 @@
 - [x] ~~**[NOTIF-10]** Fixes — chat draft modal "submit anonymously" unchecked by default (logged-in chat cases were silently anonymous → no notification); lawyer `PaymentReceived` sent on payment confirmation (`MarkPaidAsync`), not order creation — *Hrittika* `[Blocked by: NOTIF-4]`~~
 - [x] ~~**[NOTIF-11]** Real-time push via SignalR — `NotificationHub` (`/hubs/notifications`) + `NotificationPushInterceptor` (EF SaveChanges hook signals the row owner); client re-fetches on signal, polls only while disconnected — *Hrittika* `[Blocked by: NOTIF-6]`~~
 - [x] ~~**[NOTIF-12]** Lawyer queue notifications — `LawyerQueueNotifier`: on "Send to lawyer", notify verified lawyers whose specialisation keyword-matches the case category (fallback: all verified lawyers); resubmission notifies only the claiming lawyer — *Hrittika* `[Blocked by: NOTIF-4]`~~
+- [x] ~~**[LAW-QUEUE-SPEC]** "My field" queue filter by specialization (falls back to all) — *Hrittika* `[Blocked by: NOTIF-12]`~~
 
 ---
 

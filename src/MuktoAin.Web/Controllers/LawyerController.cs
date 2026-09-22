@@ -93,7 +93,8 @@ public class LawyerController : Controller
     private const int QueuePageSize = 20;
 
     // Queue: documents in the pool, oldest-first (SLA). Filter chips:
-    // All (default) · Unclaimed · Mine (my claimed docs, re-enterable).
+    // All (default) · Unclaimed · Mine (my claimed docs, re-enterable) ·
+    // MyField (cases matching my specialization).
     [HttpGet]
     public async Task<IActionResult> Queue(string? filter, int page = 1)
     {
@@ -111,6 +112,7 @@ public class LawyerController : Controller
             Specialization = profile.Specialization ?? "",
             PendingCount = queue.TotalCount, // KPI shows the full backlog, not the page
             ActiveFilter = filter ?? "All",
+            FieldFallback = queue.FieldFallback,
             Page = Math.Max(1, Math.Min(page, totalPages)),
             PageSize = QueuePageSize,
             TotalCount = queue.TotalCount,

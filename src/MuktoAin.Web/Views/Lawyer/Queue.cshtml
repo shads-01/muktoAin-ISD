@@ -46,16 +46,31 @@
         </div>
     </div>
 
-    <!-- Filter chips: All · Unclaimed · Mine -->
+    <!-- Filter chips: All · Unclaimed · Mine · My field -->
     <div class="chip-row" style="margin-bottom: 16px">
-        @foreach (var f in new[] { "All", "Unclaimed", "Mine" })
+        @foreach (var f in new[] { "All", "Unclaimed", "Mine", "MyField" })
         {
             <a class="chip chip-sm @(Model.ActiveFilter == f ? "active" : "")"
                asp-action="Queue" asp-route-filter="@f">
-                @(f == "All" ? "সকল / All" : f == "Unclaimed" ? "অনাবৃত / Unclaimed" : "আমার নেওয়া / Mine")
+                @(f switch
+                {
+                    "All" => "সকল / All",
+                    "Unclaimed" => "অনাবৃত / Unclaimed",
+                    "Mine" => "আমার নেওয়া / Mine",
+                    _ => "আমার বিষয় / My field"
+                })
             </a>
         }
     </div>
+
+    @if (Model.FieldFallback)
+    {
+        <div class="alert alert-info tiny" role="note" style="margin-bottom: 16px">
+            <span data-bn="আপনার বিশেষজ্ঞতার ক্ষেত্র কোনো মামলার বিভাগের সাথে মেলেনি, তাই সব নথি দেখানো হচ্ছে।"
+                  data-en="Your specialization doesn't match any case category, so all documents are shown.">আপনার বিশেষজ্ঞতার ক্ষেত্র কোনো মামলার বিভাগের সাথে মেলেনি, তাই সব নথি দেখানো হচ্ছে।</span>
+            <a asp-controller="Account" asp-action="Profile" data-bn="প্রোফাইলে যোগ করুন" data-en="Update it in your profile">প্রোফাইলে যোগ করুন</a>
+        </div>
+    }
 
     @if (!Model.Items.Any())
     {
