@@ -259,6 +259,238 @@ public static class MockData
         Comments = "আইনের ধারা ১২৩ ও ২৮৯ যথাযথভাবে উল্লেখ করা হয়েছে। আবেদনপত্রটি সম্পূর্ণ এবং গ্রহণযোগ্য।"
     };
 
+    public static List<AdminUserViewModel> SampleUsers => new()
+    {
+        new()
+        {
+            UserId = 2,
+            FullName = "শাদস (Shads)",
+            Email = "admin@muktoain.bd",
+            Role = "Admin",
+            AccountStatus = "Active",
+            CreatedAt = new DateTime(2026, 7, 3)
+        },
+        new()
+        {
+            UserId = 11,
+            FullName = "মোঃ রফিকুল ইসলাম (Md. Rafiqul Islam)",
+            Email = "rafiqul@example.com",
+            Role = "Citizen",
+            AccountStatus = "Active",
+            CreatedAt = new DateTime(2026, 7, 19)
+        },
+        new()
+        {
+            UserId = 14,
+            FullName = "আরিফা আক্তার (Arifa Akter)",
+            Email = "arifa@example.com",
+            Role = "Citizen",
+            AccountStatus = "Active",
+            CreatedAt = new DateTime(2026, 8, 2)
+        },
+        new()
+        {
+            UserId = 23,
+            FullName = "অ্যাডভোকেট নুসরাত জাহান (Adv. Nusrat Jahan)",
+            Email = "nusrat.law@example.com",
+            Role = "Lawyer",
+            AccountStatus = "Active",
+            CreatedAt = new DateTime(2026, 7, 25)
+        },
+        new()
+        {
+            UserId = 31,
+            FullName = "অ্যাডভোকেট তানভীর আহমেদ (Adv. Tanvir Ahmed)",
+            Email = "tanvir.law@example.com",
+            Role = "Lawyer",
+            AccountStatus = "Suspended",
+            CreatedAt = new DateTime(2026, 6, 30)
+        },
+        new()
+        {
+            UserId = 45,
+            FullName = "কবিতা রানী দাস (Kabita Rani Das)",
+            Email = "kabita.das@example.com",
+            Role = "Citizen",
+            AccountStatus = "Suspended",
+            CreatedAt = new DateTime(2026, 5, 18)
+        },
+        new()
+        {
+            UserId = 58,
+            FullName = "রাকিব হাসান (Rakib Hasan)",
+            Email = "rakib.h@example.com",
+            Role = "Citizen",
+            AccountStatus = "Active",
+            CreatedAt = new DateTime(2026, 8, 20)
+        },
+        new()
+        {
+            UserId = 61,
+            FullName = "অ্যাডভোকেট মাহমুদা আক্তার (Adv. Mahmuda Akter)",
+            Email = "mahmuda.law@example.com",
+            Role = "Lawyer",
+            AccountStatus = "Active",
+            CreatedAt = new DateTime(2026, 7, 12)
+        }
+    };
+
+    public static List<AdminLawyerViewModel> SampleLawyers => new()
+    {
+        new()
+        {
+            LawyerProfileId = 1,
+            UserId = 14,
+            ApplicantName = "অ্যাডভোকেট নুসরাত জাহান (Adv. Nusrat Jahan)",
+            BarRegistrationNumber = "DHA-1187",
+            VerificationStatus = "Approved",
+            Specialization = "শ্রম আইন (Labour Law)",
+            AppliedAt = new DateTime(2026, 7, 25)
+        },
+        new()
+        {
+            LawyerProfileId = 2,
+            UserId = 19,
+            ApplicantName = "অ্যাডভোকেট শফিকুল ইসলাম (Adv. Shafiqul Islam)",
+            BarRegistrationNumber = "CTT-0564",
+            VerificationStatus = "Pending",
+            Specialization = "ভোক্তা অধিকার (Consumer Law)",
+            AppliedAt = new DateTime(2026, 8, 22)
+        },
+        new()
+        {
+            LawyerProfileId = 3,
+            UserId = 28,
+            ApplicantName = "অ্যাডভোকেট মাহমুদা আক্তার (Adv. Mahmuda Akter)",
+            BarRegistrationNumber = "RAJ-0231",
+            VerificationStatus = "Pending",
+            Specialization = "পারিবারিক আইন (Family Law)",
+            AppliedAt = new DateTime(2026, 8, 23)
+        },
+        new()
+        {
+            LawyerProfileId = 4,
+            UserId = 31,
+            ApplicantName = "অ্যাডভোকেট তানভীর আহমেদ (Adv. Tanvir Ahmed)",
+            BarRegistrationNumber = "DHA-1298",
+            VerificationStatus = "Rejected",
+            Specialization = "দেওয়ানি মামলা (Civil Litigation)",
+            AppliedAt = new DateTime(2026, 8, 10)
+        },
+        new()
+        {
+            LawyerProfileId = 5,
+            UserId = 40,
+            ApplicantName = "অ্যাডভোকেট প্রিয়া দাস (Adv. Priya Das)",
+            BarRegistrationNumber = "SYL-0190",
+            VerificationStatus = "Pending",
+            Specialization = "তথ্য অধিকার (RTI)",
+            AppliedAt = new DateTime(2026, 8, 25)
+        }
+    };
+
+    public static List<AdminActViewModel> SampleActs => new()
+    {
+        new()
+        {
+            ActId = 1,
+            Title = "বাংলাদেশ শ্রম আইন, ২০০৬ (The Bangladesh Labour Act, 2006)",
+            Year = 2006,
+            SectionCount = 353,
+            ImportedAt = new DateTime(2026, 8, 18),
+            IsVectorIndexed = true
+        },
+        new()
+        {
+            ActId = 2,
+            Title = "তথ্য অধিকার আইন, ২০০৯ (The Right to Information Act, 2009)",
+            Year = 2009,
+            SectionCount = 40,
+            ImportedAt = new DateTime(2026, 8, 18),
+            IsVectorIndexed = true
+        },
+        new()
+        {
+            ActId = 3,
+            Title = "ভোক্তা অধিকার সংরক্ষণ আইন, ২০০৯ (The Consumer Rights Protection Act, 2009)",
+            Year = 2009,
+            SectionCount = 58,
+            ImportedAt = new DateTime(2026, 8, 19),
+            IsVectorIndexed = true
+        },
+        new()
+        {
+            ActId = 4,
+            Title = "দণ্ডবিধি, ১৮৬০ (The Penal Code, 1860)",
+            Year = 1860,
+            SectionCount = 511,
+            ImportedAt = new DateTime(2026, 8, 20),
+            IsVectorIndexed = false
+        },
+        new()
+        {
+            ActId = 5,
+            Title = "নারী ও শিশু নির্যাতন দমন আইন, ২০০০ (The Prevention of Oppression Against Women and Children Act, 2000)",
+            Year = 2000,
+            SectionCount = 60,
+            ImportedAt = new DateTime(2026, 8, 21),
+            IsVectorIndexed = false
+        }
+    };
+
+    /// <summary>
+    /// Mock section dropdown for ScenarioMapping add-form. When Tultul wires
+    /// ScenarioMappingService, this becomes IActSectionRepository.GetAllAsync().
+    /// </summary>
+    public static List<SelectListItem> SampleScenarioSections => new()
+    {
+        new("বাংলাদেশ শ্রম আইন, ২০০৬ — ধারা ১২৩ (Section 123) · মজুরি পরিশোধের সময়সীমা", "123"),
+        new("বাংলাদেশ শ্রম আইন, ২০০৬ — ধারা ২৮৯ (Section 289) · ধারা ১২৩ লঙ্ঘনের দণ্ড", "289"),
+        new("তথ্য অধিকার আইন, ২০০৯ — ধারা ৪ (Section 4) · তথ্য প্রদানের বাধ্যবাধকতা", "44"),
+        new("ভোক্তা অধিকার সংরক্ষণ আইন, ২০০৯ — ধারা ৪৫ (Section 45) · ভোক্তা ক্ষতিপূরণ", "301"),
+        new("দণ্ডবিধি, ১৮৬০ — ধারা ৪২০ (Section 420) · প্রতারণা", "489")
+    };
+
+    public static List<AdminScenarioMappingViewModel> SampleMappings => new()
+    {
+        new()
+        {
+            MappingId = 1,
+            SectionId = 123,
+            ScenarioKeyword = "বেতন না দেওয়া (unpaid wage)",
+            ActTitle = "বাংলাদেশ শ্রম আইন, ২০০৬",
+            SectionNumber = "ধারা ১২৩ (Section 123)",
+            Notes = "বকেয়া মজুরি ও বেতন সংক্রান্ত অভিযোগে প্রাথমিক বুস্ট।"
+        },
+        new()
+        {
+            MappingId = 2,
+            SectionId = 289,
+            ScenarioKeyword = "শ্রমিক হয়রানি (worker harassment)",
+            ActTitle = "বাংলাদেশ শ্রম আইন, ২০০৬",
+            SectionNumber = "ধারা ২৮৯ (Section 289)",
+            Notes = "মজুরি বকেয়ার শাস্তি সংক্রান্ত ধারা — ডিফল্ট সেকেন্ডারি সাইটেশন।"
+        },
+        new()
+        {
+            MappingId = 3,
+            SectionId = 44,
+            ScenarioKeyword = "তথ্য চাওয়া (RTI request)",
+            ActTitle = "তথ্য অধিকার আইন, ২০০৯",
+            SectionNumber = "ধারা ৪ (Section 4)",
+            Notes = "সরকারি তথ্য প্রাপ্তির মূল ধারা, RTI আবেদনে পিন করা।"
+        },
+        new()
+        {
+            MappingId = 4,
+            SectionId = 301,
+            ScenarioKeyword = "ভোক্তা প্রতারণা (consumer fraud)",
+            ActTitle = "ভোক্তা অধিকার সংরক্ষণ আইন, ২০০৯",
+            SectionNumber = "ধারা ৪৫ (Section 45)",
+            Notes = "মেয়াদোত্তীর্ণ/নকল পণ্য সংক্রান্ত ভোক্তা অভিযোগের বুস্ট।"
+        }
+    };
+
     public static AdminDashboardViewModel SampleAnalytics => new()
     {
         TotalCases = 1284,
