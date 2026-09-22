@@ -1,0 +1,33 @@
+@model string
+@* Payment method choice for the Honorarium / Top-Up modals (FR-24). Model is
+   the radio group name; the modal's script reads the checked value and sends
+   it as `method` ("bkash" or "card"). In Sandbox mode the citizen leaves for
+   bKash's own page, so the test wallet is shown here instead (Simulator mode
+   shows its test values on the /GatewaySim checkout page). *@
+@using Microsoft.Extensions.Options
+@using MuktoAin.Infrastructure.Payments
+@inject IOptions<PaymentGatewayOptions> PaymentOptions
+@{
+    var sandbox = string.Equals(PaymentOptions.Value.Mode, PaymentGatewayOptions.Sandbox, StringComparison.OrdinalIgnoreCase);
+}
+<fieldset class="pay-methods">
+    <legend class="form-label" data-bn="পেমেন্ট পদ্ধতি:" data-en="Payment method:">পেমেন্ট পদ্ধতি:</legend>
+    <div class="chip-row">
+        <label class="chip pay-method">
+            <input type="radio" name="@Model" value="bkash" checked />
+            <i data-lucide="smartphone"></i> <span>bKash</span>
+        </label>
+        <label class="chip pay-method">
+            <input type="radio" name="@Model" value="card" />
+            <i data-lucide="credit-card"></i>
+            <span data-bn="কার্ড / অন্যান্য" data-en="Card / other">কার্ড / অন্যান্য</span>
+        </label>
+    </div>
+    @if (sandbox)
+    {
+        <p class="form-text" data-testid="sandbox-test-values">
+            <span data-bn="পরীক্ষার bKash ওয়ালেট:" data-en="Test bKash wallet:">পরীক্ষার bKash ওয়ালেট:</span>
+            <code>@BkashGatewayClient.SandboxWallet</code>, OTP <code>@BkashGatewayClient.SandboxOtp</code>, PIN <code>@BkashGatewayClient.SandboxPin</code>
+        </p>
+    }
+</fieldset>

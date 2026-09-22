@@ -1,4 +1,6 @@
 @model MuktoAin.Web.ViewModels.ProfileViewModel
+@using MuktoAin.Application.Services
+@inject AiBudgetService Budget
 @{
     ViewData["Title"] = "ব্যবহারকারী প্রোফাইল ও সেটিংস — User Profile";
     var isLawyer = string.Equals(Model.Role, "Lawyer", StringComparison.OrdinalIgnoreCase);
@@ -12,6 +14,12 @@
     {
         initial = Model.FullName.Trim().Substring(0, 1).ToUpperInvariant();
     }
+
+    // Chat quota + paid chat credits, read here so every re-render of this
+    // view (including failed form posts, which do not post UserId) shows the
+    // live balance. The page is [Authorize], so the claim is always there.
+    var signedInUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+    var quota = await Budget.GetRemainingToday(signedInUserId, null);
 }
 
 <main class="container" id="main">
@@ -53,6 +61,23 @@
                     <span><span class="badge badge-success" style="font-size: 11px;"><span data-bn="স্ট্যাটাস:" data-en="Status:">স্ট্যাটাস:</span> @if (Model.AccountStatus == "Active") { <span data-bn="সক্রিয়" data-en="Active">সক্রিয়</span> } else { <text>@Model.AccountStatus</text> }</span></span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- AI chat credits (FR-24 top-up) -->
+    <div class="card" style="margin-bottom: 24px; padding: 20px 24px;" data-testid="chat-credits-card">
+        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 220px;">
+                <h2 style="font-size: 17px; margin: 0 0 4px;"><i data-lucide="zap" style="display: inline; vertical-align: middle; color: var(--gold);"></i> <span data-bn="AI চ্যাট ক্রেডিট" data-en="AI Chat Credits">AI চ্যাট ক্রেডিট</span></h2>
+                <div style="display: flex; gap: 16px; flex-wrap: wrap; color: var(--ink-2); font-size: 14px;">
+                    <span><span data-bn="ক্রেডিট:" data-en="Credits:">ক্রেডিট:</span> <b data-testid="chat-credits-balance">@quota.Credits</b></span>
+                    <span><span data-bn="আজকের বিনামূল্যের চ্যাট বাকি:" data-en="Free chats left today:">আজকের বিনামূল্যের চ্যাট বাকি:</span> <b>@quota.RemainingToday / @quota.DailyLimit</b></span>
+                </div>
+                <p class="muted tiny" style="margin: 6px 0 0;" data-bn="দৈনিক বিনামূল্যের চ্যাট শেষ হলে ক্রেডিট খরচ হয়। ক্রেডিটের মেয়াদ শেষ হয় না।" data-en="Credits are used after your free daily chats run out. They never expire.">দৈনিক বিনামূল্যের চ্যাট শেষ হলে ক্রেডিট খরচ হয়। ক্রেডিটের মেয়াদ শেষ হয় না।</p>
+            </div>
+            <button class="btn btn-gold" type="button" data-open-modal="#topup-modal">
+                <i data-lucide="credit-card"></i> <span data-bn="রিচার্জ করুন" data-en="Recharge">রিচার্জ করুন</span>
+            </button>
         </div>
     </div>
 
@@ -252,6 +277,9 @@
         </div>
     </div>
 </main>
+
+<partial name="_TopUpModal" />
+<script src="~/assets/js/payment.js" asp-append-version="true" defer></script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {

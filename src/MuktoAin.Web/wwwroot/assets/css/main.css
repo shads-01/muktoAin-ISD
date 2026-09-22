@@ -619,6 +619,11 @@ a.card.click { color: var(--ink); }
 .chip:hover { border-color: var(--border-strong); color: var(--ink); }
 .chip.active { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 .chip-sm { min-height: 34px; padding: 4px 12px; font-size: 13px; }
+.pay-methods { border: 0; margin: 0 0 16px; padding: 0; }
+.pay-method { position: relative; cursor: pointer; }
+.pay-method input { position: absolute; opacity: 0; pointer-events: none; }
+.pay-method:has(input:checked) { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.pay-method:has(input:focus-visible) { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 .citation-chip {
   display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px;

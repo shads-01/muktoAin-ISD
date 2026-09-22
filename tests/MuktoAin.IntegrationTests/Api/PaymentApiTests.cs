@@ -88,7 +88,7 @@ public class PaymentApiTests : IClassFixture<MuktoAinWebApplicationFactory>
         var json = await response.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(json);
         Assert.True(doc.RootElement.GetProperty("success").GetBoolean());
-        Assert.Equal("Paid", doc.RootElement.GetProperty("status").GetString());
+        Assert.StartsWith("/GatewaySim/Checkout/", doc.RootElement.GetProperty("gatewayUrl").GetString());
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public class PaymentApiTests : IClassFixture<MuktoAinWebApplicationFactory>
     }
 
     [Fact]
-    public async Task TopUp_ValidAmount_ReturnsSandboxPaidOrder()
+    public async Task TopUp_ValidAmount_ReturnsGatewayCheckoutUrl_OrderStaysPending()
     {
         var user = await NewUserAsync(UserRole.Citizen);
         var client = _factory.CreateAuthenticatedClient(user.Id, UserRole.Citizen);
@@ -122,8 +122,14 @@ public class PaymentApiTests : IClassFixture<MuktoAinWebApplicationFactory>
         var json = await response.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(json);
         Assert.True(doc.RootElement.GetProperty("success").GetBoolean());
-        Assert.Equal(300m, doc.RootElement.GetProperty("amount").GetDecimal());
-        Assert.StartsWith("SANDBOX-TOP-", doc.RootElement.GetProperty("gatewayRef").GetString());
+        Assert.StartsWith("/GatewaySim/Checkout/", doc.RootElement.GetProperty("gatewayUrl").GetString());
+
+        // Nothing is Paid until the gateway confirms (see PaymentFlowE2ETests).
+        var orderId = doc.RootElement.GetProperty("orderId").GetInt32();
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var order = await db.PaymentOrders.AsNoTracking().SingleAsync(o => o.PaymentOrderId == orderId);
+        Assert.Equal(PaymentStatus.Pending, order.Status);
     }
 
     [Fact]

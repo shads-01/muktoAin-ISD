@@ -1,0 +1,123 @@
+@model MuktoAin.Web.Controllers.GatewaySimulatorViewModel
+@using MuktoAin.Infrastructure.Payments
+@{
+    Layout = "_GatewaySimLayout";
+    ViewData["Title"] = "Checkout";
+    var s = Model.Session;
+    var otpStep = s.State == SimulatedGatewayState.AwaitingOtp;
+    var method = s.Method
+                 ?? (Model.PreferredMethod != null && SimulatedGateway.Methods.ContainsKey(Model.PreferredMethod) ? Model.PreferredMethod : "bkash");
+    var methodLabels = new Dictionary<string, string>
+    {
+        ["bkash"] = "bKash", ["nagad"] = "Nagad", ["rocket"] = "Rocket", ["card"] = "Card",
+    };
+}
+
+<div class="sim-card">
+    <div class="sim-head">
+        <div class="brand">SimuPay</div>
+        <div class="merchant">মার্চেন্ট / Merchant: MuktoAin · @(s.PurposeLabel == "Honorarium" ? "সম্মানী / Honorarium" : "টপ-আপ / Top-up")</div>
+        <div class="sim-amount" data-testid="sim-amount">৳@s.Amount.ToString("0.00")</div>
+    </div>
+    <div class="sim-body">
+        <div class="sim-meta">
+            <span>Ref: <span class="mono">@s.TransactionId</span></span>
+            <span>BDT</span>
+        </div>
+
+        @if (Model.ErrorEn != null)
+        {
+            <div class="err" role="alert" data-testid="sim-error">@Model.ErrorBn<br />@Model.ErrorEn</div>
+        }
+
+        @if (!otpStep)
+        {
+            <form method="post" asp-action="Pay" asp-route-key="@s.Key" id="sim-pay-form" autocomplete="off">
+                <div class="methods" role="radiogroup" aria-label="Payment method">
+                    @foreach (var m in SimulatedGateway.Methods.Keys)
+                    {
+                        <label>
+                            <input type="radio" name="method" value="@m" @(m == method ? "checked" : "") />
+                            <span>@methodLabels[m]</span>
+                        </label>
+                    }
+                </div>
+
+                <div id="wallet-fields" class="@(method == "card" ? "hidden" : "")">
+                    <div class="field">
+                        <label for="wallet-account">মোবাইল নম্বর / Wallet number</label>
+                        <input id="wallet-account" name="account" inputmode="numeric" placeholder="01XXXXXXXXX" @(method == "card" ? "disabled" : "") />
+                    </div>
+                    <div class="field">
+                        <label for="wallet-pin">পিন / PIN</label>
+                        <input id="wallet-pin" name="secret" type="password" inputmode="numeric" maxlength="5" @(method == "card" ? "disabled" : "") />
+                    </div>
+                </div>
+
+                <div id="card-fields" class="@(method == "card" ? "" : "hidden")">
+                    <div class="field">
+                        <label for="card-number">কার্ড নম্বর / Card number</label>
+                        <input id="card-number" name="account" inputmode="numeric" placeholder="4111 1111 1111 1111" @(method == "card" ? "" : "disabled") />
+                    </div>
+                    <div class="row2">
+                        <div class="field">
+                            <label for="card-expiry">মেয়াদ / Expiry</label>
+                            <input id="card-expiry" name="expiry" placeholder="MM/YY" @(method == "card" ? "" : "disabled") />
+                        </div>
+                        <div class="field">
+                            <label for="card-cvv">CVV</label>
+                            <input id="card-cvv" name="secret" type="password" inputmode="numeric" maxlength="4" @(method == "card" ? "" : "disabled") />
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-pay" type="submit" id="sim-pay">পরবর্তী / Continue</button>
+            </form>
+        }
+        else
+        {
+            <p style="font-size:14px; margin-top:0;">
+                @methodLabels[method] (@s.Account) — আপনার ফোনে পাঠানো ওটিপি দিন।<br />
+                Enter the OTP sent to your phone.
+            </p>
+            <form method="post" asp-action="Otp" asp-route-key="@s.Key" id="sim-otp-form" autocomplete="off">
+                <div class="field">
+                    <label for="sim-otp">ওটিপি / OTP</label>
+                    <input id="sim-otp" name="otp" inputmode="numeric" maxlength="6" autofocus />
+                </div>
+                <button class="btn btn-pay" type="submit" id="sim-confirm">পেমেন্ট নিশ্চিত করুন / Confirm payment</button>
+            </form>
+        }
+
+        <form method="post" asp-action="Cancel" asp-route-key="@s.Key">
+            <button class="btn btn-cancel" type="submit" id="sim-cancel">বাতিল করে ফিরে যান / Cancel and return</button>
+        </form>
+
+        <div class="hint">
+            পরীক্ষার তথ্য / Test values:<br />
+            ওয়ালেট / Wallet: যেকোনো <code>01XXXXXXXXX</code>, PIN <code>@SimulatedGateway.WalletPin</code><br />
+            কার্ড / Card: <code>4111 1111 1111 1111</code>, CVV <code>@SimulatedGateway.TestCardCvv</code>, any future MM/YY<br />
+            OTP <code>@SimulatedGateway.Otp</code> ·
+            অপর্যাপ্ত ব্যালান্স / Insufficient balance: <code>@SimulatedGateway.InsufficientBalanceWallet</code> ·
+            প্রত্যাখ্যাত কার্ড / Declined card: <code>@SimulatedGateway.DeclinedCard</code>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// Show only the fields of the chosen method, and disable the hidden ones so
+// their same-named inputs (account/secret) are not posted.
+document.querySelectorAll('input[name="method"]').forEach(function (radio) {
+    radio.addEventListener("change", function () {
+        var card = radio.value === "card";
+        var wallet = document.getElementById("wallet-fields");
+        var cardFields = document.getElementById("card-fields");
+        wallet.classList.toggle("hidden", card);
+        cardFields.classList.toggle("hidden", !card);
+        wallet.querySelectorAll("input").forEach(function (i) { i.disabled = card; });
+        cardFields.querySelectorAll("input").forEach(function (i) { i.disabled = !card; });
+    });
+});
+</script>
+}
