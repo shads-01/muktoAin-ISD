@@ -40,6 +40,109 @@ public class AdminController : Controller
         return View(model);
     }
 
+    [HttpGet]
+    public IActionResult Users()
+    {
+        ViewData["IsAdminPage"] = true;
+        // TODO: [Shads] Replace with UserManagementService.GetAllUsersAsync()
+        return View(MockData.SampleUsers);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Suspend(int id)
+    {
+        // TODO: [Shads] Replace with UserManagementService.SetAccountStatusAsync(id, AccountStatus.Suspended)
+        TempData["Success"] = $"ইউজার #{id} স্থগিত করা হয়েছে (সাসপেন্ডেড)।";
+        TempData["SuccessEn"] = $"User #{id} suspended.";
+        return RedirectToAction("Users");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Activate(int id)
+    {
+        // TODO: [Shads] Replace with UserManagementService.SetAccountStatusAsync(id, AccountStatus.Active)
+        TempData["Success"] = $"ইউজার #{id} সক্রিয় করা হয়েছে।";
+        TempData["SuccessEn"] = $"User #{id} activated.";
+        return RedirectToAction("Users");
+    }
+
+    [HttpGet]
+    public IActionResult Lawyers()
+    {
+        ViewData["IsAdminPage"] = true;
+        // TODO: [Arpita] Replace with LawyerVerificationService.GetPendingApplicationsAsync()
+        return View(MockData.SampleLawyers);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Verify(int id, bool approve)
+    {
+        // TODO: [Arpita] Replace with LawyerVerificationService.VerifyAsync(id, approve, adminId)
+        var verdict = approve ? "অনুমোদিত (Approved)" : "বাতিল (Rejected)";
+        TempData["Success"] = $"আইনজীবী আবেদন #{id} — {verdict}।";
+        TempData["SuccessEn"] = $"Lawyer application #{id} marked as {(approve ? "Approved" : "Rejected")}.";
+        return RedirectToAction("Lawyers");
+    }
+
+    [HttpGet]
+    public IActionResult Acts()
+    {
+        ViewData["IsAdminPage"] = true;
+        // TODO: [Tultul] Replace with ActsManagementService.GetAllActStatusAsync()
+        return View(MockData.SampleActs);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Reindex(int id)
+    {
+        // TODO: [Tultul] Replace with ActsManagementService.ReindexActAsync(id) / EmbeddingBatchJob trigger
+        TempData["Success"] = $"আইন #{id} ভেক্টর রি-ইনডেক্সিং শুরু হয়েছে।";
+        TempData["SuccessEn"] = $"Act #{id} vector re-indexing triggered.";
+        return RedirectToAction("Acts");
+    }
+
+    [HttpGet]
+    public IActionResult ScenarioMappings()
+    {
+        ViewData["IsAdminPage"] = true;
+        // TODO: [Tultul] Replace with ScenarioMappingService.GetAllAsync() + IActSectionRepository for dropdown
+        var vm = new AdminScenarioMappingsViewModel
+        {
+            Mappings = MockData.SampleMappings,
+            Sections = MockData.SampleScenarioSections
+        };
+        return View(vm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult AddMapping(ScenarioMappingAddViewModel vm)
+    {
+        // TODO: [Tultul] Wire ScenarioMappingService for Add/Delete actions
+        if (string.IsNullOrWhiteSpace(vm.ScenarioKeyword) || vm.SectionId == 0)
+        {
+            TempData["Error"] = "কী-ওয়ার্ড ও সেকশন নির্বাচন আবশ্যক / Keyword and Section are required.";
+            return RedirectToAction("ScenarioMappings");
+        }
+        TempData["Success"] = $"কী-ওয়ার্ড \"{vm.ScenarioKeyword}\" নতুন ম্যাপিং যোগ করা হয়েছে (mock)।";
+        TempData["SuccessEn"] = $"New mapping \"{vm.ScenarioKeyword}\" added (mock).";
+        return RedirectToAction("ScenarioMappings");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult DeleteMapping(int id)
+    {
+        // TODO: [Tultul] Wire ScenarioMappingService for Add/Delete actions
+        TempData["Success"] = $"ম্যাপিং #{id} মুছে ফেলা হয়েছে (mock)।";
+        TempData["SuccessEn"] = $"Mapping #{id} removed (mock).";
+        return RedirectToAction("ScenarioMappings");
+    }
+
     /// <summary>
     /// Live Real-time API endpoint polled by the Admin Dashboard to give immediate
     /// feedback as configuration or services change without restarting the server.
