@@ -13,6 +13,13 @@ namespace MuktoAin.Infrastructure.Payments;
 // user-facing redirect, so a failed call surfaces at once as an error.
 public class SslCommerzGatewayClient : IPaymentGatewayClient
 {
+    // SSLCommerz's published sandbox test card (Mastercard 5111111111111111
+    // and Amex 371111111111111 work too). Shown to the citizen in Sandbox
+    // mode (_PaymentMethodPicker), next to the bKash test wallet.
+    public const string SandboxCard = "4111 1111 1111 1111";
+    public const string SandboxCardCvv = "111";
+    public const string SandboxOtp = "111111";
+
     private readonly HttpClient _httpClient;
     private readonly SslCommerzOptions _options;
 
@@ -29,7 +36,8 @@ public class SslCommerzGatewayClient : IPaymentGatewayClient
         string purposeLabel,
         string successUrl,
         string failUrl,
-        string cancelUrl)
+        string cancelUrl,
+        GatewayCustomer? customer = null)
     {
         var form = new Dictionary<string, string>
         {
@@ -41,12 +49,12 @@ public class SslCommerzGatewayClient : IPaymentGatewayClient
             ["success_url"] = successUrl,
             ["fail_url"] = failUrl,
             ["cancel_url"] = cancelUrl,
-            ["cus_name"] = "MuktoAin Citizen",
-            ["cus_email"] = "citizen@muktoain.local",
+            ["cus_name"] = string.IsNullOrWhiteSpace(customer?.Name) ? "MuktoAin Citizen" : customer.Name,
+            ["cus_email"] = string.IsNullOrWhiteSpace(customer?.Email) ? "citizen@muktoain.local" : customer.Email,
             ["cus_add1"] = "Dhaka",
             ["cus_city"] = "Dhaka",
             ["cus_country"] = "Bangladesh",
-            ["cus_phone"] = "01700000000",
+            ["cus_phone"] = string.IsNullOrWhiteSpace(customer?.Phone) ? "01700000000" : customer.Phone,
             ["shipping_method"] = "NO",
             ["product_name"] = purposeLabel,
             ["product_category"] = "Legal Service",

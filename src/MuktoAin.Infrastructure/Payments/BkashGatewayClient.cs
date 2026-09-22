@@ -45,7 +45,8 @@ public class BkashGatewayClient : IPaymentGatewayClient
         string purposeLabel,
         string successUrl,
         string failUrl,
-        string cancelUrl)
+        string cancelUrl,
+        GatewayCustomer? customer = null)
     {
         var (payload, error) = await CallAsync<CreateResponse>("/tokenized/checkout/create", new Dictionary<string, string>
         {

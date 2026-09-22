@@ -624,6 +624,19 @@ a.card.click { color: var(--ink); }
 .pay-method input { position: absolute; opacity: 0; pointer-events: none; }
 .pay-method:has(input:checked) { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 .pay-method:has(input:focus-visible) { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* Sandbox test values under the picker: the citizen types these on the
+   vendor's own checkout page, so they must be hard to miss. */
+.sandbox-values { margin-top: 12px; }
+.sandbox-values dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; margin: 8px 0 0; align-items: baseline; }
+.sandbox-values dt { font-weight: 600; }
+.sandbox-values dd { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px; }
+.sandbox-values code {
+  font-size: 13.5px; font-weight: 700; letter-spacing: .02em; padding: 2px 7px;
+  border-radius: 6px; color: var(--ink); background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--info) 40%, transparent);
+  user-select: all;
+}
+.sandbox-values .sandbox-note { font-size: 12.5px; opacity: .85; }
 
 .citation-chip {
   display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px;

@@ -2,7 +2,7 @@
 @* Payment method choice for the Honorarium / Top-Up modals (FR-24). Model is
    the radio group name; the modal's script reads the checked value and sends
    it as `method` ("bkash" or "card"). In Sandbox mode the citizen leaves for
-   bKash's own page, so the test wallet is shown here instead (Simulator mode
+   bKash's and SSLCommerz's own pages, so their test values are shown here instead (Simulator mode
    shows its test values on the /GatewaySim checkout page). *@
 @using Microsoft.Extensions.Options
 @using MuktoAin.Infrastructure.Payments
@@ -25,9 +25,26 @@
     </div>
     @if (sandbox)
     {
-        <p class="form-text" data-testid="sandbox-test-values">
-            <span data-bn="পরীক্ষার bKash ওয়ালেট:" data-en="Test bKash wallet:">পরীক্ষার bKash ওয়ালেট:</span>
-            <code>@BkashGatewayClient.SandboxWallet</code>, OTP <code>@BkashGatewayClient.SandboxOtp</code>, PIN <code>@BkashGatewayClient.SandboxPin</code>
-        </p>
+        <div class="alert alert-info sandbox-values" data-testid="sandbox-test-values" role="note">
+            <i data-lucide="flask-conical"></i>
+            <div>
+                <strong data-bn="স্যান্ডবক্স — এই পরীক্ষার তথ্য ব্যবহার করুন" data-en="Sandbox — use these test values">স্যান্ডবক্স — এই পরীক্ষার তথ্য ব্যবহার করুন</strong>
+                <dl>
+                    <dt>bKash</dt>
+                    <dd>
+                        <span data-bn="ওয়ালেট" data-en="Wallet">ওয়ালেট</span> <code>@BkashGatewayClient.SandboxWallet</code>
+                        OTP <code>@BkashGatewayClient.SandboxOtp</code>
+                        PIN <code>@BkashGatewayClient.SandboxPin</code>
+                    </dd>
+                    <dt data-bn="কার্ড" data-en="Card">কার্ড</dt>
+                    <dd>
+                        <code>@SslCommerzGatewayClient.SandboxCard</code>
+                        CVV <code>@SslCommerzGatewayClient.SandboxCardCvv</code>
+                        OTP <code>@SslCommerzGatewayClient.SandboxOtp</code>
+                        <span class="sandbox-note" data-bn="যেকোনো ভবিষ্যৎ মেয়াদ" data-en="any future expiry">যেকোনো ভবিষ্যৎ মেয়াদ</span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
     }
 </fieldset>

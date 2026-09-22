@@ -394,7 +394,7 @@ Three wrong PIN, card or OTP entries fail the payment. A checkout session expire
 | Method | Test values |
 |---|---|
 | bKash | Wallet `01619777282` or `01619777283`, OTP `123456`, PIN `12121` |
-| Card | Use the test cards shown on the SSLCommerz sandbox checkout page |
+| Card | `4111 1111 1111 1111` (Visa), `5111 1111 1111 1111` (Mastercard) or `3711 111111 11111` (Amex), CVV `111`, any future `MM/YY`, OTP `111111` |
 
 > 📷 *[SCREENSHOT: Simulated checkout page with bKash selected — capture before release]*
 

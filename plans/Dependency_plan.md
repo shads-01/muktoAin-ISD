@@ -244,7 +244,7 @@
 - [x] ~~**[R-29]** In-app notifications feature — *Hrittika* (new `NOTIFICATION` table with schema, `NotificationService` with fail-safe dispatch and text formatting, 5 event triggers wired across case submission/document decision/lawyer verification/payment receipt/lawyer application flows, bell icon with real-time polling in `_Layout.cshtml`, paginated notification list page with mark-read functionality, and deprecated `Case.HasUnreadActivity` column).~~
 - [x] **[R-30]** Lawyer claim and review-submit races return `false` instead of a 500 (AUD-4); SQL race tests added — *Hrittika*.
 - [x] **[R-31]** Payments go through a gateway (simulated by default, SSLCommerz optional); no more instant-Paid stub (SSL-1…5, AUD-11) — *Hrittika*. Dev seed `SeedDemoPaymentCases` keeps 3 payable cases for `citizen@muktoain.bd`.
-- [x] **[R-32]** Payment method picker: bKash via bKash tokenized sandbox, card via SSLCommerz sandbox (`Payments:Mode = Sandbox`) — *Hrittika*. Needs `scripts/19_payment_gateway_routing.sql`.
+- [x] **[R-32]** Payment method picker: bKash via bKash tokenized sandbox, card via SSLCommerz sandbox (`Payments:Mode = Sandbox`) — *Hrittika*. Needs `scripts/19_payment_gateway_routing.sql`. Picker shows the bKash wallet and SSLCommerz test card in Sandbox mode.
 
 ---
 
@@ -314,7 +314,7 @@
 > **Full plan:** [`docs/superpowers/plans/2026-09-12-sslcommerz-sandbox-payment-gateway.md`](file:///c:/Users/HP/Desktop/Projects/muktoAin-ISD/docs/superpowers/plans/2026-09-12-sslcommerz-sandbox-payment-gateway.md) (26 steps)
 > **AI agents:** Follow the implementation plan above task-by-task.
 
-- [x] **[SSL-1]** `IPaymentGatewayClient` port (Domain) + `SslCommerzGatewayClient` adapter (Infrastructure) — *Hrittika* (swapped from Arpita, 2026-09-14) (~200 lines) — done: `IPaymentGatewayClient` + `SslCommerzGatewayClient` + built-in `SimulatedGateway` (default, `Payments:Gateway`).
+- [x] **[SSL-1]** `IPaymentGatewayClient` port (Domain) + `SslCommerzGatewayClient` adapter (Infrastructure) — *Hrittika* (swapped from Arpita, 2026-09-14) (~200 lines) — done: `IPaymentGatewayClient` + `SslCommerzGatewayClient` + built-in `SimulatedGateway` (default, `Payments:Gateway`). SSLCommerz gets the paying citizen as `cus_*` (per-user saved cards).
 - [x] **[SSL-2]** `PaymentService` — `CreateCheckoutSessionAsync`/`ConfirmPaymentAsync` integration — *Hrittika* `[Blocked by: SSL-1]` (~150 lines) — done; also sets `Case.HonorariumPaid` on confirm.
 - [x] **[SSL-3]** `PaymentController` — Success/Fail/Cancel callbacks + UI updates — *Hrittika* `[Blocked by: SSL-2]` (~200 lines) — done: `/Payment/Result` + `/GatewaySim` checkout; instant-Paid stub and admin `MarkOrderPaid` removed.
 - [x] **[SSL-4]** Schema additions (`PaymentOrder` columns) + `SslCommerz` config section — *Hrittika* `[Blocked by: SSL-1]` (~60 lines) — done: `scripts/18_payment_gateway.sql` (`TransactionId`, `RowVersion`, unique index).

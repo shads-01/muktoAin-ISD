@@ -2,6 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
+using MuktoAin.Domain.Interfaces.Services;
 using MuktoAin.Infrastructure.Payments;
 
 namespace MuktoAin.UnitTests.Services;
@@ -42,6 +43,36 @@ public class SslCommerzGatewayClientTests
         Assert.Contains("store_id=testbox", handler.LastRequestBody);
         Assert.Contains("tran_id=MA-1-20260912", handler.LastRequestBody);
         Assert.Contains("total_amount=500.00", handler.LastRequestBody);
+    }
+
+    // SSLCommerz keys saved cards on cus_email/cus_phone, so each citizen must
+    // be sent as themselves, not as one shared placeholder customer.
+    [Fact]
+    public async Task InitSessionAsync_SendsThePayingCustomer()
+    {
+        var handler = new FakeHandler(Json(new { status = "SUCCESS", GatewayPageURL = "https://x/pay" }));
+
+        await NewClient(handler).InitSessionAsync(
+            "MA-6", 500m, "TopUp", "https://x/s", "https://x/f", "https://x/c",
+            new GatewayCustomer("Rahim Uddin", "rahim@example.com", "01811111111"));
+
+        Assert.Contains("cus_name=Rahim+Uddin", handler.LastRequestBody);
+        Assert.Contains("cus_email=rahim%40example.com", handler.LastRequestBody);
+        Assert.Contains("cus_phone=01811111111", handler.LastRequestBody);
+    }
+
+    [Fact]
+    public async Task InitSessionAsync_NoCustomerDetails_FallsBackToPlaceholders()
+    {
+        var handler = new FakeHandler(Json(new { status = "SUCCESS", GatewayPageURL = "https://x/pay" }));
+
+        await NewClient(handler).InitSessionAsync(
+            "MA-7", 500m, "TopUp", "https://x/s", "https://x/f", "https://x/c",
+            new GatewayCustomer("", null, null));
+
+        Assert.Contains("cus_name=MuktoAin+Citizen", handler.LastRequestBody);
+        Assert.Contains("cus_email=citizen%40muktoain.local", handler.LastRequestBody);
+        Assert.Contains("cus_phone=01700000000", handler.LastRequestBody);
     }
 
     [Fact]
