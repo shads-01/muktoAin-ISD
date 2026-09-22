@@ -1,0 +1,108 @@
+@model MuktoAin.Web.ViewModels.AdminScenarioMappingsViewModel
+@{
+    ViewData["Title"] = "সিনারিও বুস্ট ম্যাপিং — Admin Scenario Mappings";
+    ViewData["IsAdminPage"] = true;
+}
+
+<main class="container" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a asp-controller="Home" asp-action="Index" data-bn="হোম" data-en="Home">Home</a>
+        <span class="sep">/</span>
+        <a asp-controller="Admin" asp-action="Dashboard" data-bn="অ্যাডমিন কনসোল" data-en="Admin Console">Admin Console</a>
+        <span class="sep">/</span>
+        <span data-bn="সিনারিও কি-ওয়ার্ড বুস্ট ম্যাপিং" data-en="Scenario Keyword Boosts">সিনারিও কি-ওয়ার্ড বুস্ট ম্যাপিং</span>
+    </nav>
+
+    <div class="page-head">
+        <span class="kicker" data-bn="FR-18 · Scenario Keyword Boost Mappings" data-en="FR-18 · Scenario Keyword Boost Mappings"><i data-lucide="zap" aria-hidden="true"></i> FR-18 · Scenario Keyword Boost Mappings</span>
+        <h1 class="page-title" data-bn="সিনারিও কি-ওয়ার্ড বুস্ট ম্যাপিং" data-en="Scenario Keyword Boost Mappings">সিনারিও কি-ওয়ার্ড বুস্ট ম্যাপিং</h1>
+        <p class="page-sub" data-bn="আইনি সমস্যার ধরন (কী-ওয়ার্ড) নির্দিষ্ট Act সেকশনে পিন করুন — RAG র্যাংকিং বুস্টের জন্য।" data-en="Pin legal scenario keywords to specific Act sections to boost RAG result ranking.">আইনি সমস্যার ধরন (কী-ওয়ার্ড) নির্দিষ্ট Act সেকশনে পিন করুন — RAG র্যাংকিং বুস্টের জন্য।</p>
+    </div>
+
+    <!-- Add New Mapping Form -->
+    <div class="card" style="padding: 24px; margin-bottom: 24px; background: linear-gradient(135deg, rgba(255,253,247,0.98), rgba(248,242,228,0.95)); border: 1.5px solid #92743a;">
+        <div style="display: flex; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+            <h2 style="font-size: 18px; margin: 0;"><i data-lucide="plus-circle" style="display: inline; vertical-align: middle; color: var(--gold);"></i> <span data-bn="নতুন ম্যাপিং যোগ করুন" data-en="Add New Mapping">নতুন ম্যাপিং যোগ করুন</span></h2>
+        </div>
+
+        <form method="post" asp-controller="Admin" asp-action="AddMapping">
+            @Html.AntiForgeryToken()
+            <div class="grid grid-3" style="gap: 16px; align-items: end;">
+                <div class="form-group">
+                    <label class="form-label" for="ScenarioKeyword" data-bn="সিনারিও কী-ওয়ার্ড (Scenario Keyword)" data-en="Scenario Keyword">সিনারিও কী-ওয়ার্ড (Scenario Keyword)</label>
+                    <input class="form-control" id="ScenarioKeyword" name="ScenarioKeyword" value="@Model.NewMapping.ScenarioKeyword" style="font-size: 16px; min-height: 46px;"
+                           placeholder="যেমন: বেতন না দেওয়া / unpaid wage" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="SectionId" data-bn="লিংকড এ্যাক্ট সেকশন (Linked Act Section)" data-en="Linked Act Section">লিংকড এ্যাক্ট সেকশন (Linked Act Section)</label>
+                    <select class="form-select" id="SectionId" name="SectionId" style="font-size: 16px; min-height: 46px;" required>
+                        <option value="">— সেকশন নির্বাচন করুন / Select Section —</option>
+                        @foreach (var sec in Model.Sections)
+                        {
+                            <option value="@sec.Value" selected="@(Model.NewMapping.SectionId.ToString() == sec.Value ? "selected" : null)">@sec.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="Notes" data-bn="নোট (Notes — ঐচ্ছিক)" data-en="Notes (optional)">নোট (Notes — ঐচ্ছিক)</label>
+                    <input class="form-control" id="Notes" name="Notes" value="@Model.NewMapping.Notes" style="font-size: 16px; min-height: 46px;"
+                           placeholder="বুস্টের কারণ / why this boost" />
+                </div>
+            </div>
+            <div style="margin-top: 16px;">
+                <button type="submit" class="btn btn-primary" style="min-height: 44px; font-size: 16px;">
+                    <i data-lucide="plus" style="width: 17px; height: 17px;"></i> <span data-bn="ম্যাপিং যোগ করুন" data-en="Add Mapping">ম্যাপিং যোগ করুন</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Existing Mappings Table -->
+    <div class="card" style="padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+            <div>
+                <h2 style="font-size: 18px; margin: 0;"><i data-lucide="list-filter" style="display: inline; vertical-align: middle; color: var(--gold);"></i> <span data-bn="কনফিগারকৃত ম্যাপিংসমূহ" data-en="Configured Mappings">কনফিগারকৃত ম্যাপিংসমূহ</span></h2>
+                <span class="muted tiny" data-bn="@Model.Mappings.Count() টি সক্রিয় কিওয়ার্ড-সেকশন রুল" data-en="@Model.Mappings.Count() active keyword-to-section rules">@Model.Mappings.Count() টি সক্রিয় কিওয়ার্ড-সেকশন রুল</span>
+            </div>
+            <span class="badge badge-gold" style="color:#92743a;" data-bn="RAG র্যাংকিং বুস্ট সক্রিয়" data-en="RAG ranking boost active">RAG র্যাংকিং বুস্ট সক্রিয়</span>
+        </div>
+
+        <div class="table-wrap" style="overflow-x: auto;">
+            <table class="table" style="width: 100%; font-size: 14px; text-align: left;">
+                <thead>
+                    <tr style="border-bottom: 1.5px solid var(--border);">
+                        <th style="padding: 8px 10px;" data-bn="সিনারিও কী-ওয়ার্ড" data-en="Scenario Keyword">সিনারিও কী-ওয়ার্ড</th>
+                        <th style="padding: 8px 10px;" data-bn="লিংকড এ্যাক্ট + সেকশন" data-en="Linked Act + Section">লিংকড এ্যাক্ট + সেকশন</th>
+                        <th style="padding: 8px 10px;" data-bn="নোট" data-en="Notes">নোট</th>
+                        <th style="padding: 8px 10px; text-align: right;" data-bn="অ্যাকশন" data-en="Actions">অ্যাকশন</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var mapping in Model.Mappings)
+                    {
+                        <tr style="border-bottom: 1px solid var(--border-soft);">
+                            <td style="padding: 10px 10px; font-weight: 600; white-space: nowrap;">
+                                <i data-lucide="key-round" style="width: 14px; height: 14px; display: inline; vertical-align: text-bottom; color: var(--gold);"></i> @mapping.ScenarioKeyword
+                            </td>
+                            <td style="padding: 10px 10px;">
+                                <strong style="font-size: 13.5px;">@mapping.ActTitle</strong>
+                                <span class="muted tiny" style="display: block; font-family: monospace;">@mapping.SectionNumber</span>
+                            </td>
+                            <td style="padding: 10px 10px; font-size: 13px; color: var(--ink-2); max-width: 320px;">@mapping.Notes</td>
+                            <td style="padding: 10px 10px; text-align: right;">
+                                <form method="post" asp-controller="Admin" asp-action="DeleteMapping" asp-route-id="@mapping.MappingId" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline btn-sm" style="min-height:44px; display:inline-flex; align-items:center; gap:6px; font-size:13px; padding:4px 10px; color:#b91c1c;" data-bn="মুছে ফেলুন" data-en="Delete">
+                                        <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i> মুছে ফেলুন
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="muted tiny" style="margin-top: 16px;" data-bn="টীকা: এই ম্যাপিং PromptAssembler-কে পাওয়া ধারাগুলো প্রাধান্য দিতে সহায়তা করে (ScenarioMappingService)।" data-en="Note: These mappings help PromptAssembler prioritize boosted sections (ScenarioMappingService).">টীকা: এই ম্যাপিং PromptAssembler-কে পাওয়া ধারাগুলো প্রাধান্য দিতে সহায়তা করে (ScenarioMappingService)।</div>
+    </div>
+</main>
