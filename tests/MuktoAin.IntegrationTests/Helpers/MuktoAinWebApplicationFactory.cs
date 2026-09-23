@@ -33,6 +33,10 @@ public class MuktoAinWebApplicationFactory : WebApplicationFactory<Program>
                 ["Qdrant:VectorSize"] = "3",
                 ["Qdrant:Endpoint"] = "http://127.0.0.1:1",
                 ["SeedAdmin:Password"] = "Test-Admin-Passw0rd!",
+                // The Gemini key pool is constructed eagerly by controllers
+                // that take it (AdminController), and throws without at least
+                // one key. IAiService is stubbed below, so no key is ever used.
+                ["Gemini:ApiKeys:0"] = "test-key-not-used",
             });
         });
 
