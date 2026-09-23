@@ -1,4 +1,3 @@
-> .dockerignore
 bin/
 obj/
 .git/
@@ -9,6 +8,12 @@ frontend/
 frontend.zip
 scripts/
 tests/
+node_modules/
+keys/
+*.pfx
+*.key
+docs/
+.vs/
 
 # The ~50-100MB Kaggle dataset is git-ignored and optional at runtime
 # (ActImportService no-ops when it's absent). Small seed files under data/

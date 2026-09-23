@@ -500,6 +500,14 @@ yourself (section 7).
   verified locally. The Azure portal steps follow current Azure documentation,
   but nobody has run the full sequence against a live subscription yet. Record
   any drift you find here.
+  **Update 2026-09-22:** the first live run is under way; see
+  [deployment-status.md](deployment-status.md) for current state and recorded
+  drift. Three findings change this document: the region must be `eastasia`
+  (Azure for Students policy blocks `southeastasia`); the source database need
+  not be Shads's if another developer's DB is verified ID-matched to Qdrant;
+  and section 7's key-ring upload must run **after** section 8's first deploy,
+  because `--type static` against an app with no code restarts the site until
+  the F1 daily quota is exhausted.
 
 ---
 
