@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# Report drafts / deliverables (not part of the codebase)
+/Reports/
+
 # User-specific files
 *.rsuser
 *.suo
