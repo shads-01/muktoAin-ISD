@@ -75,3 +75,18 @@ jobs:
       - name: Apply schema scripts
         run: pwsh ./scripts/run-all.ps1 -ServerInstance "localhost,1433" -User sa -Password 'YourStrong!Passw0rd'
       - run: dotnet test tests/MuktoAin.IntegrationTests/MuktoAin.IntegrationTests.csproj -c Release --verbosity normal
+
+  docker-build:
+    # Verifies the S-3.4 Dockerfile builds and the published output is intact.
+    # Runtime smoke testing is deliberately NOT done here: the app needs SQL
+    # Server at startup (Program.cs seeders run unconditionally), so a runtime
+    # check would require the full compose stack (see the S-3.4 plan, done
+    # locally). Keeps CI green-by-construction, same as integration-tests.
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t muktoain:ci .
+      - name: Verify published output in image
+        run: docker run --rm --entrypoint /bin/sh muktoain:ci -c "test -f /app/MuktoAin.Web.dll && echo published-output-ok"

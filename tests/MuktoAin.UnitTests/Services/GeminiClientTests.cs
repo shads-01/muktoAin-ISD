@@ -51,14 +51,14 @@ public class GeminiClientTests
                 attempts++;
                 if (attempts == 1)
                 {
-                    Assert.Contains("key=key-1", req.RequestUri!.Query);
+                    Assert.Equal("key-1", req.Headers.GetValues("x-goog-api-key").First());
                     return Task.FromResult(new HttpResponseMessage((HttpStatusCode)429)
                     {
                         Content = new StringContent("{\"error\":\"RESOURCE_EXHAUSTED\"}")
                     });
                 }
 
-                Assert.Contains("key=key-2", req.RequestUri!.Query);
+                Assert.Equal("key-2", req.Headers.GetValues("x-goog-api-key").First());
                 var responseJson = JsonSerializer.Serialize(new
                 {
                     candidates = new[]
@@ -103,7 +103,7 @@ public class GeminiClientTests
                 ItExpr.IsAny<CancellationToken>())
             .Returns<HttpRequestMessage, CancellationToken>((req, ct) =>
             {
-                var key = System.Web.HttpUtility.ParseQueryString(req.RequestUri!.Query)["key"];
+                var key = req.Headers.GetValues("x-goog-api-key").First();
                 usedKeys.Enqueue(key!);
 
                 var responseJson = JsonSerializer.Serialize(new
@@ -146,7 +146,7 @@ public class GeminiClientTests
                 ItExpr.IsAny<CancellationToken>())
             .Returns<HttpRequestMessage, CancellationToken>((req, ct) =>
             {
-                var key = System.Web.HttpUtility.ParseQueryString(req.RequestUri!.Query)["key"];
+                var key = req.Headers.GetValues("x-goog-api-key").First();
                 usedKeys.Enqueue(key!);
 
                 // key-1 429s on its FIRST use with a 2s RetryInfo, then succeeds.
@@ -496,7 +496,7 @@ public class GeminiClientTests
                 ItExpr.IsAny<CancellationToken>())
             .Returns<HttpRequestMessage, CancellationToken>((req, ct) =>
             {
-                var key = System.Web.HttpUtility.ParseQueryString(req.RequestUri!.Query)["key"];
+                var key = req.Headers.GetValues("x-goog-api-key").First();
                 if (key == "key-1")
                 {
                     var body = JsonSerializer.Serialize(new
@@ -573,5 +573,50 @@ public class GeminiClientTests
         Assert.Equal(0.2f, result[0][1], precision: 2);
         Assert.Equal(0.3f, result[1][0], precision: 2);
         Assert.Equal(0.4f, result[1][1], precision: 2);
+    }
+
+    // The API key must never appear in the request URI. Request URIs are logged
+    // verbatim by System.Net.Http.HttpClient at Information level, so a key in
+    // the query string ends up in plaintext in App Service logs and container
+    // stdout. Google accepts the key in the x-goog-api-key header instead.
+    [Fact]
+    public async Task GenerateContentAsync_SendsApiKeyInHeader_NeverInUri()
+    {
+        Uri? capturedUri = null;
+        string? capturedHeader = null;
+
+        var handlerMock = new Mock<HttpMessageHandler>();
+        handlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .Returns<HttpRequestMessage, CancellationToken>((req, ct) =>
+            {
+                capturedUri = req.RequestUri;
+                capturedHeader = req.Headers.TryGetValues("x-goog-api-key", out var v)
+                    ? v.FirstOrDefault()
+                    : null;
+
+                var responseJson = JsonSerializer.Serialize(new
+                {
+                    candidates = new[]
+                    {
+                        new { content = new { parts = new[] { new { text = "ok" } } } }
+                    }
+                });
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(responseJson, Encoding.UTF8, "application/json")
+                });
+            });
+
+        var client = CreateClient(handlerMock.Object, ["secret-key-1"]);
+        await client.GenerateContentAsync("prompt", CancellationToken.None);
+
+        Assert.NotNull(capturedUri);
+        Assert.Equal("secret-key-1", capturedHeader);
+        Assert.DoesNotContain("secret-key-1", capturedUri!.ToString());
+        Assert.Equal(string.Empty, capturedUri.Query);
     }
 }

@@ -267,7 +267,7 @@ public class GeminiClient : IAiService
                 continue;
             }
 
-            var uri = BuildUri(model + methodSuffix, _apiKeys[keyIndex]);
+            var uri = BuildUri(model + methodSuffix);
 
             HttpResponseMessage result;
             try
@@ -278,6 +278,10 @@ public class GeminiClient : IAiService
                     {
                         Content = new StringContent(jsonBody, Encoding.UTF8, "application/json"),
                     };
+                    // The key goes in a header, never the query string: HttpClient
+                    // logs request URIs verbatim at Information level, which would
+                    // write the key in plaintext to App Service logs and stdout.
+                    request.Headers.Add("x-goog-api-key", _apiKeys[keyIndex]);
                     return await _httpClient.SendAsync(request, token);
                 }, ct);
             }
@@ -574,8 +578,7 @@ public class GeminiClient : IAiService
         return (retryAfter, isPerMinute);
     }
 
-    private Uri BuildUri(string modelPath, string apiKey) =>
-        new UriBuilder(BaseUrl + modelPath) { Query = $"key={Uri.EscapeDataString(apiKey)}" }.Uri;
+    private static Uri BuildUri(string modelPath) => new(BaseUrl + modelPath);
 
     /// <summary>
     /// Extracts the human-readable error.message from a Google error body (or
